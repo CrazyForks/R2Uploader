@@ -11,13 +11,23 @@ export interface UploadTarget {
   secretKey: string;
 }
 
+export interface UploadHistory {
+  id?: number;
+  fileName: string;
+  remoteFileName: string;
+  target: string;
+  timestamp: Date;
+}
+
 class AppDatabase extends Dexie {
   uploadTargets!: Dexie.Table<UploadTarget, number>;
+  uploadHistory!: Dexie.Table<UploadHistory, number>;
 
   constructor() {
     super('AppDatabase');
-    this.version(1).stores({
-      uploadTargets: '++id, name, type'
+    this.version(2).stores({
+      uploadTargets: '++id, name, type',
+      uploadHistory: '++id, fileName, remoteFileName, target, timestamp'
     });
   }
 }
