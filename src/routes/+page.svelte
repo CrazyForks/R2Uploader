@@ -12,6 +12,7 @@
   let remoteFileName = $state("");
   let textContent = $state("");
   let activeTab = $state<"file" | "folder" | "text">("file");
+
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
   let showUploadButton = $derived(
     (activeTab === "file" && !!filePath) ||
@@ -63,7 +64,6 @@
       uploadStatus = "uploading";
 
       if (textContent) {
-        remoteFileName = generateTimestampFileName();
         await invoke("r2_upload", {
           bucketName: selectedTarget.bucketName,
           accountId: selectedTarget.accountId,
@@ -149,7 +149,10 @@
         </button>
         <button
           class:btn-tab-active={activeTab === "text"}
-          onclick={() => (activeTab = "text")}
+          onclick={() => {
+            activeTab = "text";
+            remoteFileName = generateTimestampFileName();
+          }}
           class="btn-tab"
         >
           <FileText class="w-5 h-5" /> 上传文本
