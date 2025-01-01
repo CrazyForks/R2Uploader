@@ -56,10 +56,10 @@
         accountId: selectedTarget.accountId,
         accessKey: selectedTarget.accessKey,
         secretKey: selectedTarget.secretKey,
-        filePath,
+        source: { filePath },
         remoteFileName,
       });
-      
+
       // 保存上传记录
       await db.uploadHistory.add({
         fileName,
@@ -67,7 +67,7 @@
         target: selectedTarget.bucketName,
         timestamp: new Date(),
       });
-      
+
       uploadStatus = "success";
       setAlert("上传成功");
       filePath = "";
@@ -108,64 +108,65 @@
         </div>
       </div>
     {/if}
-      <div class="space-y-4">
-        <div class="flex gap-4">
-          <button onclick={openFile} class="flex-1 btn btn-default"
-            ><Upload class="w-6 h-6" />选择文件</button
-          >
-          <button onclick={openDirectory} class="flex-1 btn btn-default"
-            ><Folder class="w-6 h-6" />选择文件夹</button
-          >
-        </div>
-        
-        {#if fileName}
-          <div class="space-y-2">
-            <div>
-              <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                文件名
-              </p>
-              <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                {fileName}
-              </div>
-            </div>
-            <div>
-              <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                远程文件名
-              </p>
-              <input
-                bind:value={remoteFileName}
-                class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="输入远程文件名"
-              />
-            </div>
-          </div>
-        {/if}
-        
-        {#if showUploadButton}
-          <div class="space-y-2">
-            <button
-              onclick={uploadFile}
-              class="w-full btn btn-primary"
-              disabled={uploadStatus === "uploading"}
-            >
-              {#if uploadStatus === "uploading"}
-                上传中...
-              {:else}
-                <Check class="w-6 h-6" />确认上传
-              {/if}
-            </button>
-            
-            {#if uploadStatus === "error"}
-              <button
-                onclick={uploadFile}
-                class="w-full btn btn-default"
-              >
-                重试上传
-              </button>
-            {/if}
-          </div>
-        {/if}
+    <div class="space-y-4">
+      <div class="flex gap-4">
+        <button onclick={openFile} class="flex-1 btn btn-default"
+          ><Upload class="w-6 h-6" />选择文件</button
+        >
+        <button onclick={openDirectory} class="flex-1 btn btn-default"
+          ><Folder class="w-6 h-6" />选择文件夹</button
+        >
       </div>
+
+      {#if fileName}
+        <div class="space-y-2">
+          <div>
+            <p
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              文件名
+            </p>
+            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+              {fileName}
+            </div>
+          </div>
+          <div>
+            <p
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              远程文件名
+            </p>
+            <input
+              bind:value={remoteFileName}
+              class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="输入远程文件名"
+            />
+          </div>
+        </div>
+      {/if}
+
+      {#if showUploadButton}
+        <div class="space-y-2">
+          <button
+            onclick={uploadFile}
+            class="w-full btn btn-primary"
+            disabled={uploadStatus === "uploading"}
+          >
+            {#if uploadStatus === "uploading"}
+              上传中...
+            {:else}
+              <Check class="w-6 h-6" />确认上传
+            {/if}
+          </button>
+
+          {#if uploadStatus === "error"}
+            <button onclick={uploadFile} class="w-full btn btn-default">
+              重试上传
+            </button>
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 

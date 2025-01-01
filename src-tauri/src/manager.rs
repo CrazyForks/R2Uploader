@@ -1,6 +1,14 @@
 use mime_guess::from_path;
 use s3::{creds::Credentials, Bucket, Region};
+use serde::{Deserialize, Serialize};
 use std::fs;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")] // 统一使用小驼峰命名法
+pub enum UploadSource {
+    FilePath(String),
+    FileContent(String),
+}
 
 #[tauri::command]
 pub async fn read_file_data(file_path: &str) -> Result<Vec<u8>, String> {
@@ -13,14 +21,26 @@ pub async fn r2_upload(
     account_id: &str,
     access_key: &str,
     secret_key: &str,
-    file_path: &str,
+    source: UploadSource,
     remote_file_name: &str,
 ) -> Result<(), String> {
-    println!(
-        "Uploading file to bucket: {}, account_id: {}, file_path: {}",
-        bucket_name, account_id, file_path
-    );
-    let file_data = read_file_data(file_path).await?;
+    let file_data = match source {
+        UploadSource::FilePath(path) => {
+            println!(
+                "Uploading file to bucket: {}, account_id: {}, file_path: {}",
+                bucket_name, account_id, path
+            );
+            read_file_data(&path).await?
+        }
+        UploadSource::FileContent(content) => {
+            println!(
+                "Uploading content to bucket: {}, account_id: {}",
+                bucket_name, account_id
+            );
+            content.as_bytes().to_vec()
+        }
+    };
+
     let bucket = Bucket::new(
         bucket_name,
         Region::R2 {
@@ -32,8 +52,8 @@ pub async fn r2_upload(
     .map_err(|e| e.to_string())?
     .with_path_style();
 
-    let mime = from_path(file_path).first_or_octet_stream();
-    let content_type = mime.as_ref();
+    let content_type = from_path(remote_file_name).first_or_octet_stream();
+    let content_type = content_type.as_ref();
     let response_data = bucket
         .put_object_with_content_type(remote_file_name, &file_data, content_type)
         .await
@@ -43,7 +63,7 @@ pub async fn r2_upload(
         Ok(())
     } else {
         Err(format!(
-            "Failed to upload file to S3: {}",
+            "Failed to upload file: {}",
             response_data.as_str().map_err(|e| e.to_string())?
         ))
     }
