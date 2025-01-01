@@ -1,65 +1,80 @@
 <script lang="ts">
-import db from "$lib/db";
-import { onMount } from "svelte";
+  import db from "$lib/db";
+  import { onMount } from "svelte";
 
-// 上传目标管理相关状态
-let targets: Array<{
-	id?: number;
-	name: string;
-	description: string;
-	bucketName: string;
-	accountId: string;
-	accessKey: string;
-	secretKey: string;
-}> = [];
+  // 上传目标管理相关状态
+  let targets: Array<{
+    id?: number;
+    name: string;
+    description: string;
+    bucketName: string;
+    accountId: string;
+    accessKey: string;
+    secretKey: string;
+  }> = [];
 
-let newTarget = {
-	name: "",
-	description: "",
-	bucketName: "",
-	accountId: "",
-	accessKey: "",
-	secretKey: "",
-};
+  let newTarget = {
+    name: "",
+    description: "",
+    bucketName: "",
+    accountId: "",
+    accessKey: "",
+    secretKey: "",
+  };
 
-onMount(async () => {
-	targets = await db.uploadTargets.toArray();
-});
+  onMount(async () => {
+    targets = await db.uploadTargets.toArray();
+  });
 
-// 上传目标管理功能
-async function addTarget() {
-	const id = await db.uploadTargets.add({
-		...newTarget,
-		type: "r2",
-	});
-	targets = await db.uploadTargets.toArray();
-	newTarget = {
-		name: "",
-		description: "",
-		bucketName: "",
-		accountId: "",
-		accessKey: "",
-		secretKey: "",
-	};
-}
+  // 上传目标管理功能
+  async function addTarget() {
+    const id = await db.uploadTargets.add({
+      ...newTarget,
+      type: "r2",
+    });
+    targets = await db.uploadTargets.toArray();
+    newTarget = {
+      name: "",
+      description: "",
+      bucketName: "",
+      accountId: "",
+      accessKey: "",
+      secretKey: "",
+    };
+  }
 
-async function deleteTarget(id: number) {
-	await db.uploadTargets.delete(id);
-	targets = await db.uploadTargets.toArray();
-}
+  async function deleteTarget(id: number) {
+    await db.uploadTargets.delete(id);
+    targets = await db.uploadTargets.toArray();
+  }
 </script>
 
 <div class="max-w-4xl mx-auto px-4 py-8">
   <h1 class="text-2xl font-bold mb-8 dark:text-white">上传目标管理</h1>
 
   <div class="config-card mb-8">
-    <h2 class="text-xl font-semibold mb-4 dark:text-gray-200">添加新的 R2 配置</h2>
+    <h2 class="text-xl font-semibold mb-4 dark:text-gray-200">
+      添加新的 R2 配置
+    </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <input bind:value={newTarget.name} required placeholder="名称" class="form-input" />
-      <textarea bind:value={newTarget.description} placeholder="描述" class="form-input md:col-span-2"></textarea>
-      <input bind:value={newTarget.bucketName} required placeholder="Bucket 名称" class="form-input" />
-      <input bind:value={newTarget.accountId} required placeholder="Account ID" class="form-input" />
-      <input bind:value={newTarget.accessKey} required placeholder="Access Key" class="form-input" />
+      <input
+        bind:value={newTarget.bucketName}
+        required
+        placeholder="Bucket Name"
+        class="form-input"
+      />
+      <input
+        bind:value={newTarget.accountId}
+        required
+        placeholder="Account ID"
+        class="form-input"
+      />
+      <input
+        bind:value={newTarget.accessKey}
+        required
+        placeholder="Access Key"
+        class="form-input"
+      />
       <input
         type="password"
         bind:value={newTarget.secretKey}
@@ -68,7 +83,9 @@ async function deleteTarget(id: number) {
         class="form-input"
       />
     </div>
-    <button type="submit" class="form-button mt-4" on:click={addTarget}>添加</button>
+    <button type="submit" class="form-button mt-4" on:click={addTarget}
+      >添加</button
+    >
   </div>
 
   <div class="config-card">
@@ -79,11 +96,17 @@ async function deleteTarget(id: number) {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 class="font-medium dark:text-gray-200">{target.name}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{target.description}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {target.description}
+              </p>
             </div>
             <div>
-              <p class="text-sm dark:text-gray-300">Bucket: {target.bucketName}</p>
-              <p class="text-sm dark:text-gray-300">Account ID: {target.accountId}</p>
+              <p class="text-sm dark:text-gray-300">
+                Bucket: {target.bucketName}
+              </p>
+              <p class="text-sm dark:text-gray-300">
+                Account ID: {target.accountId}
+              </p>
             </div>
           </div>
           <button
