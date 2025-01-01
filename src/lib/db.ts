@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 
-interface UploadTarget {
+export interface UploadTarget {
   id?: number;
   name: string;
   description: string;

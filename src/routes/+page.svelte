@@ -2,9 +2,27 @@
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
   import { Upload, Folder, Check } from "lucide-svelte";
+  import db from "$lib/db";
+  import type { UploadTarget } from "$lib/db";
+  import { onMount } from "svelte";
+  import { setAlert } from "$lib/store.svelte";
 
   let filePath = $state("");
   let showUploadButton = $derived(!!filePath);
+  let uploadTargets = $state<UploadTarget[]>([]);
+  let selectedTarget = $state<UploadTarget | null>(null);
+
+  // 获取上传目标
+  async function getUploadTargets() {
+    uploadTargets = await db.uploadTargets.toArray();
+    if (uploadTargets.length > 0) {
+      selectedTarget = uploadTargets[0];
+    }
+  }
+
+  onMount(() => {
+    getUploadTargets();
+  });
 
   // 文件上传功能
   async function openFile() {
@@ -25,18 +43,20 @@
   }
 
   async function uploadFile() {
-    // 	try {
-    // 		await invoke("r2_upload", {
-    // 			bucketName,
-    // 			accountId,
-    // 			accessKey,
-    // 			secretKey,
-    // 			filePath,
-    // 		});
-    // 		console.log("Upload success");
-    // 	} catch (error) {
-    // 		console.error(error);
-    // 	}
+    if (!selectedTarget) return;
+    try {
+      await invoke("r2_upload", {
+        bucketName: selectedTarget.bucketName,
+        accountId: selectedTarget.accountId,
+        accessKey: selectedTarget.accessKey,
+        secretKey: selectedTarget.secretKey,
+        filePath,
+      });
+      console.log("Upload success");
+      setAlert("上传成功");
+    } catch (error) {
+      console.error(error);
+    }
   }
 </script>
 
@@ -48,6 +68,25 @@
   <div
     class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 dark:border-gray-700/20"
   >
+    {#if uploadTargets.length === 0}
+      <div
+        class="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-800 dark:text-yellow-200"
+      >
+        请先<a href="/setting" class="font-medium underline">设置上传目标</a
+        >后再进行上传
+      </div>
+    {:else}
+      <div class="mb-4">
+        <p
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          上传目标
+        </p>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          {selectedTarget?.bucketName}
+        </div>
+      </div>
+    {/if}
     <div class="space-y-4">
       <div class="flex gap-4">
         <button onclick={openFile} class="flex-1 btn btn-default"
