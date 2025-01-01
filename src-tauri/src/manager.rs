@@ -1,3 +1,4 @@
+use mime_guess::from_path;
 use s3::{creds::Credentials, Bucket, Region};
 use std::fs;
 
@@ -13,6 +14,7 @@ pub async fn r2_upload(
     access_key: &str,
     secret_key: &str,
     file_path: &str,
+    remote_file_name: &str,
 ) -> Result<(), String> {
     println!(
         "Uploading file to bucket: {}, account_id: {}, file_path: {}",
@@ -30,8 +32,10 @@ pub async fn r2_upload(
     .map_err(|e| e.to_string())?
     .with_path_style();
 
+    let mime = from_path(file_path).first_or_octet_stream();
+    let content_type = mime.as_ref();
     let response_data = bucket
-        .put_object(file_path, &file_data)
+        .put_object_with_content_type(remote_file_name, &file_data, content_type)
         .await
         .map_err(|e| e.to_string())?;
 

@@ -16,9 +16,6 @@
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-dialog": "~2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.2",
-    "@uppy/dashboard": "^4.1.3",
-    "@uppy/file-input": "^4.0.4",
-    "@uppy/svelte": "^4.1.1",
     "dexie": "^4.0.10"
   },
   "devDependencies": {
