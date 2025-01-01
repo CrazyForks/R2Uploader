@@ -2,14 +2,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
-// 文件上传相关状态
-let endpoint = $state("");
-let bucketName = $state("goodasmr");
-let accountId = $state("19e4e01d44eb2736350b1c862f0a8a2f");
-let accessKey = $state("5ac7a2dae9007729c48bb09f34eccb8a");
-let secretKey = $state(
-	"673b1f221e57e955b0e93e42013b7045deea8ddb3df6685743a714421f1a1b94",
-);
 let filePath = $state("");
 
 // 文件上传功能
