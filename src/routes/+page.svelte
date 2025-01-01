@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { Upload, Folder, Check } from "lucide-svelte";
+  import { Upload, Folder, Check, FileText } from "lucide-svelte";
   import db from "$lib/db";
   import type { UploadTarget } from "$lib/db";
   import { onMount } from "svelte";
@@ -10,8 +10,13 @@
   let filePath = $state("");
   let fileName = $state("");
   let remoteFileName = $state("");
+  let textContent = $state("");
+  let activeTab = $state<"file" | "folder" | "text">("file");
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
-  let showUploadButton = $derived(!!filePath);
+  let showUploadButton = $derived(
+    (activeTab === "file" && !!filePath) ||
+      (activeTab === "text" && !!textContent)
+  );
   let uploadTargets = $state<UploadTarget[]>([]);
   let selectedTarget = $state<UploadTarget | null>(null);
 
@@ -47,18 +52,36 @@
     });
   }
 
+  function generateTimestampFileName() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}-${String(now.getSeconds()).padStart(2, "0")}.txt`;
+  }
+
   async function uploadFile() {
     if (!selectedTarget) return;
     try {
       uploadStatus = "uploading";
-      await invoke("r2_upload", {
-        bucketName: selectedTarget.bucketName,
-        accountId: selectedTarget.accountId,
-        accessKey: selectedTarget.accessKey,
-        secretKey: selectedTarget.secretKey,
-        source: { filePath },
-        remoteFileName,
-      });
+
+      if (textContent) {
+        remoteFileName = generateTimestampFileName();
+        await invoke("r2_upload", {
+          bucketName: selectedTarget.bucketName,
+          accountId: selectedTarget.accountId,
+          accessKey: selectedTarget.accessKey,
+          secretKey: selectedTarget.secretKey,
+          source: { fileContent: textContent },
+          remoteFileName,
+        });
+      } else {
+        await invoke("r2_upload", {
+          bucketName: selectedTarget.bucketName,
+          accountId: selectedTarget.accountId,
+          accessKey: selectedTarget.accessKey,
+          secretKey: selectedTarget.secretKey,
+          source: { filePath },
+          remoteFileName,
+        });
+      }
 
       // 保存上传记录
       await db.uploadHistory.add({
@@ -109,38 +132,97 @@
       </div>
     {/if}
     <div class="space-y-4">
-      <div class="flex gap-4">
-        <button onclick={openFile} class="flex-1 btn btn-default"
-          ><Upload class="w-6 h-6" />选择文件</button
+      <div class="flex gap-2 mb-4">
+        <button
+          class:btn-tab-active={activeTab === "file"}
+          onclick={() => (activeTab = "file")}
+          class="btn-tab"
         >
-        <button onclick={openDirectory} class="flex-1 btn btn-default"
-          ><Folder class="w-6 h-6" />选择文件夹</button
+          <Upload class="w-5 h-5" /> 上传文件
+        </button>
+        <button
+          class:btn-tab-active={activeTab === "folder"}
+          onclick={() => (activeTab = "folder")}
+          class="btn-tab"
         >
+          <Folder class="w-5 h-5" /> 上传文件夹
+        </button>
+        <button
+          class:btn-tab-active={activeTab === "text"}
+          onclick={() => (activeTab = "text")}
+          class="btn-tab"
+        >
+          <FileText class="w-5 h-5" /> 上传文本
+        </button>
       </div>
 
-      {#if fileName}
-        <div class="space-y-2">
-          <div>
-            <p
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              文件名
-            </p>
-            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-              {fileName}
+      {#if activeTab === "file"}
+        <div class="space-y-4">
+          <button onclick={openFile} class="w-full btn btn-default">
+            <Upload class="w-6 h-6" /> 选择文件
+          </button>
+
+          {#if fileName}
+            <div class="space-y-2">
+              <div>
+                <p
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  文件名
+                </p>
+                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  {fileName}
+                </div>
+              </div>
+              <div>
+                <p
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  远程文件名
+                </p>
+                <input
+                  bind:value={remoteFileName}
+                  class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="输入远程文件名"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <p
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              远程文件名
-            </p>
-            <input
-              bind:value={remoteFileName}
-              class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="输入远程文件名"
-            />
+          {/if}
+        </div>
+      {:else if activeTab === "folder"}
+        <div class="space-y-4">
+          <button onclick={openDirectory} class="w-full btn btn-default">
+            <Folder class="w-6 h-6" /> 选择文件夹
+          </button>
+        </div>
+      {:else if activeTab === "text"}
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <div>
+              <p
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                文本内容
+              </p>
+              <textarea
+                bind:value={textContent}
+                class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="输入要上传的文本内容"
+                rows="6"
+              ></textarea>
+            </div>
+            <div>
+              <p
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                远程文件名
+              </p>
+              <input
+                bind:value={remoteFileName}
+                class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="输入远程文件名"
+              />
+            </div>
           </div>
         </div>
       {/if}
@@ -181,5 +263,15 @@
 
   .btn-primary {
     @apply bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700;
+  }
+
+  .btn-tab {
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors;
+    @apply bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700;
+  }
+
+  .btn-tab-active {
+    @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400;
+    @apply hover:bg-blue-100 dark:hover:bg-blue-900/30;
   }
 </style>
