@@ -1,11 +1,16 @@
 <script lang="ts">
-import { page } from "$app/state";
-import { PanelRightClose, PanelRightOpen, Plus, Settings } from "lucide-svelte";
-let collapsed = $state(false);
+  import { page } from "$app/state";
+  import {
+    PanelRightClose,
+    PanelRightOpen,
+    Plus,
+    Settings,
+  } from "lucide-svelte";
+  let collapsed = $state(false);
 
-function getRounded() {
-	return collapsed ? "rounded-none" : "rounded-xl";
-}
+  function getRounded() {
+    return collapsed ? "rounded-none" : "rounded-xl";
+  }
 </script>
 
 <nav
@@ -61,7 +66,7 @@ function getRounded() {
 
 <style lang="postcss">
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer;
+    @apply flex cursor-pointer items-center gap-3 px-4 py-3 text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700;
   }
 
   .sidebar-link[aria-current] {

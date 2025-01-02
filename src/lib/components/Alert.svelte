@@ -1,19 +1,19 @@
 <script lang="ts">
-import { alertMessage } from "$lib/store.svelte";
-import { quadOut } from "svelte/easing";
-import { fly } from "svelte/transition";
+  import { alertMessage } from "$lib/store.svelte";
+  import { quadOut } from "svelte/easing";
+  import { fly } from "svelte/transition";
 
-// 使用 effect 确保消息自动清除
-$effect(() => {
-	if (alertMessage.message) {
-		const timer = setTimeout(() => {
-			alertMessage.message = "";
-		}, 2000); // 稍微延长一点显示时间
+  // 使用 effect 确保消息自动清除
+  $effect(() => {
+    if (alertMessage.message) {
+      const timer = setTimeout(() => {
+        alertMessage.message = "";
+      }, 2000); // 稍微延长一点显示时间
 
-		// 清理定时器
-		return () => clearTimeout(timer);
-	}
-});
+      // 清理定时器
+      return () => clearTimeout(timer);
+    }
+  });
 </script>
 
 {#if alertMessage.message}

@@ -1,98 +1,98 @@
 <script lang="ts">
-import db from "$lib/db";
-import {
-	addCustomProxy,
-	proxySettings,
-	removeCustomProxy,
-	selectCustomProxy,
-} from "$lib/store.svelte";
-import { onMount } from "svelte";
-let showAddProxyModal = false;
+  import db from "$lib/db";
+  import {
+    addCustomProxy,
+    proxySettings,
+    removeCustomProxy,
+    selectCustomProxy,
+  } from "$lib/store.svelte";
+  import { onMount } from "svelte";
+  let showAddProxyModal = false;
 
-// 新代理表单状态
-let newProxy = {
-	host: "",
-	port: 0,
-	username: "",
-	password: "",
-};
+  // 新代理表单状态
+  let newProxy = {
+    host: "",
+    port: 0,
+    username: "",
+    password: "",
+  };
 
-// 添加代理
-function addProxy() {
-	if (!newProxy.host || !newProxy.port) return;
+  // 添加代理
+  function addProxy() {
+    if (!newProxy.host || !newProxy.port) return;
 
-	addCustomProxy({
-		host: newProxy.host,
-		port: newProxy.port,
-		username: newProxy.username || undefined,
-		password: newProxy.password || undefined,
-	});
+    addCustomProxy({
+      host: newProxy.host,
+      port: newProxy.port,
+      username: newProxy.username || undefined,
+      password: newProxy.password || undefined,
+    });
 
-	// 重置表单
-	newProxy = {
-		host: "",
-		port: 0,
-		username: "",
-		password: "",
-	};
+    // 重置表单
+    newProxy = {
+      host: "",
+      port: 0,
+      username: "",
+      password: "",
+    };
 
-	showAddProxyModal = false;
-}
+    showAddProxyModal = false;
+  }
 
-// 上传目标管理相关状态
-let targets: Array<{
-	id?: number;
-	name: string;
-	description: string;
-	bucketName: string;
-	accountId: string;
-	accessKey: string;
-	secretKey: string;
-}> = [];
+  // 上传目标管理相关状态
+  let targets: Array<{
+    id?: number;
+    name: string;
+    description: string;
+    bucketName: string;
+    accountId: string;
+    accessKey: string;
+    secretKey: string;
+  }> = [];
 
-let newTarget = {
-	name: "",
-	description: "",
-	bucketName: "",
-	accountId: "",
-	accessKey: "",
-	secretKey: "",
-};
+  let newTarget = {
+    name: "",
+    description: "",
+    bucketName: "",
+    accountId: "",
+    accessKey: "",
+    secretKey: "",
+  };
 
-onMount(async () => {
-	targets = await db.uploadTargets.toArray();
-});
+  onMount(async () => {
+    targets = await db.uploadTargets.toArray();
+  });
 
-// 上传目标管理功能
-async function addTarget() {
-	const id = await db.uploadTargets.add({
-		...newTarget,
-		type: "r2",
-	});
-	targets = await db.uploadTargets.toArray();
-	newTarget = {
-		name: "",
-		description: "",
-		bucketName: "",
-		accountId: "",
-		accessKey: "",
-		secretKey: "",
-	};
-}
+  // 上传目标管理功能
+  async function addTarget() {
+    const id = await db.uploadTargets.add({
+      ...newTarget,
+      type: "r2",
+    });
+    targets = await db.uploadTargets.toArray();
+    newTarget = {
+      name: "",
+      description: "",
+      bucketName: "",
+      accountId: "",
+      accessKey: "",
+      secretKey: "",
+    };
+  }
 
-async function deleteTarget(id: number) {
-	await db.uploadTargets.delete(id);
-	targets = await db.uploadTargets.toArray();
-}
+  async function deleteTarget(id: number) {
+    await db.uploadTargets.delete(id);
+    targets = await db.uploadTargets.toArray();
+  }
 </script>
 
-<div class="max-w-4xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold mb-8 dark:text-white">设置</h1>
+<div class="mx-auto max-w-4xl px-4 py-8">
+  <h1 class="mb-8 text-2xl font-bold dark:text-white">设置</h1>
 
   <div class="config-card mb-8">
-    <h2 class="text-xl font-semibold mb-4 dark:text-slate-200">代理设置</h2>
-    
-    <div class="space-y-2 mb-4">
+    <h2 class="mb-4 text-xl font-semibold dark:text-slate-200">代理设置</h2>
+
+    <div class="mb-4 space-y-2">
       <label class="flex items-center space-x-2">
         <input
           type="radio"
@@ -103,7 +103,7 @@ async function deleteTarget(id: number) {
         />
         <span class="dark:text-slate-300">使用系统代理</span>
       </label>
-      
+
       <label class="flex items-center space-x-2">
         <input
           type="radio"
@@ -114,7 +114,7 @@ async function deleteTarget(id: number) {
         />
         <span class="dark:text-slate-300">使用自定义代理</span>
       </label>
-      
+
       <label class="flex items-center space-x-2">
         <input
           type="radio"
@@ -127,12 +127,9 @@ async function deleteTarget(id: number) {
       </label>
     </div>
 
-    {#if proxySettings.proxyType === 'custom'}
+    {#if proxySettings.proxyType === "custom"}
       <div class="space-y-4">
-        <button
-          on:click={() => showAddProxyModal = true}
-          class="form-button"
-        >
+        <button on:click={() => (showAddProxyModal = true)} class="form-button">
           添加代理
         </button>
 
@@ -147,7 +144,7 @@ async function deleteTarget(id: number) {
                   </p>
                 {/if}
               </div>
-              
+
               <div class="flex items-center space-x-2">
                 <input
                   type="radio"
@@ -170,13 +167,13 @@ async function deleteTarget(id: number) {
     {/if}
   </div>
 
-  <h2 class="text-2xl font-bold mb-8 dark:text-white">上传目标管理</h2>
+  <h2 class="mb-8 text-2xl font-bold dark:text-white">上传目标管理</h2>
 
   <div class="config-card mb-8">
-    <h2 class="text-xl font-semibold mb-4 dark:text-slate-200">
+    <h2 class="mb-4 text-xl font-semibold dark:text-slate-200">
       添加新的 R2 配置
     </h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <input
         bind:value={newTarget.bucketName}
         required
@@ -209,11 +206,11 @@ async function deleteTarget(id: number) {
   </div>
 
   <div class="config-card">
-    <h2 class="text-xl font-semibold mb-4 dark:text-slate-200">现有配置</h2>
+    <h2 class="mb-4 text-xl font-semibold dark:text-slate-200">现有配置</h2>
     <div class="space-y-4">
       {#each targets as target}
         <div class="config-card">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <h3 class="font-medium dark:text-slate-200">{target.name}</h3>
               <p class="text-sm text-slate-600 dark:text-slate-400">
@@ -243,10 +240,12 @@ async function deleteTarget(id: number) {
 
 <!-- 添加代理模态框 -->
 {#if showAddProxyModal}
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+  >
     <div class="config-card w-full max-w-md">
-      <h2 class="text-xl font-semibold mb-4 dark:text-slate-200">添加代理</h2>
-      
+      <h2 class="mb-4 text-xl font-semibold dark:text-slate-200">添加代理</h2>
+
       <div class="space-y-4">
         <input
           bind:value={newProxy.host}
@@ -272,19 +271,14 @@ async function deleteTarget(id: number) {
         />
       </div>
 
-      <div class="flex justify-end space-x-2 mt-4">
+      <div class="mt-4 flex justify-end space-x-2">
         <button
-          on:click={() => showAddProxyModal = false}
+          on:click={() => (showAddProxyModal = false)}
           class="delete-button"
         >
           取消
         </button>
-        <button
-          on:click={addProxy}
-          class="form-button"
-        >
-          添加
-        </button>
+        <button on:click={addProxy} class="form-button"> 添加 </button>
       </div>
     </div>
   </div>
@@ -292,26 +286,18 @@ async function deleteTarget(id: number) {
 
 <style lang="postcss">
   .form-input {
-    @apply w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-800 
-           border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 
-           focus:border-blue-500 dark:focus:ring-blue-600 dark:focus:border-blue-600 
-           transition-colors duration-200 text-slate-900 dark:text-slate-100;
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 transition-colors duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-600 dark:focus:ring-blue-600;
   }
 
   .form-button {
-    @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
-           focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 
-           dark:focus:ring-offset-slate-800 transition-colors duration-200;
+    @apply rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800;
   }
 
   .delete-button {
-    @apply px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 
-           focus:ring-2 focus:ring-red-500 focus:ring-offset-2 
-           dark:focus:ring-offset-slate-800 transition-colors duration-200;
+    @apply rounded-md bg-red-600 px-3 py-1 text-white transition-colors duration-200 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800;
   }
 
   .config-card {
-    @apply p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm 
-           border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100;
+    @apply rounded-lg border border-slate-200 bg-white p-4 text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100;
   }
 </style>
