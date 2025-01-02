@@ -53,7 +53,7 @@
   <h1 class="text-2xl font-bold mb-8 dark:text-white">上传目标管理</h1>
 
   <div class="config-card mb-8">
-    <h2 class="text-xl font-semibold mb-4 dark:text-gray-200">
+    <h2 class="text-xl font-semibold mb-4 dark:text-slate-200">
       添加新的 R2 配置
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -89,22 +89,22 @@
   </div>
 
   <div class="config-card">
-    <h2 class="text-xl font-semibold mb-4 dark:text-gray-200">现有配置</h2>
+    <h2 class="text-xl font-semibold mb-4 dark:text-slate-200">现有配置</h2>
     <div class="space-y-4">
       {#each targets as target}
         <div class="config-card">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h3 class="font-medium dark:text-gray-200">{target.name}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
+              <h3 class="font-medium dark:text-slate-200">{target.name}</h3>
+              <p class="text-sm text-slate-600 dark:text-slate-400">
                 {target.description}
               </p>
             </div>
             <div>
-              <p class="text-sm dark:text-gray-300">
+              <p class="text-sm dark:text-slate-300">
                 Bucket: {target.bucketName}
               </p>
-              <p class="text-sm dark:text-gray-300">
+              <p class="text-sm dark:text-slate-300">
                 Account ID: {target.accountId}
               </p>
             </div>
@@ -123,26 +123,26 @@
 
 <style lang="postcss">
   .form-input {
-    @apply w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 
-           border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 
+    @apply w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-800 
+           border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 
            focus:border-blue-500 dark:focus:ring-blue-600 dark:focus:border-blue-600 
-           transition-colors duration-200 text-gray-900 dark:text-gray-100;
+           transition-colors duration-200 text-slate-900 dark:text-slate-100;
   }
 
   .form-button {
     @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
            focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 
-           dark:focus:ring-offset-gray-800 transition-colors duration-200;
+           dark:focus:ring-offset-slate-800 transition-colors duration-200;
   }
 
   .delete-button {
     @apply px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 
            focus:ring-2 focus:ring-red-500 focus:ring-offset-2 
-           dark:focus:ring-offset-gray-800 transition-colors duration-200;
+           dark:focus:ring-offset-slate-800 transition-colors duration-200;
   }
 
   .config-card {
-    @apply p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm 
-           border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100;
+    @apply p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm 
+           border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100;
   }
 </style>

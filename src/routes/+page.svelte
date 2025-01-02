@@ -1,11 +1,11 @@
 <script lang="ts">
+  import type { UploadTarget } from "$lib/db";
+  import db from "$lib/db";
+  import { setAlert } from "$lib/store.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { Upload, Folder, Check, FileText } from "lucide-svelte";
-  import db from "$lib/db";
-  import type { UploadTarget } from "$lib/db";
+  import { Check, FileText, Folder, Upload } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { setAlert } from "$lib/store.svelte";
 
   let filePath = $state("");
   let fileName = $state("");
@@ -105,12 +105,12 @@
 </script>
 
 <div class="max-w-4xl mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200">
+  <h1 class="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-200">
     文件上传
   </h1>
 
   <div
-    class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 dark:border-gray-700/20"
+    class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 dark:border-slate-700/20"
   >
     {#if uploadTargets.length === 0}
       <div
@@ -122,11 +122,11 @@
     {:else}
       <div class="mb-4">
         <p
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
         >
           上传目标
         </p>
-        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+        <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
           {selectedTarget?.bucketName}
         </div>
       </div>
@@ -169,23 +169,23 @@
             <div class="space-y-2">
               <div>
                 <p
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
                 >
                   文件名
                 </p>
-                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
                   {fileName}
                 </div>
               </div>
               <div>
                 <p
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
                 >
                   远程文件名
                 </p>
                 <input
                   bind:value={remoteFileName}
-                  class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full bg-slate-50 dark:bg-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="输入远程文件名"
                 />
               </div>
@@ -203,26 +203,26 @@
           <div class="space-y-2">
             <div>
               <p
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
                 文本内容
               </p>
               <textarea
                 bind:value={textContent}
-                class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full bg-slate-50 dark:bg-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="输入要上传的文本内容"
                 rows="6"
               ></textarea>
             </div>
             <div>
               <p
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
                 远程文件名
               </p>
               <input
                 bind:value={remoteFileName}
-                class="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full bg-slate-50 dark:bg-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="输入远程文件名"
               />
             </div>
@@ -261,7 +261,7 @@
   }
 
   .btn-default {
-    @apply bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 active:bg-gray-100 dark:active:bg-gray-500 border border-gray-200 dark:border-gray-600;
+    @apply bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:bg-slate-100 dark:active:bg-slate-500 border border-slate-200 dark:border-slate-600;
   }
 
   .btn-primary {
@@ -269,8 +269,8 @@
   }
 
   .btn-tab {
-    @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors;
-    @apply bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700;
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer;
+    @apply bg-transparent text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700;
   }
 
   .btn-tab-active {
