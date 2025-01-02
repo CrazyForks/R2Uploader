@@ -4,7 +4,15 @@ import db from "$lib/db";
 import { setAlert } from "$lib/store.svelte";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Check, FileText, Folder, Upload, Clipboard } from "lucide-svelte";
+import {
+	Check,
+	Clipboard,
+	FileText,
+	Folder,
+	Triangle,
+	Upload,
+} from "lucide-svelte";
+import { Select, type Selected } from "bits-ui";
 import { onMount } from "svelte";
 import clipboard from "tauri-plugin-clipboard-api";
 
@@ -30,11 +38,16 @@ let showUploadButton = $derived(
 				!!clipboardImage ||
 				!!clipboardRtf)),
 );
-let uploadTargets = $state<UploadTarget[]>([]);
-let selectedTarget = $state<UploadTarget | null>(null);
+let uploadTargets: Selected<UploadTarget>[] = $state([]);
+let selectedTarget: Selected<UploadTarget> | undefined = $state();
 
 async function getUploadTargets() {
-	uploadTargets = await db.uploadTargets.toArray();
+	await db.uploadTargets.toArray().then((targets) => {
+		uploadTargets = targets.map((target) => ({
+			value: target,
+			label: target.bucketName,
+		}));
+	});
 	if (uploadTargets.length > 0) {
 		selectedTarget = uploadTargets[0];
 	}
@@ -111,10 +124,10 @@ async function uploadFile() {
 		}
 
 		await invoke("r2_upload", {
-			bucketName: selectedTarget.bucketName,
-			accountId: selectedTarget.accountId,
-			accessKey: selectedTarget.accessKey,
-			secretKey: selectedTarget.secretKey,
+			bucketName: selectedTarget.value.bucketName,
+			accountId: selectedTarget.value.accountId,
+			accessKey: selectedTarget.value.accessKey,
+			secretKey: selectedTarget.value.secretKey,
 			source,
 			remoteFileName,
 		});
@@ -122,7 +135,7 @@ async function uploadFile() {
 		await db.uploadHistory.add({
 			fileName,
 			remoteFileName,
-			target: selectedTarget.bucketName,
+			target: selectedTarget.value.bucketName,
 			timestamp: new Date(),
 		});
 
@@ -161,9 +174,28 @@ async function uploadFile() {
         >
           上传目标
         </p>
-        <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
-          {selectedTarget?.bucketName}
-        </div>
+        <Select.Root
+          items={uploadTargets}
+          selected={selectedTarget}
+          onSelectedChange={(e) => {
+            selectedTarget = {
+              value: e!.value,
+              label: e?.value.bucketName || "unknown",
+            };
+          }}
+        >
+          <Select.Trigger>
+              <Select.Value class="text-sm" placeholder="Select a theme" />
+              <!-- <CaretUpDown class="ml-auto size-6 text-muted-foreground" /> -->
+          </Select.Trigger>
+          <Select.Content>
+            {#each uploadTargets as target}
+              <Select.Item value={target.value} label={target.label}
+                >{target.label}</Select.Item
+              >
+            {/each}
+          </Select.Content>
+        </Select.Root>
       </div>
     {/if}
     <div class="space-y-4">
@@ -300,7 +332,7 @@ async function uploadFile() {
               <p
                 class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
-                剪贴板HTML
+                剪贴板 HTML
               </p>
               <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
                 {@html clipboardHtml}
@@ -328,7 +360,7 @@ async function uploadFile() {
               <p
                 class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
               >
-                剪贴板RTF
+                剪贴板 RTF
               </p>
               <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
                 {clipboardRtf}
