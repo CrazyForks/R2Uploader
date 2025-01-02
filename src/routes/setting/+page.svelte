@@ -1,12 +1,12 @@
 <script lang="ts">
   import db from "$lib/db";
-  import { onMount } from "svelte";
   import {
+    addCustomProxy,
     proxySettings,
-    selectCustomProxy,
     removeCustomProxy,
-    addCustomProxy
+    selectCustomProxy
   } from "$lib/store.svelte";
+  import { onMount } from "svelte";
   let showAddProxyModal = false;
 
   // 新代理表单状态
@@ -143,7 +143,7 @@
                 <p class="dark:text-slate-300">{proxy.host}:{proxy.port}</p>
                 {#if proxy.username}
                   <p class="text-sm dark:text-slate-400">
-                    用户名: {proxy.username}
+                    用户名：{proxy.username}
                   </p>
                 {/if}
               </div>

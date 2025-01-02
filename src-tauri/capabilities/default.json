@@ -7,11 +7,24 @@
     "core:default",
     "opener:default",
     "dialog:default",
-    "clipboard-manager:allow-clear",
-    "clipboard-manager:allow-read-image",
-    "clipboard-manager:allow-read-text",
-    "clipboard-manager:allow-write-image",
-    "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-write-html"
+
+    "clipboard:allow-ping",
+    "clipboard:allow-available-types",
+
+    "clipboard:allow-clear",
+    "clipboard:allow-execute",
+
+    "clipboard:allow-is-monitor-running",
+    "clipboard:allow-start-monitor",
+    "clipboard:allow-stop-monitor",
+
+    "clipboard:allow-has-files",
+    "clipboard:allow-has-html",
+    "clipboard:allow-has-image",
+    "clipboard:allow-has-rtf",
+    "clipboard:allow-has-text",
+
+    "clipboard:read-all",
+    "clipboard:write-all"
   ]
 }

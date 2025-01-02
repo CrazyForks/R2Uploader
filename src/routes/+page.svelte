@@ -4,24 +4,35 @@
   import { setAlert } from "$lib/store.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { Check, FileText, Folder, Upload } from "lucide-svelte";
+  import { Check, FileText, Folder, Upload, Clipboard } from "lucide-svelte";
   import { onMount } from "svelte";
+  import clipboard from "tauri-plugin-clipboard-api";
 
   let filePath = $state("");
   let fileName = $state("");
   let remoteFileName = $state("");
   let textContent = $state("");
-  let activeTab = $state<"file" | "folder" | "text">("file");
+  let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
+  let clipboardFiles = $state<string[]>([]);
+  let clipboardText = $state("");
+  let clipboardHtml = $state("");
+  let clipboardImage = $state("");
+  let clipboardRtf = $state("");
   let showUploadButton = $derived(
     (activeTab === "file" && !!filePath) ||
-      (activeTab === "text" && !!textContent)
+      (activeTab === "text" && !!textContent) ||
+      (activeTab === "clipboard" &&
+        (!!clipboardFiles.length ||
+          !!clipboardText ||
+          !!clipboardHtml ||
+          !!clipboardImage ||
+          !!clipboardRtf))
   );
   let uploadTargets = $state<UploadTarget[]>([]);
   let selectedTarget = $state<UploadTarget | null>(null);
 
-  // 获取上传目标
   async function getUploadTargets() {
     uploadTargets = await db.uploadTargets.toArray();
     if (uploadTargets.length > 0) {
@@ -29,11 +40,34 @@
     }
   }
 
-  onMount(() => {
+  async function checkClipboardContent() {
+    try {
+      if (await clipboard.hasText()) {
+        clipboardText = await clipboard.readText();
+      }
+      if (await clipboard.hasHTML()) {
+        clipboardHtml = await clipboard.readHtml();
+      }
+      if (await clipboard.hasImage()) {
+        clipboardImage = await clipboard.readImageBase64();
+      }
+      if (await clipboard.hasRTF()) {
+        clipboardRtf = await clipboard.readRtf();
+      }
+      if (await clipboard.hasFiles()) {
+        clipboardFiles = await clipboard.readFiles();
+      }
+    } catch (error: unknown) {
+      console.error(error);
+      setAlert("读取剪贴板内容失败");
+    }
+  }
+
+  onMount(async () => {
     getUploadTargets();
+    await checkClipboardContent();
   });
 
-  // 文件上传功能
   async function openFile() {
     const file = await open({
       multiple: false,
@@ -63,27 +97,28 @@
     try {
       uploadStatus = "uploading";
 
-      if (textContent) {
-        await invoke("r2_upload", {
-          bucketName: selectedTarget.bucketName,
-          accountId: selectedTarget.accountId,
-          accessKey: selectedTarget.accessKey,
-          secretKey: selectedTarget.secretKey,
-          source: { fileContent: textContent },
-          remoteFileName,
-        });
+      let source: unknown;
+      if (activeTab === "text") {
+        source = { fileContent: textContent };
+      } else if (activeTab === "clipboard") {
+        if (clipboardText) {
+          source = { fileContent: clipboardText };
+        } else if (clipboardFiles.length > 0) {
+          source = { filePath: clipboardFiles[0] };
+        }
       } else {
-        await invoke("r2_upload", {
-          bucketName: selectedTarget.bucketName,
-          accountId: selectedTarget.accountId,
-          accessKey: selectedTarget.accessKey,
-          secretKey: selectedTarget.secretKey,
-          source: { filePath },
-          remoteFileName,
-        });
+        source = { filePath };
       }
 
-      // 保存上传记录
+      await invoke("r2_upload", {
+        bucketName: selectedTarget.bucketName,
+        accountId: selectedTarget.accountId,
+        accessKey: selectedTarget.accessKey,
+        secretKey: selectedTarget.secretKey,
+        source,
+        remoteFileName,
+      });
+
       await db.uploadHistory.add({
         fileName,
         remoteFileName,
@@ -96,7 +131,7 @@
       filePath = "";
       fileName = "";
       remoteFileName = "";
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
       uploadStatus = "error";
       setAlert("上传失败，请重试");
@@ -156,6 +191,16 @@
           class="btn-tab"
         >
           <FileText class="w-5 h-5" /> 上传文本
+        </button>
+        <button
+          class:btn-tab-active={activeTab === "clipboard"}
+          onclick={() => {
+            activeTab = "clipboard";
+            remoteFileName = generateTimestampFileName();
+          }}
+          class="btn-tab"
+        >
+          <Clipboard class="w-5 h-5" /> 剪贴板
         </button>
       </div>
 
@@ -226,6 +271,97 @@
                 placeholder="输入远程文件名"
               />
             </div>
+          </div>
+        </div>
+      {:else if activeTab === "clipboard"}
+        <div class="space-y-4">
+          <button
+            onclick={checkClipboardContent}
+            class="w-full btn btn-default"
+          >
+            <Clipboard class="w-6 h-6" /> 刷新剪贴板内容
+          </button>
+
+          {#if clipboardText}
+            <div class="space-y-2">
+              <p
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+              >
+                剪贴板文本
+              </p>
+              <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
+                {clipboardText}
+              </div>
+            </div>
+          {/if}
+
+          {#if clipboardHtml}
+            <div class="space-y-2">
+              <p
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+              >
+                剪贴板HTML
+              </p>
+              <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
+                {@html clipboardHtml}
+              </div>
+            </div>
+          {/if}
+
+          {#if clipboardImage}
+            <div class="space-y-2">
+              <p
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+              >
+                剪贴板图片
+              </p>
+              <img
+                src={`data:image/png;base64,${clipboardImage}`}
+                alt="剪贴板图片"
+                class="max-w-full"
+              />
+            </div>
+          {/if}
+
+          {#if clipboardRtf}
+            <div class="space-y-2">
+              <p
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+              >
+                剪贴板RTF
+              </p>
+              <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
+                {clipboardRtf}
+              </div>
+            </div>
+          {/if}
+
+          {#if clipboardFiles.length > 0}
+            <div class="space-y-2">
+              <p
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+              >
+                剪贴板文件
+              </p>
+              <div class="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
+                {#each clipboardFiles as file}
+                  <div>{file}</div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
+          <div class="space-y-2">
+            <p
+              class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+            >
+              远程文件名
+            </p>
+            <input
+              bind:value={remoteFileName}
+              class="w-full bg-slate-50 dark:bg-slate-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="输入远程文件名"
+            />
           </div>
         </div>
       {/if}

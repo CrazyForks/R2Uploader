@@ -14,10 +14,10 @@
   "license": "MIT",
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",
-    "@tauri-apps/plugin-clipboard-manager": "^2.2.0",
     "@tauri-apps/plugin-dialog": "~2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.2",
-    "dexie": "^4.0.10"
+    "dexie": "^4.0.10",
+    "tauri-plugin-clipboard-api": "^2.1.11"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
