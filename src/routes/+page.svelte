@@ -4,15 +4,15 @@ import db from "$lib/db";
 import { setAlert } from "$lib/store.svelte";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Select, type Selected } from "bits-ui";
 import {
 	Check,
+	ChevronsUpDown,
 	Clipboard,
 	FileText,
 	Folder,
-	Triangle,
 	Upload,
 } from "lucide-svelte";
-import { Select, type Selected } from "bits-ui";
 import { onMount } from "svelte";
 import clipboard from "tauri-plugin-clipboard-api";
 
@@ -168,10 +168,8 @@ async function uploadFile() {
         >后再进行上传
       </div>
     {:else}
-      <div class="mb-4">
-        <p
-          class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
-        >
+      <div class="mb-4 flex items-center gap-4">
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
           上传目标
         </p>
         <Select.Root
@@ -184,15 +182,21 @@ async function uploadFile() {
             };
           }}
         >
-          <Select.Trigger>
-              <Select.Value class="text-sm" placeholder="Select a theme" />
-              <!-- <CaretUpDown class="ml-auto size-6 text-muted-foreground" /> -->
+          <Select.Trigger class="select-trigger">
+            <Select.Value placeholder="选择上传目标" />
+            <ChevronsUpDown
+              class="ml-auto size-4 text-slate-400 dark-text-slate-300"
+            />
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content class="select-content">
             {#each uploadTargets as target}
-              <Select.Item value={target.value} label={target.label}
-                >{target.label}</Select.Item
+              <Select.Item
+                value={target.value}
+                label={target.label}
+                class="select-item"
               >
+                {target.label}
+              </Select.Item>
             {/each}
           </Select.Content>
         </Select.Root>
@@ -205,14 +209,14 @@ async function uploadFile() {
           onclick={() => (activeTab = "file")}
           class="btn-tab"
         >
-          <Upload class="w-5 h-5" /> 上传文件
+          <Upload class="size-5" /> 上传文件
         </button>
         <button
           class:btn-tab-active={activeTab === "folder"}
           onclick={() => (activeTab = "folder")}
           class="btn-tab"
         >
-          <Folder class="w-5 h-5" /> 上传文件夹
+          <Folder class="size-5" /> 上传文件夹
         </button>
         <button
           class:btn-tab-active={activeTab === "text"}
@@ -222,7 +226,7 @@ async function uploadFile() {
           }}
           class="btn-tab"
         >
-          <FileText class="w-5 h-5" /> 上传文本
+          <FileText class="size-5" /> 上传文本
         </button>
         <button
           class:btn-tab-active={activeTab === "clipboard"}
@@ -232,14 +236,14 @@ async function uploadFile() {
           }}
           class="btn-tab"
         >
-          <Clipboard class="w-5 h-5" /> 剪贴板
+          <Clipboard class="size-5" /> 剪贴板
         </button>
       </div>
 
       {#if activeTab === "file"}
         <div class="space-y-4">
           <button onclick={openFile} class="w-full btn btn-default">
-            <Upload class="w-6 h-6" /> 选择文件
+            <Upload class="size-6" /> 选择文件
           </button>
 
           {#if fileName}
@@ -272,7 +276,7 @@ async function uploadFile() {
       {:else if activeTab === "folder"}
         <div class="space-y-4">
           <button onclick={openDirectory} class="w-full btn btn-default">
-            <Folder class="w-6 h-6" /> 选择文件夹
+            <Folder class="size-6" /> 选择文件夹
           </button>
         </div>
       {:else if activeTab === "text"}
@@ -311,7 +315,7 @@ async function uploadFile() {
             onclick={checkClipboardContent}
             class="w-full btn btn-default"
           >
-            <Clipboard class="w-6 h-6" /> 刷新剪贴板内容
+            <Clipboard class="size-6" /> 刷新剪贴板内容
           </button>
 
           {#if clipboardText}
@@ -408,7 +412,7 @@ async function uploadFile() {
             {#if uploadStatus === "uploading"}
               上传中...
             {:else}
-              <Check class="w-6 h-6" />确认上传
+              <Check class="size-6" />确认上传
             {/if}
           </button>
 
@@ -444,5 +448,26 @@ async function uploadFile() {
   .btn-tab-active {
     @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400;
     @apply hover:bg-blue-100 dark:hover:bg-blue-900/30;
+  }
+
+  /* Bits UI Select 样式 */
+  :global(.select-trigger) {
+    @apply min-w-48 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 cursor-pointer;
+  }
+
+  :global(.select-trigger[disabled]) {
+    @apply cursor-not-allowed bg-gray-100 text-gray-400 hover:border-slate-200 dark:bg-slate-800 dark:text-gray-500;
+  }
+
+  :global(.select-content) {
+    @apply mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-700;
+  }
+
+  :global(.select-item) {
+    @apply cursor-pointer px-4 py-1 text-gray-700 outline-none hover:bg-slate-100 dark:text-gray-200 dark:hover:bg-slate-600;
+  }
+
+  :global(.select-item[data-highlighted]) {
+    @apply bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
   }
 </style>
