@@ -1,89 +1,89 @@
 <script lang="ts">
-  import db from "$lib/db";
-  import {
-    addCustomProxy,
-    proxySettings,
-    removeCustomProxy,
-    selectCustomProxy
-  } from "$lib/store.svelte";
-  import { onMount } from "svelte";
-  let showAddProxyModal = false;
+import db from "$lib/db";
+import {
+	addCustomProxy,
+	proxySettings,
+	removeCustomProxy,
+	selectCustomProxy,
+} from "$lib/store.svelte";
+import { onMount } from "svelte";
+let showAddProxyModal = false;
 
-  // 新代理表单状态
-  let newProxy = {
-    host: "",
-    port: 0,
-    username: "",
-    password: ""
-  };
+// 新代理表单状态
+let newProxy = {
+	host: "",
+	port: 0,
+	username: "",
+	password: "",
+};
 
-  // 添加代理
-  function addProxy() {
-    if (!newProxy.host || !newProxy.port) return;
-    
-    addCustomProxy({
-      host: newProxy.host,
-      port: newProxy.port,
-      username: newProxy.username || undefined,
-      password: newProxy.password || undefined
-    });
+// 添加代理
+function addProxy() {
+	if (!newProxy.host || !newProxy.port) return;
 
-    // 重置表单
-    newProxy = {
-      host: "",
-      port: 0,
-      username: "",
-      password: ""
-    };
+	addCustomProxy({
+		host: newProxy.host,
+		port: newProxy.port,
+		username: newProxy.username || undefined,
+		password: newProxy.password || undefined,
+	});
 
-    showAddProxyModal = false;
-  }
+	// 重置表单
+	newProxy = {
+		host: "",
+		port: 0,
+		username: "",
+		password: "",
+	};
 
-  // 上传目标管理相关状态
-  let targets: Array<{
-    id?: number;
-    name: string;
-    description: string;
-    bucketName: string;
-    accountId: string;
-    accessKey: string;
-    secretKey: string;
-  }> = [];
+	showAddProxyModal = false;
+}
 
-  let newTarget = {
-    name: "",
-    description: "",
-    bucketName: "",
-    accountId: "",
-    accessKey: "",
-    secretKey: "",
-  };
+// 上传目标管理相关状态
+let targets: Array<{
+	id?: number;
+	name: string;
+	description: string;
+	bucketName: string;
+	accountId: string;
+	accessKey: string;
+	secretKey: string;
+}> = [];
 
-  onMount(async () => {
-    targets = await db.uploadTargets.toArray();
-  });
+let newTarget = {
+	name: "",
+	description: "",
+	bucketName: "",
+	accountId: "",
+	accessKey: "",
+	secretKey: "",
+};
 
-  // 上传目标管理功能
-  async function addTarget() {
-    const id = await db.uploadTargets.add({
-      ...newTarget,
-      type: "r2",
-    });
-    targets = await db.uploadTargets.toArray();
-    newTarget = {
-      name: "",
-      description: "",
-      bucketName: "",
-      accountId: "",
-      accessKey: "",
-      secretKey: "",
-    };
-  }
+onMount(async () => {
+	targets = await db.uploadTargets.toArray();
+});
 
-  async function deleteTarget(id: number) {
-    await db.uploadTargets.delete(id);
-    targets = await db.uploadTargets.toArray();
-  }
+// 上传目标管理功能
+async function addTarget() {
+	const id = await db.uploadTargets.add({
+		...newTarget,
+		type: "r2",
+	});
+	targets = await db.uploadTargets.toArray();
+	newTarget = {
+		name: "",
+		description: "",
+		bucketName: "",
+		accountId: "",
+		accessKey: "",
+		secretKey: "",
+	};
+}
+
+async function deleteTarget(id: number) {
+	await db.uploadTargets.delete(id);
+	targets = await db.uploadTargets.toArray();
+}
 </script>
 
 <div class="max-w-4xl mx-auto px-4 py-8">

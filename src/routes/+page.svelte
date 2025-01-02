@@ -1,142 +1,142 @@
 <script lang="ts">
-  import type { UploadTarget } from "$lib/db";
-  import db from "$lib/db";
-  import { setAlert } from "$lib/store.svelte";
-  import { invoke } from "@tauri-apps/api/core";
-  import { open } from "@tauri-apps/plugin-dialog";
-  import { Check, FileText, Folder, Upload, Clipboard } from "lucide-svelte";
-  import { onMount } from "svelte";
-  import clipboard from "tauri-plugin-clipboard-api";
+import type { UploadTarget } from "$lib/db";
+import db from "$lib/db";
+import { setAlert } from "$lib/store.svelte";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
+import { Check, FileText, Folder, Upload, Clipboard } from "lucide-svelte";
+import { onMount } from "svelte";
+import clipboard from "tauri-plugin-clipboard-api";
 
-  let filePath = $state("");
-  let fileName = $state("");
-  let remoteFileName = $state("");
-  let textContent = $state("");
-  let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
+let filePath = $state("");
+let fileName = $state("");
+let remoteFileName = $state("");
+let textContent = $state("");
+let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
-  let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
-  let clipboardFiles = $state<string[]>([]);
-  let clipboardText = $state("");
-  let clipboardHtml = $state("");
-  let clipboardImage = $state("");
-  let clipboardRtf = $state("");
-  let showUploadButton = $derived(
-    (activeTab === "file" && !!filePath) ||
-      (activeTab === "text" && !!textContent) ||
-      (activeTab === "clipboard" &&
-        (!!clipboardFiles.length ||
-          !!clipboardText ||
-          !!clipboardHtml ||
-          !!clipboardImage ||
-          !!clipboardRtf))
-  );
-  let uploadTargets = $state<UploadTarget[]>([]);
-  let selectedTarget = $state<UploadTarget | null>(null);
+let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
+let clipboardFiles = $state<string[]>([]);
+let clipboardText = $state("");
+let clipboardHtml = $state("");
+let clipboardImage = $state("");
+let clipboardRtf = $state("");
+let showUploadButton = $derived(
+	(activeTab === "file" && !!filePath) ||
+		(activeTab === "text" && !!textContent) ||
+		(activeTab === "clipboard" &&
+			(!!clipboardFiles.length ||
+				!!clipboardText ||
+				!!clipboardHtml ||
+				!!clipboardImage ||
+				!!clipboardRtf)),
+);
+let uploadTargets = $state<UploadTarget[]>([]);
+let selectedTarget = $state<UploadTarget | null>(null);
 
-  async function getUploadTargets() {
-    uploadTargets = await db.uploadTargets.toArray();
-    if (uploadTargets.length > 0) {
-      selectedTarget = uploadTargets[0];
-    }
-  }
+async function getUploadTargets() {
+	uploadTargets = await db.uploadTargets.toArray();
+	if (uploadTargets.length > 0) {
+		selectedTarget = uploadTargets[0];
+	}
+}
 
-  async function checkClipboardContent() {
-    try {
-      if (await clipboard.hasText()) {
-        clipboardText = await clipboard.readText();
-      }
-      if (await clipboard.hasHTML()) {
-        clipboardHtml = await clipboard.readHtml();
-      }
-      if (await clipboard.hasImage()) {
-        clipboardImage = await clipboard.readImageBase64();
-      }
-      if (await clipboard.hasRTF()) {
-        clipboardRtf = await clipboard.readRtf();
-      }
-      if (await clipboard.hasFiles()) {
-        clipboardFiles = await clipboard.readFiles();
-      }
-    } catch (error: unknown) {
-      console.error(error);
-      setAlert("读取剪贴板内容失败");
-    }
-  }
+async function checkClipboardContent() {
+	try {
+		if (await clipboard.hasText()) {
+			clipboardText = await clipboard.readText();
+		}
+		if (await clipboard.hasHTML()) {
+			clipboardHtml = await clipboard.readHtml();
+		}
+		if (await clipboard.hasImage()) {
+			clipboardImage = await clipboard.readImageBase64();
+		}
+		if (await clipboard.hasRTF()) {
+			clipboardRtf = await clipboard.readRtf();
+		}
+		if (await clipboard.hasFiles()) {
+			clipboardFiles = await clipboard.readFiles();
+		}
+	} catch (error: unknown) {
+		console.error(error);
+		setAlert("读取剪贴板内容失败");
+	}
+}
 
-  onMount(async () => {
-    getUploadTargets();
-    await checkClipboardContent();
-  });
+onMount(async () => {
+	getUploadTargets();
+	await checkClipboardContent();
+});
 
-  async function openFile() {
-    const file = await open({
-      multiple: false,
-      directory: false,
-    });
-    if (file) {
-      filePath = file;
-      fileName = file;
-      remoteFileName = file;
-    }
-  }
+async function openFile() {
+	const file = await open({
+		multiple: false,
+		directory: false,
+	});
+	if (file) {
+		filePath = file;
+		fileName = file;
+		remoteFileName = file;
+	}
+}
 
-  async function openDirectory() {
-    await open({
-      multiple: false,
-      directory: true,
-    });
-  }
+async function openDirectory() {
+	await open({
+		multiple: false,
+		directory: true,
+	});
+}
 
-  function generateTimestampFileName() {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}-${String(now.getSeconds()).padStart(2, "0")}.txt`;
-  }
+function generateTimestampFileName() {
+	const now = new Date();
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}-${String(now.getSeconds()).padStart(2, "0")}.txt`;
+}
 
-  async function uploadFile() {
-    if (!selectedTarget) return;
-    try {
-      uploadStatus = "uploading";
+async function uploadFile() {
+	if (!selectedTarget) return;
+	try {
+		uploadStatus = "uploading";
 
-      let source: unknown;
-      if (activeTab === "text") {
-        source = { fileContent: textContent };
-      } else if (activeTab === "clipboard") {
-        if (clipboardText) {
-          source = { fileContent: clipboardText };
-        } else if (clipboardFiles.length > 0) {
-          source = { filePath: clipboardFiles[0] };
-        }
-      } else {
-        source = { filePath };
-      }
+		let source: unknown;
+		if (activeTab === "text") {
+			source = { fileContent: textContent };
+		} else if (activeTab === "clipboard") {
+			if (clipboardText) {
+				source = { fileContent: clipboardText };
+			} else if (clipboardFiles.length > 0) {
+				source = { filePath: clipboardFiles[0] };
+			}
+		} else {
+			source = { filePath };
+		}
 
-      await invoke("r2_upload", {
-        bucketName: selectedTarget.bucketName,
-        accountId: selectedTarget.accountId,
-        accessKey: selectedTarget.accessKey,
-        secretKey: selectedTarget.secretKey,
-        source,
-        remoteFileName,
-      });
+		await invoke("r2_upload", {
+			bucketName: selectedTarget.bucketName,
+			accountId: selectedTarget.accountId,
+			accessKey: selectedTarget.accessKey,
+			secretKey: selectedTarget.secretKey,
+			source,
+			remoteFileName,
+		});
 
-      await db.uploadHistory.add({
-        fileName,
-        remoteFileName,
-        target: selectedTarget.bucketName,
-        timestamp: new Date(),
-      });
+		await db.uploadHistory.add({
+			fileName,
+			remoteFileName,
+			target: selectedTarget.bucketName,
+			timestamp: new Date(),
+		});
 
-      uploadStatus = "success";
-      setAlert("上传成功");
-      filePath = "";
-      fileName = "";
-      remoteFileName = "";
-    } catch (error: unknown) {
-      console.error(error);
-      uploadStatus = "error";
-      setAlert("上传失败，请重试");
-    }
-  }
+		uploadStatus = "success";
+		setAlert("上传成功");
+		filePath = "";
+		fileName = "";
+		remoteFileName = "";
+	} catch (error: unknown) {
+		console.error(error);
+		uploadStatus = "error";
+		setAlert("上传失败，请重试");
+	}
+}
 </script>
 
 <div class="max-w-4xl mx-auto p-6">

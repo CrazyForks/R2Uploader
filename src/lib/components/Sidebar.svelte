@@ -1,16 +1,11 @@
 <script lang="ts">
-  import { page } from "$app/state";
-  import {
-    PanelRightClose,
-    PanelRightOpen,
-    Plus,
-    Settings,
-  } from "lucide-svelte";
-  let collapsed = $state(false);
+import { page } from "$app/state";
+import { PanelRightClose, PanelRightOpen, Plus, Settings } from "lucide-svelte";
+let collapsed = $state(false);
 
-  function getRounded() {
-    return collapsed ? "rounded-none" : "rounded-xl";
-  }
+function getRounded() {
+	return collapsed ? "rounded-none" : "rounded-xl";
+}
 </script>
 
 <nav
