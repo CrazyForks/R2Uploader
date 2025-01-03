@@ -5,6 +5,7 @@
     Check,
     ChevronsUpDown,
     GripVertical,
+    Eye,
   } from "lucide-svelte";
   import { tick } from "svelte";
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
@@ -104,12 +105,14 @@
             />
           </div>
         </div>
-        <button
-          onclick={() => onRemove(index)}
-          class="cursor-pointer rounded-lg p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600"
-        >
-          <X class="size-4" />
-        </button>
+        <div>
+          <button class="action-button">
+            <Eye class="size-4" />
+          </button>
+          <button onclick={() => onRemove(index)} class="action-button">
+            <X class="size-4" />
+          </button>
+        </div>
       </div>
     {/each}
   </section>
@@ -118,5 +121,9 @@
 <style lang="postcss">
   .input {
     @apply rounded-lg bg-slate-100 px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600;
+  }
+
+  .action-button {
+    @apply cursor-pointer rounded-lg p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600;
   }
 </style>
