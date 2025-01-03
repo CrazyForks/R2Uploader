@@ -14,11 +14,9 @@
   import TextUploader from "$lib/components/TextUploader.svelte";
   import ClipboardUploader from "$lib/components/ClipboardUploader.svelte";
   import { Check } from "lucide-svelte";
-  import { page } from "$app/state";
 
-  let filePath = $state("");
-  let fileName = $state("");
-  let remoteFileName = $state("");
+  let files: { filename: string; remoteFilename: string }[] = $state([]);
+  let dialogFiles: string[] = [];
   let textContent = $state("");
   let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
@@ -29,7 +27,7 @@
   let clipboardImage = $state("");
   let clipboardRtf = $state("");
   let showUploadButton = $derived(
-    (activeTab === "file" && !!filePath) ||
+    (activeTab === "file" && files.length > 0) ||
       (activeTab === "text" && !!textContent) ||
       (activeTab === "clipboard" &&
         (!!clipboardFiles.length ||
@@ -82,61 +80,65 @@
   });
 
   async function openFile() {
-    const file = await open({
-      multiple: false,
+    const dialogFiles = await open({
+      multiple: true,
       directory: false,
     });
-    if (file) {
-      filePath = file;
-      fileName = file;
-      remoteFileName = file;
+    if (dialogFiles) {
+      console.log("dialog files: ", dialogFiles);
+      dialogFiles.forEach((file) => {
+        files.push({
+          filename: file,
+          remoteFilename: file.split("/").pop() || "unknown",
+        });
+      });
     }
   }
 
   async function uploadFile() {
     if (!selectedTarget) return;
-    try {
-      uploadStatus = "uploading";
+    // try {
+    //   uploadStatus = "uploading";
 
-      let source: unknown;
-      if (activeTab === "text") {
-        source = { fileContent: textContent };
-      } else if (activeTab === "clipboard") {
-        if (clipboardText) {
-          source = { fileContent: clipboardText };
-        } else if (clipboardFiles.length > 0) {
-          source = { filePath: clipboardFiles[0] };
-        }
-      } else {
-        source = { filePath };
-      }
+    //   let source: unknown;
+    //   if (activeTab === "text") {
+    //     source = { fileContent: textContent };
+    //   } else if (activeTab === "clipboard") {
+    //     if (clipboardText) {
+    //       source = { fileContent: clipboardText };
+    //     } else if (clipboardFiles.length > 0) {
+    //       source = { filePaths: clipboardFiles };
+    //     }
+    //   } else {
+    //     source = { filePaths };
+    //   }
 
-      await invoke("r2_upload", {
-        bucketName: selectedTarget.value.bucketName,
-        accountId: selectedTarget.value.accountId,
-        accessKey: selectedTarget.value.accessKey,
-        secretKey: selectedTarget.value.secretKey,
-        source,
-        remoteFileName,
-      });
+    //   await invoke("r2_upload", {
+    //     bucketName: selectedTarget.value.bucketName,
+    //     accountId: selectedTarget.value.accountId,
+    //     accessKey: selectedTarget.value.accessKey,
+    //     secretKey: selectedTarget.value.secretKey,
+    //     source,
+    //     remoteFileNames: remoteFileNames.join(","),
+    //   });
 
-      await db.uploadHistory.add({
-        fileName,
-        remoteFileName,
-        target: selectedTarget.value.bucketName,
-        timestamp: new Date(),
-      });
+    //   await db.uploadHistory.add({
+    //     fileName: fileNames.join(","),
+    //     remoteFileName: remoteFileNames.join(","),
+    //     target: selectedTarget.value.bucketName,
+    //     timestamp: new Date(),
+    //   });
 
-      uploadStatus = "success";
-      setAlert("上传成功");
-      filePath = "";
-      fileName = "";
-      remoteFileName = "";
-    } catch (error: unknown) {
-      console.error(error);
-      uploadStatus = "error";
-      setAlert("上传失败，请重试");
-    }
+    //   uploadStatus = "success";
+    //   setAlert("上传成功");
+    //   filePaths = [];
+    //   fileNames = [];
+    //   remoteFileNames = [];
+    // } catch (error: unknown) {
+    //   console.error(error);
+    //   uploadStatus = "error";
+    //   setAlert("上传失败，请重试");
+    // }
   }
 </script>
 
@@ -170,24 +172,22 @@
       <TabSwitcher {activeTab} onTabChange={(tab) => (activeTab = tab)} />
 
       {#if activeTab === "file"}
-        <FileUploader
-          {filePath}
-          {fileName}
-          {remoteFileName}
-          onFileSelect={openFile}
-        />
+        <FileUploader {files} onFileSelect={openFile} />
       {:else if activeTab === "text"}
-        <TextUploader {textContent} {remoteFileName} />
+        <!-- <TextUploader
+          {textContent}
+          remoteFileName={remoteFileNames.join(",")}
+        /> -->
       {:else if activeTab === "clipboard"}
-        <ClipboardUploader
+        <!-- <ClipboardUploader
           {clipboardText}
           {clipboardHtml}
           {clipboardImage}
           {clipboardRtf}
           {clipboardFiles}
-          {remoteFileName}
+          remoteFileName={remoteFileNames.join(",")}
           onRefreshClipboard={checkClipboardContent}
-        />
+        /> -->
       {/if}
 
       {#if showUploadButton}

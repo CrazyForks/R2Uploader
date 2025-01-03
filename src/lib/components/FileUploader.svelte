@@ -2,14 +2,10 @@
   import { Upload } from "lucide-svelte";
 
   let {
-    filePath,
-    fileName,
-    remoteFileName,
+    files,
     onFileSelect,
   }: {
-    filePath: string;
-    fileName: string;
-    remoteFileName: string;
+    files: { filename: string; remoteFilename: string }[];
     onFileSelect: () => void;
   } = $props();
 </script>
@@ -19,7 +15,7 @@
     <Upload class="size-6" /> 选择文件
   </button>
 
-  {#if fileName}
+  {#each files as file}
     <div class="space-y-2">
       <div>
         <p
@@ -28,7 +24,7 @@
           文件名
         </p>
         <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-          {fileName}
+          {file.filename}
         </div>
       </div>
       <div>
@@ -38,11 +34,11 @@
           远程文件名
         </p>
         <input
-          bind:value={remoteFileName}
+          bind:value={file.remoteFilename}
           class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700"
           placeholder="输入远程文件名"
         />
       </div>
     </div>
-  {/if}
+  {/each}
 </div>
