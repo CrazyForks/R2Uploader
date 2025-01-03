@@ -144,18 +144,9 @@
         remoteFileNames: remoteFileNames.join(","),
       });
 
-      await db.uploadHistory.add({
-        fileName: fileNames.join(","),
-        remoteFileName: remoteFileNames.join(","),
-        target: selectedTarget.value.bucketName,
-        timestamp: new Date(),
-      });
-
       uploadStatus = "success";
       setAlert("上传成功");
-      filePaths = [];
-      fileNames = [];
-      remoteFileNames = [];
+      files = [];
     } catch (error: unknown) {
       console.error(error);
       uploadStatus = "error";
