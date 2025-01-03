@@ -120,29 +120,29 @@
   async function uploadFile() {
     if (!selectedTarget) return;
     try {
-      uploadStatus = "uploading";
+      // uploadStatus = "uploading";
 
-      let source: unknown;
-      if (activeTab === "text") {
-        source = { fileContent: textContent };
-      } else if (activeTab === "clipboard") {
-        if (clipboardText) {
-          source = { fileContent: clipboardText };
-        } else if (clipboardFiles.length > 0) {
-          source = { filePaths: clipboardFiles };
-        }
-      } else {
-        source = { filePaths };
-      }
+      // let source: unknown;
+      // if (activeTab === "text") {
+      //   source = { fileContent: textContent };
+      // } else if (activeTab === "clipboard") {
+      //   if (clipboardText) {
+      //     source = { fileContent: clipboardText };
+      //   } else if (clipboardFiles.length > 0) {
+      //     source = { filePaths: clipboardFiles };
+      //   }
+      // } else {
+      //   source = { filePaths };
+      // }
 
-      await invoke("r2_upload", {
-        bucketName: selectedTarget.value.bucketName,
-        accountId: selectedTarget.value.accountId,
-        accessKey: selectedTarget.value.accessKey,
-        secretKey: selectedTarget.value.secretKey,
-        source,
-        remoteFileNames: remoteFileNames.join(","),
-      });
+      // await invoke("r2_upload", {
+      //   bucketName: selectedTarget.value.bucketName,
+      //   accountId: selectedTarget.value.accountId,
+      //   accessKey: selectedTarget.value.accessKey,
+      //   secretKey: selectedTarget.value.secretKey,
+      //   source,
+      //   remoteFileNames: remoteFileNames.join(","),
+      // });
 
       uploadStatus = "success";
       setAlert("上传成功");

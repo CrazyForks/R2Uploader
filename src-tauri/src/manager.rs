@@ -1,6 +1,13 @@
 use mime_guess::from_path;
 use s3::{creds::Credentials, Bucket, Region};
 use serde::{Deserialize, Serialize};
+use once_cell::sync::Lazy;
+use dashmap::DashMap;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
+
+static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
+static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(5))); // 限制同时上传 5 个文件
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")] // 统一使用小驼峰命名法
@@ -47,43 +54,75 @@ pub async fn r2_upload(
 
     bucket.set_proxy(get_proxy()?).map_err(|e| e.to_string())?;
 
-    for file in files {
-        let remote_file_name = format!("{}{}", file.remote_filename_prefix, file.remote_filename);
-        let content_type = from_path(&remote_file_name).first_or_octet_stream();
-        let content_type = content_type.as_ref();
+    // 立即返回，在后台处理上传
+    let bucket_name = bucket_name.to_string();
+    let account_id = account_id.to_string();
+    
+    tokio::spawn(async move {
+        let bucket = Arc::new(bucket);
+        
+        for file in files {
+            let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.unwrap();
+            let bucket = bucket.clone();
+            let bucket_name = bucket_name.clone();
+            let account_id = account_id.clone();
+            
+            tokio::spawn(async move {
+                let file_id = file.id.clone();
+                UPLOAD_STATUS.insert(file_id.clone(), "uploading".to_string());
+                
+                let remote_file_name = format!("{}{}", file.remote_filename_prefix, file.remote_filename);
+                let content_type = from_path(&remote_file_name).first_or_octet_stream();
+                let content_type = content_type.as_ref();
 
-        match file.source {
-            UploadSource::FilePath(path) => {
-                println!(
-                    "Uploading file to bucket: {}, account_id: {}, file_path: {}",
-                    bucket_name, account_id, path
-                );
+                let result: Result<(), String> = match file.source {
+                    UploadSource::FilePath(path) => {
+                        println!(
+                            "Uploading file to bucket: {}, account_id: {}, file_path: {}",
+                            &bucket_name, &account_id, path
+                        );
 
-                let _metadata = tokio::fs::metadata(&path)
-                    .await
-                    .map_err(|e| e.to_string())?;
+                        let _metadata = tokio::fs::metadata(&path)
+                            .await
+                            .map_err(|e| e.to_string())?;
 
-                let mut file = tokio::fs::File::open(&path)
-                    .await
-                    .map_err(|e| e.to_string())?;
-                bucket
-                    .put_object_stream_with_content_type(&mut file, &remote_file_name, content_type)
-                    .await
-                    .map_err(|e| e.to_string())?;
-            }
-            UploadSource::FileContent(content) => {
-                println!(
-                    "Uploading content to bucket: {}, account_id: {}",
-                    bucket_name, account_id
-                );
-                let file_data = content.as_bytes().to_vec();
-                bucket
-                    .put_object_with_content_type(&remote_file_name, &file_data, content_type)
-                    .await
-                    .map_err(|e| e.to_string())?;
-            }
+                        let mut file = tokio::fs::File::open(&path)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                        bucket
+                            .put_object_stream_with_content_type(&mut file, &remote_file_name, content_type)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                        Ok(())
+                    }
+                    UploadSource::FileContent(content) => {
+                        println!(
+                            "Uploading content to bucket: {}, account_id: {}",
+                            bucket_name, account_id
+                        );
+                        let file_data = content.as_bytes().to_vec();
+                        bucket
+                            .put_object_with_content_type(&remote_file_name, &file_data, content_type)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                        Ok(())
+                    }
+                };
+
+                match result {
+                    Ok(_) => {
+                        UPLOAD_STATUS.insert(file_id, "success".to_string());
+                    }
+                    Err(e) => {
+                        UPLOAD_STATUS.insert(file_id, format!("failed: {}", e));
+                    }
+                }
+
+                drop(permit);
+                Ok::<(), String>(())
+            });
         }
-    }
+    });
 
     Ok(())
 }
