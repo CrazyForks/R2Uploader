@@ -1,18 +1,12 @@
 use mime_guess::from_path;
 use s3::{creds::Credentials, Bucket, Region};
 use serde::{Deserialize, Serialize};
-use std::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")] // 统一使用小驼峰命名法
 pub enum UploadSource {
     FilePath(String),
     FileContent(String),
-}
-
-#[tauri::command]
-pub async fn read_file_data(file_path: &str) -> Result<Vec<u8>, String> {
-    fs::read(file_path).map_err(|e| e.to_string())
 }
 
 pub fn get_proxy() -> Result<reqwest::Proxy, String> {
@@ -58,21 +52,14 @@ pub async fn r2_upload(
             let metadata = tokio::fs::metadata(&path)
                 .await
                 .map_err(|e| e.to_string())?;
-            if metadata.len() < 1 * 1024 * 1024 {
-                let file_data = read_file_data(&path).await?;
-                bucket
-                    .put_object_with_content_type(remote_file_name, &file_data, content_type)
-                    .await
-                    .map_err(|e| e.to_string())?;
-            } else {
-                let mut file = tokio::fs::File::open(&path)
-                    .await
-                    .map_err(|e| e.to_string())?;
-                bucket
-                    .put_object_stream_with_content_type(&mut file, remote_file_name, content_type)
-                    .await
-                    .map_err(|e| e.to_string())?;
-            }
+
+            let mut file = tokio::fs::File::open(&path)
+                .await
+                .map_err(|e| e.to_string())?;
+            bucket
+                .put_object_stream_with_content_type(&mut file, remote_file_name, content_type)
+                .await
+                .map_err(|e| e.to_string())?;
         }
         UploadSource::FileContent(content) => {
             println!(
