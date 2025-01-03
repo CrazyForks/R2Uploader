@@ -16,6 +16,7 @@
   import { Check } from "lucide-svelte";
 
   let files: {
+    id: string;
     filename: string;
     remoteFilename: string;
     remoteFilenamePrefix: string;
@@ -107,6 +108,7 @@
       console.log("dialog files: ", dialogFiles);
       dialogFiles.forEach((file) => {
         files.push({
+          id: file,
           filename: file,
           remoteFilename: file.split(sep()).pop() || "unknown",
           remoteFilenamePrefix: "",
@@ -193,10 +195,9 @@
 
       {#if activeTab === "file"}
         <FileUploader
-          {files}
+          bind:files
           onFileSelect={openFile}
           onRemove={removeFile}
-          onAddPrefix={handleAddPrefix}
           onRemoveAll={handleRemoveAll}
         />
       {:else if activeTab === "text"}
