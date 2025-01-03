@@ -159,7 +159,7 @@
 
       // 启动状态轮询
       if (!intervalId) {
-        intervalId = setInterval(checkUploadStatus, 1000);
+        intervalId = setInterval(checkUploadStatus, 500);
       }
     } catch (error: unknown) {
       console.error(error);
