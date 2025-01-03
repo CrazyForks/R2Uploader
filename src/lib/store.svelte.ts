@@ -1,10 +1,17 @@
-// biome-ignore lint/style/useConst: <explanation>
 export let alertMessage = $state({
   message: "",
 });
 
 export function setAlert(message: string) {
   alertMessage.message = message;
+}
+
+export let dragState = $state({
+  isDragging: false,
+});
+
+export function setIsDragging(isDragging: boolean) {
+  dragState.isDragging = isDragging;
 }
 
 // 代理相关状态

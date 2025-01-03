@@ -2,17 +2,28 @@
   import "../app.css";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import Alert from "$lib/components/Alert.svelte";
+  import FileDrag from "$lib/components/FileDrag.svelte";
   let { children } = $props();
-  import { listen } from "@tauri-apps/api/event";
-  import { onMount } from "svelte";
+  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+  import { onDestroy, onMount } from "svelte";
+  import { setIsDragging } from "$lib/store.svelte";
 
-  onMount(() => {
-    listen("tauri://drag-drop", async (event) => {
-      console.log(event);
+  let unlisten: UnlistenFn;
+
+  onMount(async () => {
+    unlisten = await listen("tauri://drag-enter", async (event) => {
+      setIsDragging(true);
     });
+  });
+
+  onDestroy(() => {
+    if (unlisten) {
+      unlisten();
+    }
   });
 </script>
 
+<FileDrag />
 <Alert />
 
 <div class="flex h-screen bg-slate-50 dark:bg-slate-900">
