@@ -169,9 +169,7 @@
     文件上传
   </h1>
 
-  <div
-    class="rounded-2xl border border-white/20 bg-white/80 p-6 shadow-lg backdrop-blur-lg dark:border-slate-700/20 dark:bg-slate-800/80"
-  >
+  <div>
     {#if uploadTargets.length === 0}
       <div
         class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
@@ -216,30 +214,30 @@
           onRefreshClipboard={checkClipboardContent}
         /> -->
       {/if}
-
-      {#if showUploadButton}
-        <div class="space-y-2">
-          <button
-            onclick={uploadFile}
-            class="btn btn-primary w-full"
-            disabled={uploadStatus === "uploading"}
-          >
-            {#if uploadStatus === "uploading"}
-              上传中...
-            {:else}
-              <Check class="size-6" />确认上传
-            {/if}
-          </button>
-
-          {#if uploadStatus === "error"}
-            <button onclick={uploadFile} class="btn btn-default w-full">
-              重试上传
-            </button>
-          {/if}
-        </div>
-      {/if}
     </div>
   </div>
+
+  {#if showUploadButton}
+    <div class="space-y-2 pt-4">
+      <button
+        onclick={uploadFile}
+        class="btn btn-primary w-full"
+        disabled={uploadStatus === "uploading"}
+      >
+        {#if uploadStatus === "uploading"}
+          上传中...
+        {:else}
+          <Check class="size-6" />确认上传
+        {/if}
+      </button>
+
+      {#if uploadStatus === "error"}
+        <button onclick={uploadFile} class="btn btn-default w-full">
+          重试上传
+        </button>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style lang="postcss">
