@@ -2,15 +2,29 @@
   import { onMount, onDestroy } from "svelte";
   import { UploadCloud } from "lucide-svelte";
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-  import { dragState, setIsDragging } from "$lib/store.svelte";
+  import { dragState, setDragPaths, setIsDragging } from "$lib/store.svelte";
+  import { goto } from "$app/navigation";
 
   let unlistenDrop: UnlistenFn;
   let unlistenLeave: UnlistenFn;
+
+  interface DragEvent {
+    event: "string";
+    id: number;
+    payload: {
+      paths: string[];
+      position: {
+        x: number;
+        y: number;
+      };
+    };
+  }
 
   onMount(async () => {
     unlistenDrop = await listen("tauri://drag-drop", async (event) => {
       console.log(event);
       setIsDragging(false);
+      setDragPaths((event as DragEvent).payload.paths || []);
     });
 
     unlistenLeave = await listen("tauri://drag-leave", async (e) => {
@@ -25,23 +39,19 @@
 </script>
 
 <div class="overlay" class:active={dragState.isDragging}>
-  <div class="content flex flex-col items-center gap-4">
-    <UploadCloud class="size-16 text-gray-700" />
-    <p class="text-2xl font-medium">拖动文件到此</p>
-    <p class="text-gray-600">松手即可上传</p>
+  <div class="flex flex-col items-center gap-4 rounded-2xl p-8 text-center">
+    <UploadCloud class="size-16 text-slate-300" />
+    <p class="text-2xl font-medium text-slate-300">拖动文件到此</p>
+    <p class="text-slate-300">松手即可确认</p>
   </div>
 </div>
 
 <style lang="postcss">
   .overlay {
-    @apply invisible fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-black/50 opacity-0 backdrop-blur-sm transition-opacity duration-300;
+    @apply invisible fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-black/50 opacity-0 backdrop-blur-sm transition;
   }
 
   .overlay.active {
     @apply visible opacity-100;
-  }
-
-  .content {
-    @apply rounded-xl bg-white/90 p-8 text-center text-xl text-gray-800;
   }
 </style>

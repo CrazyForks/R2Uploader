@@ -6,12 +6,17 @@ export function setAlert(message: string) {
   alertMessage.message = message;
 }
 
-export let dragState = $state({
+export let dragState: { isDragging: boolean; paths: string[] } = $state({
   isDragging: false,
+  paths: [],
 });
 
 export function setIsDragging(isDragging: boolean) {
   dragState.isDragging = isDragging;
+}
+
+export function setDragPaths(paths: string[]) {
+  dragState.paths = paths;
 }
 
 // 代理相关状态

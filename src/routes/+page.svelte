@@ -14,6 +14,7 @@
   import TextUploader from "$lib/components/TextUploader.svelte";
   import ClipboardUploader from "$lib/components/ClipboardUploader.svelte";
   import { Check } from "lucide-svelte";
+  import { page } from "$app/state";
 
   let filePath = $state("");
   let fileName = $state("");
