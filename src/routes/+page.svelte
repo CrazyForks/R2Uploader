@@ -1,19 +1,17 @@
 <script lang="ts">
+  import FileUploader from "$lib/components/FileUploader.svelte";
+  import TabSwitcher from "$lib/components/TabSwitcher.svelte";
+  import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
   import type { UploadTarget } from "$lib/db";
   import db from "$lib/db";
   import { setAlert } from "$lib/store.svelte";
   import { invoke } from "@tauri-apps/api/core";
+  import { sep } from "@tauri-apps/api/path";
   import { open } from "@tauri-apps/plugin-dialog";
+  import type { Selected } from "bits-ui";
+  import { Check } from "lucide-svelte";
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
-  import type { Selected } from "bits-ui";
-  import { sep } from "@tauri-apps/api/path";
-  import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
-  import TabSwitcher from "$lib/components/TabSwitcher.svelte";
-  import FileUploader from "$lib/components/FileUploader.svelte";
-  import TextUploader from "$lib/components/TextUploader.svelte";
-  import ClipboardUploader from "$lib/components/ClipboardUploader.svelte";
-  import { Check } from "lucide-svelte";
 
   let files: {
     id: string;
@@ -26,6 +24,8 @@
   let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
+  let uploadStatusMap = $state<Record<string, string>>({});
+  let intervalId = $state<number>();
   let clipboardFiles = $state<string[]>([]);
   let clipboardText = $state("");
   let clipboardHtml = $state("");
@@ -117,36 +117,50 @@
     }
   }
 
+  async function checkUploadStatus() {
+    try {
+      const status = await invoke<Record<string, string>>("get_upload_status");
+      uploadStatusMap = status;
+
+      // 如果所有文件都上传完成，停止轮询
+      if (Object.keys(status).length === 0) {
+        clearInterval(intervalId);
+        intervalId = undefined;
+        uploadStatus = "success";
+        setAlert("上传成功");
+        files = [];
+      }
+    } catch (error) {
+      console.error("获取上传状态失败：", error);
+    }
+  }
+
   async function uploadFile() {
     if (!selectedTarget) return;
     try {
-      // uploadStatus = "uploading";
+      uploadStatus = "uploading";
 
-      // let source: unknown;
-      // if (activeTab === "text") {
-      //   source = { fileContent: textContent };
-      // } else if (activeTab === "clipboard") {
-      //   if (clipboardText) {
-      //     source = { fileContent: clipboardText };
-      //   } else if (clipboardFiles.length > 0) {
-      //     source = { filePaths: clipboardFiles };
-      //   }
-      // } else {
-      //   source = { filePaths };
-      // }
+      const filesToUpload = files.map((file) => ({
+        id: file.id,
+        source:
+          activeTab === "text"
+            ? { fileContent: textContent }
+            : { filePath: file.filename },
+        remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
+      }));
 
-      // await invoke("r2_upload", {
-      //   bucketName: selectedTarget.value.bucketName,
-      //   accountId: selectedTarget.value.accountId,
-      //   accessKey: selectedTarget.value.accessKey,
-      //   secretKey: selectedTarget.value.secretKey,
-      //   source,
-      //   remoteFileNames: remoteFileNames.join(","),
-      // });
+      await invoke("r2_upload", {
+        bucketName: selectedTarget.value.bucketName,
+        accountId: selectedTarget.value.accountId,
+        accessKey: selectedTarget.value.accessKey,
+        secretKey: selectedTarget.value.secretKey,
+        files: filesToUpload,
+      });
 
-      uploadStatus = "success";
-      setAlert("上传成功");
-      files = [];
+      // 启动状态轮询
+      if (!intervalId) {
+        intervalId = setInterval(checkUploadStatus, 1000);
+      }
     } catch (error: unknown) {
       console.error(error);
       uploadStatus = "error";

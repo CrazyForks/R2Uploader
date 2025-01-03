@@ -7,7 +7,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
 
 static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
-static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(5))); // 限制同时上传 5 个文件
+static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(16))); // 限制同时上传 16 个文件
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")] // 统一使用小驼峰命名法
@@ -22,7 +22,6 @@ pub struct File {
     pub id: String,
     pub source: UploadSource,
     pub remote_filename: String,
-    pub remote_filename_prefix: String,
 }
 
 pub fn get_proxy() -> Result<reqwest::Proxy, String> {
@@ -62,7 +61,7 @@ pub async fn r2_upload(
         let bucket = Arc::new(bucket);
 
         for file in files {
-            let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.map_err(|e| e.to_string())?;
+            let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.unwrap();
             let bucket = bucket.clone();
             let bucket_name = bucket_name.clone();
             let account_id = account_id.clone();
@@ -71,9 +70,7 @@ pub async fn r2_upload(
                 let file_id = file.id.clone();
                 UPLOAD_STATUS.insert(file_id.clone(), "uploading".to_string());
 
-                let remote_file_name =
-                    format!("{}{}", file.remote_filename_prefix, file.remote_filename);
-                let content_type = from_path(&remote_file_name).first_or_octet_stream();
+                let content_type = from_path(&file.remote_filename).first_or_octet_stream();
                 let content_type = content_type.as_ref();
 
                 let result: Result<(), String> = match file.source {
@@ -87,13 +84,13 @@ pub async fn r2_upload(
                             .await
                             .map_err(|e| e.to_string())?;
 
-                        let mut file = tokio::fs::File::open(&path)
+                        let mut f = tokio::fs::File::open(&path)
                             .await
                             .map_err(|e| e.to_string())?;
                         bucket
                             .put_object_stream_with_content_type(
-                                &mut file,
-                                &remote_file_name,
+                                &mut f,
+                                &file.remote_filename,
                                 content_type,
                             )
                             .await
@@ -108,7 +105,7 @@ pub async fn r2_upload(
                         let file_data = content.as_bytes().to_vec();
                         bucket
                             .put_object_with_content_type(
-                                &remote_file_name,
+                                &file.remote_filename,
                                 &file_data,
                                 content_type,
                             )

@@ -6,7 +6,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard::init())
-        .invoke_handler(tauri::generate_handler![manager::r2_upload])
+        .invoke_handler(tauri::generate_handler![
+            manager::r2_upload,
+            manager::get_upload_status
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
