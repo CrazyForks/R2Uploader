@@ -119,48 +119,48 @@
 
   async function uploadFile() {
     if (!selectedTarget) return;
-    // try {
-    //   uploadStatus = "uploading";
+    try {
+      uploadStatus = "uploading";
 
-    //   let source: unknown;
-    //   if (activeTab === "text") {
-    //     source = { fileContent: textContent };
-    //   } else if (activeTab === "clipboard") {
-    //     if (clipboardText) {
-    //       source = { fileContent: clipboardText };
-    //     } else if (clipboardFiles.length > 0) {
-    //       source = { filePaths: clipboardFiles };
-    //     }
-    //   } else {
-    //     source = { filePaths };
-    //   }
+      let source: unknown;
+      if (activeTab === "text") {
+        source = { fileContent: textContent };
+      } else if (activeTab === "clipboard") {
+        if (clipboardText) {
+          source = { fileContent: clipboardText };
+        } else if (clipboardFiles.length > 0) {
+          source = { filePaths: clipboardFiles };
+        }
+      } else {
+        source = { filePaths };
+      }
 
-    //   await invoke("r2_upload", {
-    //     bucketName: selectedTarget.value.bucketName,
-    //     accountId: selectedTarget.value.accountId,
-    //     accessKey: selectedTarget.value.accessKey,
-    //     secretKey: selectedTarget.value.secretKey,
-    //     source,
-    //     remoteFileNames: remoteFileNames.join(","),
-    //   });
+      await invoke("r2_upload", {
+        bucketName: selectedTarget.value.bucketName,
+        accountId: selectedTarget.value.accountId,
+        accessKey: selectedTarget.value.accessKey,
+        secretKey: selectedTarget.value.secretKey,
+        source,
+        remoteFileNames: remoteFileNames.join(","),
+      });
 
-    //   await db.uploadHistory.add({
-    //     fileName: fileNames.join(","),
-    //     remoteFileName: remoteFileNames.join(","),
-    //     target: selectedTarget.value.bucketName,
-    //     timestamp: new Date(),
-    //   });
+      await db.uploadHistory.add({
+        fileName: fileNames.join(","),
+        remoteFileName: remoteFileNames.join(","),
+        target: selectedTarget.value.bucketName,
+        timestamp: new Date(),
+      });
 
-    //   uploadStatus = "success";
-    //   setAlert("上传成功");
-    //   filePaths = [];
-    //   fileNames = [];
-    //   remoteFileNames = [];
-    // } catch (error: unknown) {
-    //   console.error(error);
-    //   uploadStatus = "error";
-    //   setAlert("上传失败，请重试");
-    // }
+      uploadStatus = "success";
+      setAlert("上传成功");
+      filePaths = [];
+      fileNames = [];
+      remoteFileNames = [];
+    } catch (error: unknown) {
+      console.error(error);
+      uploadStatus = "error";
+      setAlert("上传失败，请重试");
+    }
   }
 </script>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Upload, X, GripVertical, Eye } from "lucide-svelte";
+  import { Upload, X, GripVertical, Eye, UploadCloud } from "lucide-svelte";
   import { tick } from "svelte";
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
@@ -47,10 +47,20 @@
   class="max-h-96 space-y-2 overflow-y-auto rounded-2xl border border-white/20 bg-white/80 shadow-lg backdrop-blur-lg dark:border-slate-700/20 dark:bg-slate-800/80"
 >
   {#if showBigMenu}
-    <div class="flex gap-2">
-      <button onclick={onFileSelect} class="btn btn-default flex-1">
-        <Upload class="size-5" /> 选择文件
-      </button>
+    <div class="flex h-64 items-center justify-center">
+      <div class="flex items-center justify-center gap-12">
+        <UploadCloud class="size-32" />
+        <div class="flex flex-1 flex-col items-center gap-3">
+          <p>您的存储桶已就绪</p>
+          <div>
+            拖放或
+            <button
+              onclick={onFileSelect}
+              class="cursor-pointer pl-2 text-blue-500">点击选择文件</button
+            >
+          </div>
+        </div>
+      </div>
     </div>
   {:else}
     <div class="">
