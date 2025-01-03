@@ -7,7 +7,7 @@
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
   import type { Selected } from "bits-ui";
-
+  import { sep } from "@tauri-apps/api/path";
   import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
   import TabSwitcher from "$lib/components/TabSwitcher.svelte";
   import FileUploader from "$lib/components/FileUploader.svelte";
@@ -15,7 +15,11 @@
   import ClipboardUploader from "$lib/components/ClipboardUploader.svelte";
   import { Check } from "lucide-svelte";
 
-  let files: { filename: string; remoteFilename: string }[] = $state([]);
+  let files: {
+    filename: string;
+    remoteFilename: string;
+    remoteFilenamePrefix: string;
+  }[] = $state([]);
   let dialogFiles: string[] = [];
   let textContent = $state("");
   let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
@@ -79,6 +83,21 @@
     await checkClipboardContent();
   });
 
+  function removeFile(index: number) {
+    files.splice(index, 1);
+  }
+
+  function handleAddPrefix(prefix: string) {
+    files = files.map((file) => ({
+      ...file,
+      remoteFilename: prefix + file.remoteFilename,
+    }));
+  }
+
+  function handleRemoveAll() {
+    files = [];
+  }
+
   async function openFile() {
     const dialogFiles = await open({
       multiple: true,
@@ -89,7 +108,8 @@
       dialogFiles.forEach((file) => {
         files.push({
           filename: file,
-          remoteFilename: file.split("/").pop() || "unknown",
+          remoteFilename: file.split(sep()).pop() || "unknown",
+          remoteFilenamePrefix: "",
         });
       });
     }
@@ -172,7 +192,13 @@
       <TabSwitcher {activeTab} onTabChange={(tab) => (activeTab = tab)} />
 
       {#if activeTab === "file"}
-        <FileUploader {files} onFileSelect={openFile} />
+        <FileUploader
+          {files}
+          onFileSelect={openFile}
+          onRemove={removeFile}
+          onAddPrefix={handleAddPrefix}
+          onRemoveAll={handleRemoveAll}
+        />
       {:else if activeTab === "text"}
         <!-- <TextUploader
           {textContent}

@@ -3,7 +3,6 @@
   import { UploadCloud } from "lucide-svelte";
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { dragState, setDragPaths, setIsDragging } from "$lib/store.svelte";
-  import { goto } from "$app/navigation";
 
   let unlistenDrop: UnlistenFn;
   let unlistenLeave: UnlistenFn;
@@ -22,7 +21,6 @@
 
   onMount(async () => {
     unlistenDrop = await listen("tauri://drag-drop", async (event) => {
-      console.log(event);
       setIsDragging(false);
       setDragPaths((event as DragEvent).payload.paths || []);
     });
