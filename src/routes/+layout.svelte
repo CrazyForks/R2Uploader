@@ -3,6 +3,14 @@
   import Sidebar from "$lib/components/Sidebar.svelte";
   import Alert from "$lib/components/Alert.svelte";
   let { children } = $props();
+  import { listen } from "@tauri-apps/api/event";
+  import { onMount } from "svelte";
+
+  onMount(() => {
+    listen("tauri://drag-drop", async (event) => {
+      console.log(event);
+    });
+  });
 </script>
 
 <Alert />
