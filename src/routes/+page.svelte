@@ -4,17 +4,16 @@
   import { setAlert } from "$lib/store.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { Select, type Selected } from "bits-ui";
-  import {
-    Check,
-    ChevronsUpDown,
-    Clipboard,
-    FileText,
-    Folder,
-    Upload,
-  } from "lucide-svelte";
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
+  import type { Selected } from "bits-ui";
+
+  import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
+  import TabSwitcher from "$lib/components/TabSwitcher.svelte";
+  import FileUploader from "$lib/components/FileUploader.svelte";
+  import TextUploader from "$lib/components/TextUploader.svelte";
+  import ClipboardUploader from "$lib/components/ClipboardUploader.svelte";
+  import { Check } from "lucide-svelte";
 
   let filePath = $state("");
   let fileName = $state("");
@@ -93,13 +92,6 @@
     }
   }
 
-  async function openDirectory() {
-    await open({
-      multiple: false,
-      directory: true,
-    });
-  }
-
   function generateTimestampFileName() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}-${String(now.getSeconds()).padStart(2, "0")}.txt`;
@@ -164,242 +156,42 @@
       <div
         class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
       >
-        请先<a href="/setting" class="font-medium underline">设置上传目标</a
-        >后再进行上传
+        请先 <a href="/setting" class="font-medium underline">设置上传目标</a> 后再进行上传
       </div>
     {:else}
-      <div class="mb-4 flex items-center gap-4">
-        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
-          上传目标
-        </p>
-        <Select.Root
-          items={uploadTargets}
-          selected={selectedTarget}
-          onSelectedChange={(e) => {
-            selectedTarget = {
-              value: e!.value,
-              label: e?.value.bucketName || "unknown",
-            };
-          }}
-        >
-          <Select.Trigger class="select-trigger">
-            <Select.Value placeholder="选择上传目标" />
-            <ChevronsUpDown
-              class="dark-text-slate-300 ml-auto size-4 text-slate-400"
-            />
-          </Select.Trigger>
-          <Select.Content class="select-content">
-            {#each uploadTargets as target}
-              <Select.Item
-                value={target.value}
-                label={target.label}
-                class="select-item"
-              >
-                {target.label}
-              </Select.Item>
-            {/each}
-          </Select.Content>
-        </Select.Root>
-      </div>
+      <UploadTargetSelector
+        {uploadTargets}
+        {selectedTarget}
+        onSelectedChange={(e) => {
+          selectedTarget = {
+            value: e!.value,
+            label: e?.value.bucketName || "unknown",
+          };
+        }}
+      />
     {/if}
     <div class="space-y-4">
-      <div class="mb-4 flex gap-2">
-        <button
-          class:btn-tab-active={activeTab === "file"}
-          onclick={() => (activeTab = "file")}
-          class="btn-tab"
-        >
-          <Upload class="size-5" /> 上传文件
-        </button>
-        <button
-          class:btn-tab-active={activeTab === "folder"}
-          onclick={() => (activeTab = "folder")}
-          class="btn-tab"
-        >
-          <Folder class="size-5" /> 上传文件夹
-        </button>
-        <button
-          class:btn-tab-active={activeTab === "text"}
-          onclick={() => {
-            activeTab = "text";
-            remoteFileName = generateTimestampFileName();
-          }}
-          class="btn-tab"
-        >
-          <FileText class="size-5" /> 上传文本
-        </button>
-        <button
-          class:btn-tab-active={activeTab === "clipboard"}
-          onclick={() => {
-            activeTab = "clipboard";
-            remoteFileName = generateTimestampFileName();
-          }}
-          class="btn-tab"
-        >
-          <Clipboard class="size-5" /> 剪贴板
-        </button>
-      </div>
+      <TabSwitcher {activeTab} onTabChange={(tab) => (activeTab = tab)} />
 
       {#if activeTab === "file"}
-        <div class="space-y-4">
-          <button onclick={openFile} class="btn btn-default w-full">
-            <Upload class="size-6" /> 选择文件
-          </button>
-
-          {#if fileName}
-            <div class="space-y-2">
-              <div>
-                <p
-                  class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  文件名
-                </p>
-                <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-                  {fileName}
-                </div>
-              </div>
-              <div>
-                <p
-                  class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  远程文件名
-                </p>
-                <input
-                  bind:value={remoteFileName}
-                  class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700"
-                  placeholder="输入远程文件名"
-                />
-              </div>
-            </div>
-          {/if}
-        </div>
-      {:else if activeTab === "folder"}
-        <div class="space-y-4">
-          <button onclick={openDirectory} class="btn btn-default w-full">
-            <Folder class="size-6" /> 选择文件夹
-          </button>
-        </div>
+        <FileUploader
+          {filePath}
+          {fileName}
+          {remoteFileName}
+          onFileSelect={openFile}
+        />
       {:else if activeTab === "text"}
-        <div class="space-y-4">
-          <div class="space-y-2">
-            <div>
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                文本内容
-              </p>
-              <textarea
-                bind:value={textContent}
-                class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700"
-                placeholder="输入要上传的文本内容"
-                rows="6"
-              ></textarea>
-            </div>
-            <div>
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                远程文件名
-              </p>
-              <input
-                bind:value={remoteFileName}
-                class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700"
-                placeholder="输入远程文件名"
-              />
-            </div>
-          </div>
-        </div>
+        <TextUploader {textContent} {remoteFileName} />
       {:else if activeTab === "clipboard"}
-        <div class="space-y-4">
-          <button
-            onclick={checkClipboardContent}
-            class="btn btn-default w-full"
-          >
-            <Clipboard class="size-6" /> 刷新剪贴板内容
-          </button>
-
-          {#if clipboardText}
-            <div class="space-y-2">
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                剪贴板文本
-              </p>
-              <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-                {clipboardText}
-              </div>
-            </div>
-          {/if}
-
-          {#if clipboardHtml}
-            <div class="space-y-2">
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                剪贴板 HTML
-              </p>
-              <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-                {@html clipboardHtml}
-              </div>
-            </div>
-          {/if}
-
-          {#if clipboardImage}
-            <div class="space-y-2">
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                剪贴板图片
-              </p>
-              <img
-                src={`data:image/png;base64,${clipboardImage}`}
-                alt="剪贴板图片"
-                class="max-w-full"
-              />
-            </div>
-          {/if}
-
-          {#if clipboardRtf}
-            <div class="space-y-2">
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                剪贴板 RTF
-              </p>
-              <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-                {clipboardRtf}
-              </div>
-            </div>
-          {/if}
-
-          {#if clipboardFiles.length > 0}
-            <div class="space-y-2">
-              <p
-                class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                剪贴板文件
-              </p>
-              <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
-                {#each clipboardFiles as file}
-                  <div>{file}</div>
-                {/each}
-              </div>
-            </div>
-          {/if}
-
-          <div class="space-y-2">
-            <p
-              class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-            >
-              远程文件名
-            </p>
-            <input
-              bind:value={remoteFileName}
-              class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-700"
-              placeholder="输入远程文件名"
-            />
-          </div>
-        </div>
+        <ClipboardUploader
+          {clipboardText}
+          {clipboardHtml}
+          {clipboardImage}
+          {clipboardRtf}
+          {clipboardFiles}
+          {remoteFileName}
+          onRefreshClipboard={checkClipboardContent}
+        />
       {/if}
 
       {#if showUploadButton}
@@ -428,28 +220,6 @@
 </div>
 
 <style lang="postcss">
-  .btn {
-    @apply flex cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-4 text-lg shadow-sm transition-all hover:shadow-md;
-  }
-
-  .btn-default {
-    @apply border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 active:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 dark:active:bg-slate-500;
-  }
-
-  .btn-primary {
-    @apply bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700;
-  }
-
-  .btn-tab {
-    @apply flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors;
-    @apply bg-transparent text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700;
-  }
-
-  .btn-tab-active {
-    @apply bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400;
-    @apply hover:bg-blue-100 dark:hover:bg-blue-900/30;
-  }
-
   /* Bits UI Select 样式 */
   :global(.select-trigger) {
     @apply flex min-w-48 cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200;
