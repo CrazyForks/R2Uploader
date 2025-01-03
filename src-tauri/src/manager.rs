@@ -1,9 +1,9 @@
+use dashmap::DashMap;
 use mime_guess::from_path;
+use once_cell::sync::Lazy;
 use s3::{creds::Credentials, Bucket, Region};
 use serde::{Deserialize, Serialize};
-use once_cell::sync::Lazy;
-use dashmap::DashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
 
 static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
@@ -57,21 +57,22 @@ pub async fn r2_upload(
     // 立即返回，在后台处理上传
     let bucket_name = bucket_name.to_string();
     let account_id = account_id.to_string();
-    
+
     tokio::spawn(async move {
         let bucket = Arc::new(bucket);
-        
+
         for file in files {
-            let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.unwrap();
+            let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.map_err(|e| e.to_string())?;
             let bucket = bucket.clone();
             let bucket_name = bucket_name.clone();
             let account_id = account_id.clone();
-            
+
             tokio::spawn(async move {
                 let file_id = file.id.clone();
                 UPLOAD_STATUS.insert(file_id.clone(), "uploading".to_string());
-                
-                let remote_file_name = format!("{}{}", file.remote_filename_prefix, file.remote_filename);
+
+                let remote_file_name =
+                    format!("{}{}", file.remote_filename_prefix, file.remote_filename);
                 let content_type = from_path(&remote_file_name).first_or_octet_stream();
                 let content_type = content_type.as_ref();
 
@@ -90,7 +91,11 @@ pub async fn r2_upload(
                             .await
                             .map_err(|e| e.to_string())?;
                         bucket
-                            .put_object_stream_with_content_type(&mut file, &remote_file_name, content_type)
+                            .put_object_stream_with_content_type(
+                                &mut file,
+                                &remote_file_name,
+                                content_type,
+                            )
                             .await
                             .map_err(|e| e.to_string())?;
                         Ok(())
@@ -102,7 +107,11 @@ pub async fn r2_upload(
                         );
                         let file_data = content.as_bytes().to_vec();
                         bucket
-                            .put_object_with_content_type(&remote_file_name, &file_data, content_type)
+                            .put_object_with_content_type(
+                                &remote_file_name,
+                                &file_data,
+                                content_type,
+                            )
                             .await
                             .map_err(|e| e.to_string())?;
                         Ok(())
@@ -125,4 +134,29 @@ pub async fn r2_upload(
     });
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_upload_status() -> Result<HashMap<String, String>, String> {
+    let mut status_map = HashMap::new();
+    let mut to_remove = Vec::new();
+
+    // 收集所有状态
+    for entry in UPLOAD_STATUS.iter() {
+        let file_id = entry.key().clone();
+        let status = entry.value().clone();
+
+        // 如果状态为 success 则标记删除
+        if status == "success" {
+            to_remove.push(file_id.clone());
+        }
+        status_map.insert(file_id, status);
+    }
+
+    // 迭代结束后统一删除
+    for file_id in to_remove {
+        UPLOAD_STATUS.remove(&file_id);
+    }
+
+    Ok(status_map)
 }
