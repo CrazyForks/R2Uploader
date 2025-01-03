@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { Upload, X, Check, ChevronsUpDown } from "lucide-svelte";
+  import {
+    Upload,
+    X,
+    Check,
+    ChevronsUpDown,
+    GripVertical,
+  } from "lucide-svelte";
   import { tick } from "svelte";
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
@@ -51,16 +57,13 @@
     <button onclick={onRemoveAll} class="btn btn-danger"> 全部删除 </button>
   </div>
 
-  <div class="flex items-center gap-2">
-    <div class="relative flex-1">
+  <div class="flex items-center gap-4">
+    <div class="">
       <input
         bind:value={prefix}
         oninput={onChangePrefix}
-        class="w-full rounded-lg bg-slate-100 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600"
-        placeholder="输入全局前缀"
-      />
-      <ChevronsUpDown
-        class="absolute top-1/2 right-3 size-4 -translate-y-1/2 text-slate-400"
+        class="input w-36"
+        placeholder="全局前缀"
       />
     </div>
   </div>
@@ -68,38 +71,42 @@
     use:dragHandleZone={{ items: files, flipDurationMs }}
     onconsider={handleSort}
     onfinalize={handleSort}
+    class="space-y-2"
   >
     {#each files as file, index (file.id)}
       <div
-        class="flex items-center gap-3 rounded-lg bg-slate-50 p-2 dark:bg-slate-700"
+        class="flex items-center gap-4 rounded-xl bg-slate-50 p-2 dark:bg-slate-700"
         animate:flip={{ duration: flipDurationMs }}
       >
-        <div use:dragHandle>三</div>
+        <div
+          use:dragHandle
+          class=" text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
+        >
+          <GripVertical class="size-4" />
+        </div>
         <input
           type="checkbox"
           bind:checked={file.selected}
-          class="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+          class="size-4 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
         />
-        <div class="flex-1 space-y-1">
+        <div class="flex-1">
           <div class="flex items-center gap-2">
             <input
               bind:value={file.remoteFilenamePrefix}
-              class="w-24 rounded bg-slate-100 px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600"
-              placeholder="前缀"
+              class="input w-24"
+              placeholder="远程路径"
             />
+            <span>/</span>
             <input
               bind:value={file.remoteFilename}
-              class="flex-1 rounded bg-slate-100 px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600"
+              class="input flex-1"
               placeholder="远程文件名"
             />
-          </div>
-          <div class="text-xs text-slate-500 dark:text-slate-400">
-            {file.filename}
           </div>
         </div>
         <button
           onclick={() => onRemove(index)}
-          class="rounded p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600"
+          class="cursor-pointer rounded-lg p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600"
         >
           <X class="size-4" />
         </button>
@@ -107,3 +114,9 @@
     {/each}
   </section>
 </div>
+
+<style lang="postcss">
+  .input {
+    @apply rounded-lg bg-slate-100 px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600;
+  }
+</style>
