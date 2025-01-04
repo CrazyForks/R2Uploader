@@ -27,7 +27,7 @@
 
 <dialog
   id="modal"
-  class="modal modal-bottom sm:modal-middle"
+  class="modal modal-bottom sm:modal-middle mx-auto max-w-md"
   bind:this={modal}
   {onclose}
 >

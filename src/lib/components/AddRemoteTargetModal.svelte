@@ -1,6 +1,5 @@
 <script lang="ts">
   import { modalState } from "$lib/store.svelte";
-  import { Dialog } from "bits-ui";
 
   // 定义输入框的配置
   const inputConfigs = $state([
@@ -42,7 +41,6 @@
   function closeModal() {
     // 关闭模态框
     modalState.isShow = false;
-    modalState.children = undefined;
   }
 
   function show() {
@@ -66,7 +64,6 @@
         />
         <label
           for={config.id}
-          class:invisible={!config.value}
           class="input-label"
           class:input-label-active={config.value}
         >
@@ -76,9 +73,39 @@
     {/each}
   </div>
   <div class="mt-8 flex justify-end space-x-2">
-    <button onclick={closeModal} class="button-secondary">取消</button>
-    <button onclick={handleSubmit} class="button-primary">添加</button>
+    <button
+      onclick={closeModal}
+      class="cursor-pointer rounded-lg p-2 text-slate-500 hover:text-slate-600"
+      >取消</button
+    >
+    <button
+      onclick={handleSubmit}
+      class="cursor-pointer rounded-lg p-2 text-blue-500 hover:text-blue-600"
+      >添加</button
+    >
   </div>
 {/snippet}
 
 <button onclick={show}>添加</button>
+
+<style lang="postcss">
+  .input-container {
+    @apply relative mb-6;
+  }
+
+  .input-field {
+    @apply w-full border-0 border-b border-gray-300 py-2 transition-colors outline-none;
+  }
+
+  .input-field:focus {
+    @apply border-blue-500;
+  }
+
+  .input-label {
+    @apply pointer-events-none absolute top-2 left-0 opacity-0 transition-all;
+  }
+
+  .input-label-active {
+    @apply -translate-y-5 text-sm text-slate-500 opacity-100;
+  }
+</style>
