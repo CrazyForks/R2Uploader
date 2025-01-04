@@ -1,0 +1,23 @@
+{
+  "addBucket": {
+    "invalidS3Api": "Invalid S3 API format, please refer to help",
+    "howToUse": "How to use",
+    "step1": "1. Enter S3 API URL in format: https://[accountId].r2.cloudflarestorage.com/[bucketName]",
+    "step2": "2. If you already have Bucket Name and Account ID, you can fill them directly",
+    "step3": "3. Enter Access Key and Secret Key for authentication",
+    "step4": "4. Optional: Fill in Custom Domain",
+    "step5": "5. Click Save to save configuration",
+    "title": "Add Bucket",
+    "cancel": "Cancel",
+    "save": "Save",
+    "addNew": "Add New Bucket",
+    "labels": {
+      "s3Api": "S3 API",
+      "bucketName": "Bucket Name",
+      "accountId": "Account ID",
+      "accessKey": "Access Key",
+      "secretKey": "Secret Key",
+      "customDomain": "Custom Domain"
+    }
+  }
+}

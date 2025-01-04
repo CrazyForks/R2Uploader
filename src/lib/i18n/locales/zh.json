@@ -1,0 +1,23 @@
+{
+  "addBucket": {
+    "invalidS3Api": "S3 API 格式不正确，请参阅帮助",
+    "howToUse": "如何使用",
+    "step1": "1. 输入 S3 API URL，格式为：https://[accountId].r2.cloudflarestorage.com/[bucketName]",
+    "step2": "2. 如果已有 Bucket Name 和 Account ID，可以直接填写",
+    "step3": "3. 输入 Access Key 和 Secret Key 进行身份验证",
+    "step4": "4. 可选：填写自定义域名（Custom Domain）",
+    "step5": "5. 点击 Save 保存配置",
+    "title": "添加存储桶",
+    "cancel": "取消",
+    "save": "保存",
+    "addNew": "添加新存储桶",
+    "labels": {
+      "s3Api": "S3 API",
+      "bucketName": "Bucket 名称",
+      "accountId": "Account ID",
+      "accessKey": "Access Key",
+      "secretKey": "Secret Key",
+      "customDomain": "自定义域名"
+    }
+  }
+}

@@ -173,14 +173,6 @@
     @apply mt-2 space-y-1;
   }
 
-  .target-item {
-    @apply flex items-center justify-between rounded-lg px-2 py-1;
-  }
-
-  .target-info {
-    @apply flex-1;
-  }
-
   .target-details {
     @apply mt-1 text-xs text-slate-500 dark:text-slate-400;
   }

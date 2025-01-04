@@ -1,5 +1,6 @@
 <script lang="ts">
   import db from "$lib/db";
+  import { t } from "$lib/i18n/i18n";
   import { modalState } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
@@ -30,7 +31,7 @@
       if (!regex.test(url)) {
         const s3ApiInput = inputConfigs.find((c) => c.id === "s3Api");
         if (s3ApiInput) {
-          s3ApiInput.label = "S3 API 格式不正确，请参阅帮助";
+          s3ApiInput.label = $t("addBucket.invalidS3Api");
           s3ApiInput.error = true;
         }
         return;
@@ -42,7 +43,7 @@
     } catch (e) {
       const s3ApiInput = inputConfigs.find((c) => c.id === "s3Api");
       if (s3ApiInput) {
-        s3ApiInput.label = "S3 API 格式不正确，请参阅帮助";
+        s3ApiInput.label = $t("addBucket.invalidS3Api");
         s3ApiInput.error = true;
       }
       console.error("Invalid S3 API URL");
@@ -52,38 +53,38 @@
   const inputConfigs = $state([
     {
       id: "s3Api",
-      label: "S3 API",
+      label: $t("addBucket.labels.s3Api"),
       focused: false,
       required: false,
       error: false,
     },
     {
       id: "bucketName",
-      label: "Bucket Name",
+      label: $t("addBucket.labels.bucketName"),
       focused: false,
       required: true,
     },
     {
       id: "accountId",
-      label: "Account ID",
+      label: $t("addBucket.labels.accountId"),
       focused: false,
       required: true,
     },
     {
       id: "accessKey",
-      label: "Access Key",
+      label: $t("addBucket.labels.accessKey"),
       focused: false,
       required: true,
     },
     {
       id: "secretKey",
-      label: "Secret Key",
+      label: $t("addBucket.labels.secretKey"),
       focused: false,
       required: true,
     },
     {
       id: "customDomain",
-      label: "Custom Domain",
+      label: $t("addBucket.labels.customDomain"),
       focused: false,
       required: false,
     },
@@ -125,23 +126,20 @@
         <button class="button" onclick={() => (showHelp = false)}>
           <ArrowLeft size={20} />
         </button>
-        <p>如何使用</p>
+        <p>{$t("addBucket.howToUse")}</p>
       </div>
       <div class="space-y-2 text-sm text-gray-600">
-        <p>
-          1. 输入 S3 API
-          URL，格式为：https://[accountId].r2.cloudflarestorage.com/[bucketName]
-        </p>
-        <p>2. 如果已有 Bucket Name 和 Account ID，可以直接填写</p>
-        <p>3. 输入 Access Key 和 Secret Key 进行身份验证</p>
-        <p>4. 可选：填写自定义域名（Custom Domain）</p>
-        <p>5. 点击 Save 保存配置</p>
+        <p>{$t("addBucket.step1")}</p>
+        <p>{$t("addBucket.step2")}</p>
+        <p>{$t("addBucket.step3")}</p>
+        <p>{$t("addBucket.step4")}</p>
+        <p>{$t("addBucket.step5")}</p>
       </div>
     </div>
   {:else}
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <p>Add bucket</p>
+        <p>{$t("addBucket.title")}</p>
         <button class="button" onclick={() => (showHelp = true)}>
           <HelpCircle size={20} />
         </button>
@@ -160,7 +158,7 @@
               if (config.id === "s3Api") {
                 const target = e.target as HTMLInputElement;
                 if (config.error) {
-                  config.label = "S3 API";
+                  config.label = $t("addBucket.labels.s3Api");
                   config.error = false;
                 }
                 parseS3ApiUrl(target.value);
@@ -179,13 +177,19 @@
       {/each}
     </div>
     <div class="mt-8 flex justify-end space-x-2">
-      <button onclick={closeModal} class="button button-primary">Cancel</button>
-      <button onclick={saveBucket} class="button button-primary">Save</button>
+      <button onclick={closeModal} class="button button-primary"
+        >{$t("addBucket.cancel")}</button
+      >
+      <button onclick={saveBucket} class="button button-primary"
+        >{$t("addBucket.save")}</button
+      >
     </div>
   {/if}
 {/snippet}
 
-<button class="button button-primary" onclick={show}>Add New</button>
+<button class="button button-primary" onclick={show}
+  >{$t("addBucket.addNew")}</button
+>
 
 <style lang="postcss">
   .input-field {

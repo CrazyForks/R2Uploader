@@ -2,15 +2,16 @@
   import FileUploader from "$lib/components/FileUploader.svelte";
   import TabSwitcher from "$lib/components/TabSwitcher.svelte";
   import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
-  import type { UploadTarget } from "$lib/db";
   import db from "$lib/db";
   import { setAlert } from "$lib/store.svelte";
+  import { t } from "$lib/i18n/i18n";
   import { invoke } from "@tauri-apps/api/core";
   import { sep } from "@tauri-apps/api/path";
   import type { Selected } from "bits-ui";
   import { Check } from "lucide-svelte";
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
+  import type { Bucket } from "$lib/type";
 
   let dialogFiles: string[] = [];
   let textContent = $state("");
@@ -33,11 +34,11 @@
   let clipboardHtml = $state("");
   let clipboardImage = $state("");
   let clipboardRtf = $state("");
-  let uploadTargets: Selected<UploadTarget>[] = $state([]);
-  let selectedTarget: Selected<UploadTarget> | undefined = $state();
+  let uploadTargets: Selected<Bucket>[] = $state([]);
+  let selectedTarget: Selected<Bucket> | undefined = $state();
 
   async function getUploadTargets() {
-    await db.uploadTargets.toArray().then((targets) => {
+    await db.buckets.toArray().then((targets) => {
       uploadTargets = targets.map((target) => ({
         value: target,
         label: target.bucketName,
@@ -130,7 +131,7 @@
 
 <div class="mx-auto max-w-4xl p-6">
   <h1 class="mb-6 text-2xl font-bold text-slate-800 dark:text-slate-200">
-    文件上传
+    {$t("common.file_upload")}
   </h1>
 
   <div>
@@ -138,7 +139,7 @@
       <div
         class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
       >
-        请先 <a href="/setting" class="font-medium underline">设置上传目标</a> 后再进行上传
+        {$t("common.set_upload_target_first")}
       </div>
     {:else}
       <UploadTargetSelector
@@ -189,15 +190,15 @@
       disabled={uploadStatus === "uploading"}
     >
       {#if uploadStatus === "uploading"}
-        上传中...
+        {$t("common.uploading")}
       {:else}
-        <Check class="size-6" />确认上传
+        <Check class="size-6" />{$t("common.confirm_upload")}
       {/if}
     </button>
 
     {#if uploadStatus === "error"}
       <button onclick={uploadFile} class="btn btn-default w-full">
-        重试上传
+        {$t("common.retry_upload")}
       </button>
     {/if}
   </div>
