@@ -42,9 +42,3 @@
     <button>close</button>
   </form>
 </dialog>
-
-<style lang="postcss">
-  .modal-box :global(h3) {
-    @apply mb-4 text-lg;
-  }
-</style>

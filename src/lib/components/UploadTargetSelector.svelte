@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { UploadTarget } from "$lib/db";
+  import type { Bucket } from "$lib/type";
   import { Select, type Selected } from "bits-ui";
   import { ChevronsUpDown } from "lucide-svelte";
 
@@ -8,9 +8,9 @@
     selectedTarget,
     onSelectedChange,
   }: {
-    uploadTargets: Selected<UploadTarget>[];
-    selectedTarget: Selected<UploadTarget> | undefined;
-    onSelectedChange: (e: Selected<UploadTarget> | undefined) => void;
+    uploadTargets: Selected<Bucket>[];
+    selectedTarget: Selected<Bucket> | undefined;
+    onSelectedChange: (e: Selected<Bucket> | undefined) => void;
   } = $props();
 </script>
 

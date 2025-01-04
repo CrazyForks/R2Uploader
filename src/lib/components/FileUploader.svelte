@@ -171,7 +171,7 @@
           {#if previewLoading}
             <div class="flex items-center justify-center p-4">
               <div
-                class="size-8 animate-spin rounded-full border-b-2 border-gray-900"
+                class="size-8 animate-spin rounded-full border-b-2 border-slate-900"
               ></div>
             </div>
           {:else if previewError}

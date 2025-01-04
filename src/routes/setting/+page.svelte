@@ -1,9 +1,16 @@
 <script lang="ts">
   import AddRemoteTargetModal from "$lib/components/AddBucket.svelte";
+  import { Select, type Selected } from "bits-ui";
   import db from "$lib/db";
   import { appSettings } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { onMount } from "svelte";
+  import { ChevronsUpDown } from "lucide-svelte";
+
+  const languages = [
+    { value: "en", label: "English" },
+    { value: "zh", label: "中文" },
+  ];
 
   // 上传目标管理相关状态
   let buckets: Array<Bucket> = [];
@@ -62,6 +69,38 @@
           bind:checked={appSettings.useSystemProxy}
         />
       </label>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="flex items-center justify-between">
+      <span class="text-sm">Language</span>
+      <Select.Root
+        items={languages}
+        onSelectedChange={(selected) => {
+          if (selected) {
+            appSettings.locale = selected.value;
+          }
+        }}
+      >
+        <Select.Trigger class="select-trigger">
+          <Select.Value placeholder="选择语言" />
+          <ChevronsUpDown
+            class="dark-text-slate-300 ml-auto size-4 text-slate-400"
+          />
+        </Select.Trigger>
+        <Select.Content class="select-content">
+          {#each languages as lang}
+            <Select.Item
+              value={lang.value}
+              label={lang.label}
+              class="select-item"
+            >
+              {lang.label}
+            </Select.Item>
+          {/each}
+        </Select.Content>
+      </Select.Root>
     </div>
   </div>
 </div>

@@ -200,24 +200,5 @@
 </div>
 
 <style lang="postcss">
-  /* Bits UI Select 样式 */
-  :global(.select-trigger) {
-    @apply flex min-w-48 cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-cyan-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200;
-  }
-
-  :global(.select-trigger[disabled]) {
-    @apply cursor-not-allowed bg-gray-100 text-gray-400 hover:border-slate-200 dark:bg-slate-800 dark:text-gray-500;
-  }
-
-  :global(.select-content) {
-    @apply mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-700;
-  }
-
-  :global(.select-item) {
-    @apply cursor-pointer px-4 py-1 text-gray-700 outline-none hover:bg-slate-100 dark:text-gray-200 dark:hover:bg-slate-600;
-  }
-
-  :global(.select-item[data-highlighted]) {
-    @apply bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400;
-  }
+  
 </style>

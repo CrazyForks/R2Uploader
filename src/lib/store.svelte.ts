@@ -36,6 +36,7 @@ export function setDragPaths(paths: string[]) {
 export let appSettings = $state({
   sidebarCollapsed: false,
   useSystemProxy: true,
+  locale: "en",
 });
 
 // initialize app settings from database

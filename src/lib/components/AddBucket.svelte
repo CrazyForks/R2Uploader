@@ -128,7 +128,7 @@
         </button>
         <p>{$t("addBucket.howToUse")}</p>
       </div>
-      <div class="space-y-2 text-sm text-gray-600">
+      <div class="space-y-2 text-sm text-slate-600">
         <p>{$t("addBucket.step1")}</p>
         <p>{$t("addBucket.step2")}</p>
         <p>{$t("addBucket.step3")}</p>
@@ -176,7 +176,7 @@
         </div>
       {/each}
     </div>
-    <div class="mt-8 flex justify-end space-x-2">
+    <div class="mt-4 flex justify-end space-x-2">
       <button onclick={closeModal} class="button button-primary"
         >{$t("addBucket.cancel")}</button
       >
@@ -193,7 +193,7 @@
 
 <style lang="postcss">
   .input-field {
-    @apply w-full border-0 border-b border-gray-300 py-1 transition-colors outline-none;
+    @apply w-full border-0 border-b border-slate-300 py-1 transition-colors outline-none dark:border-slate-500;
   }
 
   .input-field:focus {

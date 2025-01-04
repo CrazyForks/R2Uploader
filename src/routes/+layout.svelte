@@ -31,6 +31,8 @@
     }
   });
 
+  $inspect(appSettings.locale)
+
   $effect(() => {
     db.appSettings.put({
       id: 1,

@@ -74,3 +74,24 @@ body {
   @apply bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400;
   @apply hover:bg-cyan-100 dark:hover:bg-cyan-900/30;
 } */
+
+/* Bits UI Select 样式 */
+.select-trigger {
+  @apply flex min-w-32 cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-1 text-slate-700 transition-colors hover:border-cyan-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200;
+}
+
+.select-trigger[disabled] {
+  @apply cursor-not-allowed bg-slate-100 text-slate-400 hover:border-slate-200 dark:bg-slate-800 dark:text-slate-500;
+}
+
+.select-content {
+  @apply mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-700;
+}
+
+.select-item {
+  @apply cursor-pointer px-4 py-1 text-slate-700 outline-none hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600;
+}
+
+.select-item[data-highlighted] {
+  @apply bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400;
+}
