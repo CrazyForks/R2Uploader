@@ -4,7 +4,6 @@
   import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
   import db from "$lib/db";
   import { setAlert } from "$lib/store.svelte";
-  import { t } from "$lib/i18n/i18n";
   import { invoke } from "@tauri-apps/api/core";
   import { sep } from "@tauri-apps/api/path";
   import type { Selected } from "bits-ui";
@@ -12,6 +11,7 @@
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
   import type { Bucket } from "$lib/type";
+  import * as m from "$lib/paraglide/messages";
 
   let dialogFiles: string[] = [];
   let textContent = $state("");
@@ -120,7 +120,7 @@
 
       // 启动状态轮询
       if (!intervalId) {
-        intervalId = setInterval(checkUploadStatus, 500);
+        // intervalId = setInterval(checkUploadStatus, 500);
       }
     } catch (error: unknown) {
       console.error(error);
