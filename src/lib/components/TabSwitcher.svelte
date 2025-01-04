@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n.svelte";
   import { Upload, Folder, FileText, Clipboard } from "lucide-svelte";
-  import { t } from "$lib/i18n/i18n";
 
   let {
     activeTab,
@@ -17,7 +17,8 @@
     onclick={() => onTabChange("file")}
     class="btn-tab"
   >
-    <Upload class="size-5" /> {$t('tabSwitcher.file')}
+    <Upload class="size-5" />
+    {t().tabSwitcher.file}
   </button>
   <button
     class:btn-tab-active={activeTab === "folder"}

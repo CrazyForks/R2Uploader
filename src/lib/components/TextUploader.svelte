@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/i18n/i18n";
-  
+    import { t } from "$lib/i18n.svelte";
+
   let {
     textContent,
     remoteFileName,
@@ -16,12 +16,13 @@
       <p
         class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
       >
-        {$t('textUploader.textLabel')}
+        ------------------
+        {t().textUploader.textPlaceholder}
       </p>
       <textarea
         bind:value={textContent}
         class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none dark:bg-slate-700"
-        placeholder="输入要上传的文本内容"
+        placeholder={t().textUploader.textPlaceholder}
         rows="6"
       ></textarea>
     </div>
@@ -29,7 +30,7 @@
       <p
         class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
       >
-        {$t('textUploader.filenameLabel')}
+      -------------------------
       </p>
       <input
         bind:value={remoteFileName}

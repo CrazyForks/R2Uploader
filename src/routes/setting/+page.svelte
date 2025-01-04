@@ -1,11 +1,12 @@
 <script lang="ts">
   import AddRemoteTargetModal from "$lib/components/AddBucket.svelte";
-  import { Select, type Selected } from "bits-ui";
+  import { Select } from "bits-ui";
   import db from "$lib/db";
   import { appSettings } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { onMount } from "svelte";
   import { ChevronsUpDown } from "lucide-svelte";
+  import { t } from "$lib/i18n.svelte";
 
   const languages = [
     { value: "en", label: "English" },
@@ -30,7 +31,7 @@
 </script>
 
 <div class="settings-container">
-  <h1 class="px-4 py-1 text-lg font-bold">Settings</h1>
+  <h1 class="px-4 py-1 text-lg font-bold">{t().common.setting}</h1>
 
   <div class="settings-section">
     <div class="flex items-center justify-between">

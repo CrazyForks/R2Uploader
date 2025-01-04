@@ -109,7 +109,7 @@
       });
 
       if (!intervalId) {
-        intervalId = setInterval(checkUploadStatus, 500);
+        intervalId = window.setInterval(checkUploadStatus, 500);
       }
     } catch (error: unknown) {
       console.error(error);

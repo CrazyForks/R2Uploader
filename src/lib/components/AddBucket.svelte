@@ -1,6 +1,6 @@
 <script lang="ts">
   import db from "$lib/db";
-  import { t } from "$lib/i18n/i18n";
+  import { t } from "$lib/i18n.svelte";
   import { modalState } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
@@ -31,7 +31,7 @@
       if (!regex.test(url)) {
         const s3ApiInput = inputConfigs.find((c) => c.id === "s3Api");
         if (s3ApiInput) {
-          s3ApiInput.label = $t("addBucket.invalidS3Api");
+          s3ApiInput.label = t().addBucket.invalidS3Api;
           s3ApiInput.error = true;
         }
         return;
@@ -43,7 +43,7 @@
     } catch (e) {
       const s3ApiInput = inputConfigs.find((c) => c.id === "s3Api");
       if (s3ApiInput) {
-        s3ApiInput.label = $t("addBucket.invalidS3Api");
+        s3ApiInput.label = t().addBucket.invalidS3Api;
         s3ApiInput.error = true;
       }
       console.error("Invalid S3 API URL");
@@ -53,38 +53,38 @@
   const inputConfigs = $state([
     {
       id: "s3Api",
-      label: $t("addBucket.labels.s3Api"),
+      label: t().addBucket.labels.s3Api,
       focused: false,
       required: false,
       error: false,
     },
     {
       id: "bucketName",
-      label: $t("addBucket.labels.bucketName"),
+      label: t().addBucket.labels.bucketName,
       focused: false,
       required: true,
     },
     {
       id: "accountId",
-      label: $t("addBucket.labels.accountId"),
+      label: t().addBucket.labels.accountId,
       focused: false,
       required: true,
     },
     {
       id: "accessKey",
-      label: $t("addBucket.labels.accessKey"),
+      label: t().addBucket.labels.accessKey,
       focused: false,
       required: true,
     },
     {
       id: "secretKey",
-      label: $t("addBucket.labels.secretKey"),
+      label: t().addBucket.labels.secretKey,
       focused: false,
       required: true,
     },
     {
       id: "customDomain",
-      label: $t("addBucket.labels.customDomain"),
+      label: t().addBucket.labels.customDomain,
       focused: false,
       required: false,
     },
@@ -126,20 +126,20 @@
         <button class="button" onclick={() => (showHelp = false)}>
           <ArrowLeft size={20} />
         </button>
-        <p>{$t("addBucket.howToUse")}</p>
+        <p>{t().addBucket.howToUse}</p>
       </div>
       <div class="space-y-2 text-sm text-slate-600">
-        <p>{$t("addBucket.step1")}</p>
-        <p>{$t("addBucket.step2")}</p>
-        <p>{$t("addBucket.step3")}</p>
-        <p>{$t("addBucket.step4")}</p>
-        <p>{$t("addBucket.step5")}</p>
+        <p>{t().addBucket.step1}</p>
+        <p>{t().addBucket.step2}</p>
+        <p>{t().addBucket.step3}</p>
+        <p>{t().addBucket.step4}</p>
+        <p>{t().addBucket.step5}</p>
       </div>
     </div>
   {:else}
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <p>{$t("addBucket.title")}</p>
+        <p>{t().addBucket.title}</p>
         <button class="button" onclick={() => (showHelp = true)}>
           <HelpCircle size={20} />
         </button>
@@ -158,7 +158,7 @@
               if (config.id === "s3Api") {
                 const target = e.target as HTMLInputElement;
                 if (config.error) {
-                  config.label = $t("addBucket.labels.s3Api");
+                  config.label = t().addBucket.labels.s3Api;
                   config.error = false;
                 }
                 parseS3ApiUrl(target.value);
@@ -178,17 +178,17 @@
     </div>
     <div class="mt-4 flex justify-end space-x-2">
       <button onclick={closeModal} class="button button-primary"
-        >{$t("addBucket.cancel")}</button
+        >{t().addBucket.cancel}</button
       >
       <button onclick={saveBucket} class="button button-primary"
-        >{$t("addBucket.save")}</button
+        >{t().addBucket.save}</button
       >
     </div>
   {/if}
 {/snippet}
 
 <button class="button button-primary" onclick={show}
-  >{$t("addBucket.addNew")}</button
+  >{t().addBucket.addNew}</button
 >
 
 <style lang="postcss">

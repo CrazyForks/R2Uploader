@@ -38,7 +38,6 @@
     "svelte-dnd-action": "^0.9.54",
     "tailwindcss": "^4.0.0-beta.8",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7",
-    "@inlang/paraglide-js": "1.11.7"
+    "vite": "^6.0.7"
   }
 }

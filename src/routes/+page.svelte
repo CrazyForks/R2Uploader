@@ -11,7 +11,7 @@
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
   import type { Bucket } from "$lib/type";
-  import * as m from "$lib/paraglide/messages";
+  import { t } from "$lib/i18n.svelte";
 
   let dialogFiles: string[] = [];
   let textContent = $state("");
@@ -132,7 +132,7 @@
 
 <div class="mx-auto max-w-4xl p-6">
   <h1 class="mb-6 text-2xl font-bold text-slate-800 dark:text-slate-200">
-    {$t("common.file_upload")}
+    {t().common.upload}
   </h1>
 
   <div>
@@ -140,7 +140,8 @@
       <div
         class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
       >
-        {$t("common.set_upload_target_first")}
+        {t().common.setting}
+        -----------------------------------
       </div>
     {:else}
       <UploadTargetSelector
@@ -191,14 +192,14 @@
       disabled={uploadStatus === "uploading"}
     >
       {#if uploadStatus === "uploading"}
-        {$t("common.uploading")}
+        {t().common.uploading}
       {:else}
-        <Check class="size-6" />{$t("common.upload")}
+        <Check class="size-6" />
+        {t().common.upload}
       {/if}
     </button>
   </div>
 </div>
 
 <style lang="postcss">
-  
 </style>

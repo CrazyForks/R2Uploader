@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { t } from "$lib/i18n.svelte";
   import { appSettings } from "$lib/store.svelte";
-  import { t } from "$lib/i18n/i18n";
   import {
     PanelRightClose,
     PanelRightOpen,
@@ -10,8 +10,8 @@
   } from "lucide-svelte";
 
   const links = [
-    { href: "/", icon: Plus, label: "common.upload" },
-    { href: "/setting", icon: Settings, label: "common.setting" },
+    { href: "/", icon: Plus, label: t().common.upload },
+    { href: "/setting", icon: Settings, label: t().common.setting },
   ];
 </script>
 
@@ -50,7 +50,7 @@
           >
             <Icon class="size-5" />
             {#if !appSettings.sidebarCollapsed}
-              <span class="text-nowrap">{$t(label)}</span>
+              <span class="text-nowrap">{label}</span>
             {/if}
           </a>
         </li>
@@ -71,7 +71,7 @@
           aria-current={page.route.id === href ? "page" : null}
         >
           <Icon class="size-5" />
-          <span class="text-nowrap">{$t(label)}</span>
+          <span class="text-nowrap">{label}</span>
         </a>
       {/each}
     </nav>
