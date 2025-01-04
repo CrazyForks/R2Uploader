@@ -50,7 +50,7 @@
 </script>
 
 {#snippet content()}
-  <h3>add remote target</h3>
+  <h3>Add bucket</h3>
   <div class="space-y-6">
     <!-- 动态生成输入框 -->
     {#each inputConfigs as config}
@@ -73,22 +73,18 @@
     {/each}
   </div>
   <div class="mt-8 flex justify-end space-x-2">
-    <button
-      onclick={closeModal}
-      class="cursor-pointer rounded-lg p-2 text-slate-500 hover:text-slate-600"
-      >取消</button
-    >
-    <button
-      onclick={handleSubmit}
-      class="cursor-pointer rounded-lg p-2 text-blue-500 hover:text-blue-600"
-      >添加</button
-    >
+    <button onclick={closeModal} class="button">取消</button>
+    <button onclick={handleSubmit} class="button">添加</button>
   </div>
 {/snippet}
 
 <button onclick={show}>添加</button>
 
 <style lang="postcss">
+  .button {
+    @apply cursor-pointer rounded-lg px-4 py-2 text-cyan-500 hover:bg-cyan-50;
+  }
+
   .input-container {
     @apply relative mb-6;
   }

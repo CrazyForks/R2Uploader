@@ -33,7 +33,7 @@
 >
   <div class="modal-box">
     {#if isLoading}
-      <div class="flex h-full w-full items-center justify-center">
+      <div class="flex h-full w-full items-center justify-center p-2">
         loading...
       </div>
     {:else}
@@ -47,6 +47,6 @@
 
 <style lang="postcss">
   .modal-box :global(h3) {
-    @apply mb-2 text-center text-lg font-semibold;
+    @apply mb-4 text-lg;
   }
 </style>
