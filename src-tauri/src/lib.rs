@@ -8,7 +8,8 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard::init())
         .invoke_handler(tauri::generate_handler![
             manager::r2_upload,
-            manager::get_upload_status
+            manager::get_upload_status,
+            manager::preview_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

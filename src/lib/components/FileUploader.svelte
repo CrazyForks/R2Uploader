@@ -6,7 +6,7 @@
   import { flip } from "svelte/animate";
   import { invoke } from "@tauri-apps/api/core";
   import { setAlert } from "$lib/store.svelte";
-  import type { Selected } from "bits-ui";
+  import { LinkPreview, type Selected } from "bits-ui";
   import { sep } from "@tauri-apps/api/path";
 
   let {
@@ -35,12 +35,28 @@
   } = $props();
 
   let showUploadButton = $derived(files.length > 0);
-
   let showBigMenu = $derived(!files.length);
   let oldPrefix = $state("");
   let prefix = $state("");
-
   const flipDurationMs = 200;
+
+  // 预览相关状态
+  let previewContent = $state<string | null>(null);
+  let previewLoading = $state(false);
+  let previewError = $state<string | null>(null);
+
+  async function previewFile(path: string) {
+    previewLoading = true;
+    previewError = null;
+    try {
+      previewContent = await invoke<string>("preview_file", { path });
+    } catch (error) {
+      previewError = error instanceof Error ? error.message : "预览失败";
+      setAlert(previewError);
+    } finally {
+      previewLoading = false;
+    }
+  }
 
   function handleSort(e: CustomEvent) {
     files = e.detail.items;
@@ -61,7 +77,6 @@
       const status = await invoke<Record<string, string>>("get_upload_status");
       uploadStatusMap = status;
 
-      // 如果所有文件都上传完成，停止轮询
       if (Object.keys(status).length === 0) {
         clearInterval(intervalId);
         intervalId = undefined;
@@ -93,7 +108,6 @@
         files: filesToUpload,
       });
 
-      // 启动状态轮询
       if (!intervalId) {
         intervalId = setInterval(checkUploadStatus, 500);
       }
@@ -126,8 +140,80 @@
   }
 </script>
 
+{#snippet preview(file: {
+  id: string;
+  filename: string;
+  remoteFilename: string;
+  remoteFilenamePrefix: string;
+  selected?: boolean;
+})}
+  <LinkPreview.Root
+    openDelay={100}
+    closeDelay={100}
+    onOpenChange={(isOpen) => {
+      if (isOpen) {
+        previewFile(file.filename);
+      } else {
+        previewContent = null;
+      }
+    }}
+  >
+    <LinkPreview.Trigger>
+      <button class="action-button">
+        <Eye class="size-4" />
+      </button>
+    </LinkPreview.Trigger>
+    <LinkPreview.Content side="top">
+      <div
+        class="w-[320px] space-y-2 rounded-md bg-white/80 p-4 shadow-lg backdrop-blur-sm dark:bg-slate-800/80"
+      >
+        {#if previewLoading}
+          <div class="flex items-center justify-center p-4">
+            <div
+              class="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"
+            ></div>
+          </div>
+        {:else if previewError}
+          <div class="text-sm text-red-500">{previewError}</div>
+        {:else if previewContent}
+          {#if file.filename.endsWith(".png") || file.filename.endsWith(".jpg") || file.filename.endsWith(".jpeg")}
+            <img
+              src={previewContent}
+              alt="文件预览"
+              class="max-h-[200px] max-w-[300px] object-contain"
+            />
+          {:else if file.filename.endsWith(".txt")}
+            <div
+              class="max-h-[200px] overflow-y-auto rounded bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
+            >
+              {#each previewContent.split("\n") as line}
+                <div>{line}</div>
+              {/each}
+            </div>
+          {/if}
+        {/if}
+
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">文件名：</span>
+            <span class="font-medium">{file.remoteFilename}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">远程路径：</span>
+            <span
+              class="rounded bg-slate-100/50 px-2 py-1 font-mono text-slate-700 dark:bg-slate-700/50 dark:text-slate-300"
+            >
+              {file.remoteFilenamePrefix}/{file.remoteFilename}
+            </span>
+          </div>
+        </div>
+      </div>
+    </LinkPreview.Content>
+  </LinkPreview.Root>
+{/snippet}
+
 <div
-  class="max-h-96 space-y-2 overflow-y-auto rounded-2xl border border-white/20 bg-white/80 shadow-lg backdrop-blur-lg dark:border-slate-700/20 dark:bg-slate-800/80"
+  class="max-h-96 space-y-2 overflow-y-auto rounded-xl border border-white/20 bg-white/80 shadow-lg backdrop-blur-lg dark:border-slate-700/20 dark:bg-slate-800/80"
 >
   {#if showBigMenu}
     <div class="flex h-64 items-center justify-center">
@@ -164,7 +250,7 @@
       >
         {#each files as file, index (file.id)}
           <div
-            class="flex items-center gap-4 rounded-xl bg-slate-50 p-2 dark:bg-slate-700"
+            class="flex items-center gap-4 rounded-md bg-slate-50 p-2 dark:bg-slate-700"
             animate:flip={{ duration: flipDurationMs }}
           >
             <div
@@ -176,7 +262,7 @@
             <input
               type="checkbox"
               bind:checked={file.selected}
-              class="size-4 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+              class="size-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
             />
             <div class="flex-1">
               <div class="flex items-center gap-2">
@@ -194,9 +280,7 @@
               </div>
             </div>
             <div>
-              <button class="action-button">
-                <Eye class="size-4" />
-              </button>
+              {@render preview(file)}
               <button onclick={() => removeFile(index)} class="action-button">
                 <X class="size-4" />
               </button>
@@ -210,10 +294,10 @@
 
 <style lang="postcss">
   .input {
-    @apply rounded-lg bg-slate-100 px-2 py-1 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600;
+    @apply rounded-md bg-slate-100 px-2 py-1 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600;
   }
 
   .action-button {
-    @apply cursor-pointer rounded-lg p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600;
+    @apply cursor-pointer rounded-md p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600;
   }
 </style>

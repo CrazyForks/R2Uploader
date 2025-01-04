@@ -3689,6 +3689,7 @@ dependencies = [
 name = "r2uploader"
 version = "0.1.0"
 dependencies = [
+ "base64 0.21.7",
  "dashmap",
  "mime_guess",
  "once_cell",

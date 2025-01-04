@@ -7,17 +7,17 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
 
 static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
-static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(16))); // 限制同时上传 16 个文件
+static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(16)));
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")] // 统一使用小驼峰命名法
+#[serde(rename_all = "camelCase")]
 pub enum UploadSource {
     FilePath(String),
     FileContent(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")] // 统一使用小驼峰命名法
+#[serde(rename_all = "camelCase")]
 pub struct File {
     pub id: String,
     pub source: UploadSource,
@@ -26,10 +26,43 @@ pub struct File {
 
 pub fn get_proxy() -> Result<reqwest::Proxy, String> {
     let proxy = sysproxy::Sysproxy::get_system_proxy()
-        .map_err(|e| format!("can not get system proxy: {}", e.to_string()))?;
+        .map_err(|e| format!("can not get system proxy: {}", e))?;
     let proxy = reqwest::Proxy::https(format!("http://{}:{}", proxy.host, proxy.port).as_str())
-        .map_err(|e| format!("can not create proxy: {}", e.to_string()))?;
+        .map_err(|e| format!("can not create proxy: {}", e))?;
     Ok(proxy)
+}
+
+#[tauri::command]
+pub async fn preview_file(path: String) -> Result<String, String> {
+    let metadata = tokio::fs::metadata(&path)
+        .await
+        .map_err(|e| format!("无法获取文件元数据: {}", e))?;
+    
+    if metadata.len() > 10 * 1024 * 1024 {
+        return Err("文件大小超过10MB限制".to_string());
+    }
+
+    if path.ends_with(".txt") {
+        let content = tokio::fs::read_to_string(&path)
+            .await
+            .map_err(|e| format!("无法读取文件: {}", e))?;
+        let lines: Vec<&str> = content.lines().take(100).collect();
+        return Ok(lines.join("\n"));
+    }
+
+    if path.ends_with(".png") || path.ends_with(".jpg") || path.ends_with(".jpeg") {
+        let data = tokio::fs::read(&path)
+            .await
+            .map_err(|e| format!("无法读取图片文件: {}", e))?;
+        let base64 = base64::encode(data);
+        return Ok(format!(
+            "data:image/{};base64,{}",
+            path.split('.').last().unwrap_or("png"),
+            base64
+        ));
+    }
+
+    Err("不支持的文件类型".to_string())
 }
 
 #[tauri::command]
@@ -53,7 +86,6 @@ pub async fn r2_upload(
 
     bucket.set_proxy(get_proxy()?).map_err(|e| e.to_string())?;
 
-    // 立即返回，在后台处理上传
     let bucket_name = bucket_name.to_string();
     let account_id = account_id.to_string();
 
@@ -138,19 +170,16 @@ pub async fn get_upload_status() -> Result<HashMap<String, String>, String> {
     let mut status_map = HashMap::new();
     let mut to_remove = Vec::new();
 
-    // 收集所有状态
     for entry in UPLOAD_STATUS.iter() {
         let file_id = entry.key().clone();
         let status = entry.value().clone();
 
-        // 如果状态为 success 则标记删除
         if status == "success" {
             to_remove.push(file_id.clone());
         }
         status_map.insert(file_id, status);
     }
 
-    // 迭代结束后统一删除
     for file_id in to_remove {
         UPLOAD_STATUS.remove(&file_id);
     }
