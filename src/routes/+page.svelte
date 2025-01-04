@@ -69,7 +69,7 @@
       }
     } catch (error: unknown) {
       console.error(error);
-      setAlert("读取剪贴板内容失败");
+      setAlert(t().common.clipboardReadError);
     }
   }
 
@@ -83,16 +83,16 @@
       const status = await invoke<Record<string, string>>("get_upload_status");
       uploadStatusMap = status;
 
-      // 如果所有文件都上传完成，停止轮询
+      // {t().console.stopPollingWhenComplete}
       if (Object.keys(status).length === 0) {
         clearInterval(intervalId);
         intervalId = undefined;
         uploadStatus = "success";
-        setAlert("上传成功");
+        setAlert(t().alert.uploadSuccess);
         files = [];
       }
     } catch (error) {
-      console.error("获取上传状态失败：", error);
+      console.error(t().alert.getStatusFailed, error);
     }
   }
 
@@ -118,14 +118,14 @@
         files: filesToUpload,
       });
 
-      // 启动状态轮询
+      // {t().console.startPolling}
       if (!intervalId) {
         // intervalId = setInterval(checkUploadStatus, 500);
       }
     } catch (error: unknown) {
       console.error(error);
       uploadStatus = "error";
-      setAlert("上传失败，请重试");
+      setAlert(t().common.uploadError);
     }
   }
 </script>
@@ -140,8 +140,7 @@
       <div
         class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
       >
-        {t().common.setting}
-        -----------------------------------
+        {t().common.noBucketWarning}
       </div>
     {:else}
       <UploadTargetSelector

@@ -2,6 +2,7 @@
   import type { Bucket } from "$lib/type";
   import { Select, type Selected } from "bits-ui";
   import { ChevronsUpDown } from "lucide-svelte";
+  import { t } from "$lib/i18n.svelte";
 
   let {
     uploadTargets,
@@ -15,14 +16,14 @@
 </script>
 
 <div class="mb-4 flex items-center gap-4">
-  <p class="text-sm font-medium text-slate-700 dark:text-slate-300">上传目标</p>
+  <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{t().uploadTargetSelector.title}</p>
   <Select.Root
     items={uploadTargets}
     selected={selectedTarget}
     {onSelectedChange}
   >
     <Select.Trigger class="select-trigger">
-      <Select.Value placeholder="选择上传目标" />
+      <Select.Value placeholder={t().uploadTargetSelector.placeholder} />
       <ChevronsUpDown
         class="dark-text-slate-300 ml-auto size-4 text-slate-400"
       />

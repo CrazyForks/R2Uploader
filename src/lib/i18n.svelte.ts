@@ -32,6 +32,21 @@ export let en = $state({
     loading: "loading...",
     close: "close",
     uploading: "Uploading...",
+    delete: "Delete",
+    useSystemProxy: "Use system proxy",
+    language: "Language",
+    selectLanguage: "Select language",
+    clipboardReadError: "Failed to read clipboard content",
+    uploadError: "Upload failed, please try again",
+    noBucketWarning: "Please add a bucket in settings first",
+  },
+  settings: {
+    buckets: "Buckets",
+    language: "Language",
+    bucketDetails: {
+      bucket: "Bucket",
+      accountId: "Account ID",
+    },
   },
   uploadTargetSelector: {
     title: "Upload Target",
@@ -40,6 +55,8 @@ export let en = $state({
   textUploader: {
     textPlaceholder: "Enter text content to upload",
     filenamePlaceholder: "Enter remote filename",
+    textSeparator: "Text Content",
+    filenameSeparator: "Remote Filename",
   },
   tabSwitcher: {
     file: "Upload File",
@@ -67,6 +84,24 @@ export let en = $state({
   },
   clipboardUploader: {
     refresh: "Refresh clipboard content",
+    clipboardText: "Clipboard text",
+    clipboardHtml: "Clipboard HTML",
+    clipboardImage: "Clipboard image",
+    clipboardRtf: "Clipboard RTF",
+    clipboardFile: "Clipboard file",
+  },
+  alert: {
+    uploadSuccess: "Upload successful",
+    uploadFailed: "Upload failed, please try again",
+    getStatusFailed: "Failed to get upload status",
+    allFilesUploaded: "All files uploaded",
+  },
+  console: {
+    startPolling: "Start status polling",
+    useEffectToClearMessage: "Use effect to ensure message auto clear",
+    extendDisplayTime: "Slightly extend display time",
+    clearTimer: "Clear timer",
+    stopPollingWhenComplete: "Stop polling when all files are uploaded",
   },
 });
 
@@ -99,6 +134,21 @@ export let zh = $state({
     loading: "加载中...",
     close: "关闭",
     uploading: "上传中...",
+    delete: "删除",
+    useSystemProxy: "使用系统代理",
+    language: "语言",
+    selectLanguage: "选择语言",
+    clipboardReadError: "读取剪贴板内容失败",
+    uploadError: "上传失败，请重试",
+    noBucketWarning: "请先在设置中添加存储桶",
+  },
+  settings: {
+    buckets: "Buckets",
+    language: "Language",
+    bucketDetails: {
+      bucket: "存储桶",
+      accountId: "账户ID",
+    },
   },
   uploadTargetSelector: {
     title: "上传目标",
@@ -107,6 +157,8 @@ export let zh = $state({
   textUploader: {
     textPlaceholder: "输入要上传的文本内容",
     filenamePlaceholder: "输入远程文件名",
+    textSeparator: "文本内容",
+    filenameSeparator: "远程文件名",
   },
   tabSwitcher: {
     file: "上传文件",
@@ -134,6 +186,24 @@ export let zh = $state({
   },
   clipboardUploader: {
     refresh: "刷新剪贴板内容",
+    clipboardText: "剪贴板文本",
+    clipboardHtml: "剪贴板 HTML",
+    clipboardImage: "剪贴板图片",
+    clipboardRtf: "剪贴板 RTF",
+    clipboardFile: "剪贴板文件",
+  },
+  alert: {
+    uploadSuccess: "上传成功",
+    uploadFailed: "上传失败，请重试",
+    getStatusFailed: "获取上传状态失败",
+    allFilesUploaded: "所有文件都上传完成",
+  },
+  console: {
+    startPolling: "启动状态轮询",
+    useEffectToClearMessage: "使用 effect 确保消息自动清除",
+    extendDisplayTime: "稍微延长一点显示时间",
+    clearTimer: "清理定时器",
+    stopPollingWhenComplete: "如果所有文件都上传完成，停止轮询",
   },
 });
 

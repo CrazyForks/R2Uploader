@@ -16,8 +16,7 @@
       <p
         class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
       >
-        ------------------
-        {t().textUploader.textPlaceholder}
+        {t().textUploader.textSeparator}
       </p>
       <textarea
         bind:value={textContent}
@@ -30,12 +29,12 @@
       <p
         class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
       >
-      -------------------------
+        {t().textUploader.filenameSeparator}
       </p>
       <input
         bind:value={remoteFileName}
         class="w-full rounded-lg bg-slate-50 p-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none dark:bg-slate-700"
-        placeholder="输入远程文件名"
+        placeholder={t().textUploader.filenamePlaceholder}
       />
     </div>
   </div>

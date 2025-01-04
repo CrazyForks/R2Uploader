@@ -35,7 +35,7 @@
 
   <div class="settings-section">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">Buckets</h2>
+      <h2 class="section-title">{t().settings.buckets}</h2>
       <AddRemoteTargetModal onclose={onAddBucketClose} />
     </div>
     <div class="targets-list">
@@ -45,15 +45,15 @@
         >
           <div class="flex-1">
             <div class="target-details">
-              <p>Bucket: {bucket.bucketName}</p>
-              <p>Account ID: {bucket.accountId}</p>
+              <p>{t().settings.bucketDetails.bucket}: {bucket.bucketName}</p>
+              <p>{t().settings.bucketDetails.accountId}: {bucket.accountId}</p>
             </div>
           </div>
           <button
             class="button button-danger text-sm"
             onclick={() => deleteTarget(bucket.id!)}
           >
-            Delete
+            {t().common.delete}
           </button>
         </div>
       {/each}
@@ -62,7 +62,7 @@
 
   <div class="settings-section">
     <div class="flex items-center justify-between">
-      <span class="text-sm">使用系统代理</span>
+      <span class="text-sm">{t().common.useSystemProxy}</span>
       <label class="relative inline-flex cursor-pointer items-center">
         <input
           type="checkbox"
@@ -75,7 +75,7 @@
 
   <div class="settings-section">
     <div class="flex items-center justify-between">
-      <span class="text-sm">Language</span>
+      <span class="text-sm">{t().settings.language}</span>
       <Select.Root
         items={languages}
         onSelectedChange={(selected) => {
@@ -85,7 +85,7 @@
         }}
       >
         <Select.Trigger class="select-trigger">
-          <Select.Value placeholder="选择语言" />
+          <Select.Value placeholder={t().common.selectLanguage} />
           <ChevronsUpDown
             class="dark-text-slate-300 ml-auto size-4 text-slate-400"
           />

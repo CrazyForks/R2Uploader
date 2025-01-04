@@ -25,20 +25,20 @@
     onclick={() => onTabChange("folder")}
     class="btn-tab"
   >
-    <Folder class="size-5" /> 上传文件夹
+    <Folder class="size-5" /> {t().tabSwitcher.folder}
   </button>
   <button
     class:btn-tab-active={activeTab === "text"}
     onclick={() => onTabChange("text")}
     class="btn-tab"
   >
-    <FileText class="size-5" /> 上传文本
+    <FileText class="size-5" /> {t().tabSwitcher.text}
   </button>
   <button
     class:btn-tab-active={activeTab === "clipboard"}
     onclick={() => onTabChange("clipboard")}
     class="btn-tab"
   >
-    <Clipboard class="size-5" /> 剪贴板
+    <Clipboard class="size-5" /> {t().tabSwitcher.clipboard}
   </button>
 </div>
