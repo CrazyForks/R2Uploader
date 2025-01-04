@@ -2,6 +2,8 @@
   import db from "$lib/db";
   import { modalState } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
+  import { ArrowLeft, HelpCircle } from "lucide-svelte";
+  let showHelp = $state(false);
 
   let {
     bucket = $bindable({
@@ -19,7 +21,6 @@
     onclose?: () => void;
   } = $props();
 
-  // 解析 S3 API URL
   function parseS3ApiUrl(url: string) {
     if (!url) return;
     try {
@@ -44,7 +45,6 @@
     }
   }
 
-  // 定义输入框的配置
   const inputConfigs = $state([
     {
       id: "s3Api",
@@ -78,11 +78,19 @@
     },
   ]);
 
-  // 上传目标管理功能
   async function saveBucket() {
     await db.buckets.put({
       ...bucket,
     });
+
+    closeModal();
+  }
+
+  function closeModal() {
+    if (onclose) {
+      onclose();
+    }
+    modalState.isShow = false;
     bucket = {
       type: "r2",
       bucketName: "",
@@ -91,15 +99,6 @@
       secretKey: "",
       customDomain: "",
     };
-    closeModal();
-  }
-
-  function closeModal() {
-    if (onclose) {
-      onclose();
-    }
-    // 关闭模态框
-    modalState.isShow = false;
   }
 
   function show() {
@@ -109,50 +108,72 @@
 </script>
 
 {#snippet content()}
-  <h3>Add bucket</h3>
-  <div class="space-y-6">
-    <!-- 动态生成输入框 -->
-    {#each inputConfigs as config}
-      <div class="input-container">
-        <input
-          bind:value={bucket[config.id]}
-          type="text"
-          id={config.id}
-          class="input-field"
-          onfocus={() => (config.focused = true)}
-          onblur={() => (config.focused = false)}
-          onchange={(e: Event) => {
-            if (config.id === "s3Api") {
-              const target = e.target as HTMLInputElement;
-              parseS3ApiUrl(target.value);
-            }
-          }}
-        />
-        <label
-          for={config.id}
-          class="input-label"
-          class:input-label-active={config.focused || bucket[config.id]}
-        >
-          {config.label}
-        </label>
+  {#if showHelp}
+    <div class="space-y-4">
+      <div class="flex items-center gap-2">
+        <button class="button" onclick={() => (showHelp = false)}>
+          <ArrowLeft size={20} />
+        </button>
+        <p>如何使用</p>
       </div>
-    {/each}
-  </div>
-  <div class="mt-8 flex justify-end space-x-2">
-    <button onclick={closeModal} class="button button-primary">Cancel</button>
-    <button onclick={saveBucket} class="button button-primary">Save</button>
-  </div>
+      <div class="space-y-2 text-sm text-gray-600">
+        <p>
+          1. 输入 S3 API
+          URL，格式为：https://[accountId].r2.cloudflarestorage.com/[bucketName]
+        </p>
+        <p>2. 如果已有 Bucket Name 和 Account ID，可以直接填写</p>
+        <p>3. 输入 Access Key 和 Secret Key 进行身份验证</p>
+        <p>4. 可选：填写自定义域名（Custom Domain）</p>
+        <p>5. 点击 Save 保存配置</p>
+      </div>
+    </div>
+  {:else}
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <p>Add bucket</p>
+        <button class="button" onclick={() => (showHelp = true)}>
+          <HelpCircle size={20} />
+        </button>
+      </div>
+
+      {#each inputConfigs as config}
+        <div class="relative">
+          <input
+            bind:value={bucket[config.id]}
+            type="text"
+            id={config.id}
+            class="input-field"
+            onfocus={() => (config.focused = true)}
+            onblur={() => (config.focused = false)}
+            onchange={(e: Event) => {
+              if (config.id === "s3Api") {
+                const target = e.target as HTMLInputElement;
+                parseS3ApiUrl(target.value);
+              }
+            }}
+          />
+          <label
+            for={config.id}
+            class="input-label"
+            class:input-label-active={config.focused || bucket[config.id]}
+          >
+            {config.label}
+          </label>
+        </div>
+      {/each}
+    </div>
+    <div class="mt-8 flex justify-end space-x-2">
+      <button onclick={closeModal} class="button button-primary">Cancel</button>
+      <button onclick={saveBucket} class="button button-primary">Save</button>
+    </div>
+  {/if}
 {/snippet}
 
 <button class="button button-primary" onclick={show}>Add New</button>
 
 <style lang="postcss">
-  .input-container {
-    @apply relative mb-6;
-  }
-
   .input-field {
-    @apply w-full border-0 border-b border-gray-300 py-2 transition-colors outline-none;
+    @apply w-full border-0 border-b border-gray-300 py-1 transition-colors outline-none;
   }
 
   .input-field:focus {
@@ -164,6 +185,6 @@
   }
 
   .input-label-active {
-    @apply -translate-y-5 text-sm text-slate-500 opacity-100;
+    @apply -translate-y-5 text-sm text-cyan-500 opacity-100;
   }
 </style>

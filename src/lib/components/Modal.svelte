@@ -27,15 +27,13 @@
 
 <dialog
   id="modal"
-  class="modal modal-bottom sm:modal-middle mx-auto max-w-md"
+  class="modal modal-bottom sm:modal-middle"
   bind:this={modal}
   {onclose}
 >
   <div class="modal-box">
     {#if isLoading}
-      <div class="flex h-full w-full items-center justify-center p-2">
-        loading...
-      </div>
+      <div class="flex h-full items-center justify-center p-2">loading...</div>
     {:else}
       {@render modalState.children?.()}
     {/if}
