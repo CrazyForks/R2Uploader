@@ -1,15 +1,5 @@
 import Dexie from "dexie";
-
-export interface UploadTarget {
-  id?: number;
-  name: string;
-  description: string;
-  type: "r2";
-  bucketName: string;
-  accountId: string;
-  accessKey: string;
-  secretKey: string;
-}
+import type { Bucket } from "./type";
 
 export interface UploadHistory {
   id?: number;
@@ -20,13 +10,13 @@ export interface UploadHistory {
 }
 
 class AppDatabase extends Dexie {
-  uploadTargets!: Dexie.Table<UploadTarget, number>;
+  buckets!: Dexie.Table<Bucket, number>;
   uploadHistory!: Dexie.Table<UploadHistory, number>;
 
   constructor() {
     super("AppDatabase");
     this.version(2).stores({
-      uploadTargets: "++id, name, type",
+      buckets: "++id, bucketName",
       uploadHistory: "++id, fileName, remoteFileName, target, timestamp",
     });
   }

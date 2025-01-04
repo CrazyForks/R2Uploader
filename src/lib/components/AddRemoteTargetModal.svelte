@@ -1,54 +1,61 @@
 <script lang="ts">
   import db from "$lib/db";
   import { modalState } from "$lib/store.svelte";
+  import type { Bucket } from "$lib/type";
+
+  let {
+    bucket = {
+      type: "r2",
+      bucketName: "",
+      accountId: "",
+      accessKey: "",
+      secretKey: "",
+      customDomain: "",
+    },
+  }: {
+    bucket?: Bucket;
+  } = $props();
 
   // 定义输入框的配置
   const inputConfigs = $state([
     {
       id: "bucketName",
       label: "Bucket Name",
-      value: "",
+      value: bucket.bucketName,
+      focused: false,
     },
     {
       id: "accountId",
       label: "Account ID",
-      value: "",
+      value: bucket.accountId,
+      focused: false,
     },
     {
       id: "accessKey",
       label: "Access Key",
-      value: "",
+      value: bucket.accessKey,
+      focused: false,
     },
     {
       id: "secretKey",
       label: "Secret Key",
-      value: "",
+      value: bucket.secretKey,
+      focused: false,
+    },
+    {
+      id: "customDomain",
+      label: "Custom Domain",
+      value: bucket.customDomain,
+      focused: false,
     },
   ]);
 
-  let newTarget = {
-    name: "",
-    description: "",
-    bucketName: "",
-    accountId: "",
-    accessKey: "",
-    secretKey: "",
-  };
-
   // 上传目标管理功能
-  async function addTarget() {
-    const id = await db.uploadTargets.add({
-      ...newTarget,
-      type: "r2",
+  async function saveBucket() {
+    await db.buckets.put({
+      ...bucket,
     });
-    newTarget = {
-      name: "",
-      description: "",
-      bucketName: "",
-      accountId: "",
-      accessKey: "",
-      secretKey: "",
-    };
+    closeModal();
   }
 
   function closeModal() {
@@ -73,11 +80,13 @@
           type="text"
           id={config.id}
           class="input-field"
+          onfocus={() => (config.focused = true)}
+          onblur={() => (config.focused = false)}
         />
         <label
           for={config.id}
           class="input-label"
-          class:input-label-active={config.value}
+          class:input-label-active={config.focused || config.value}
         >
           {config.label}
         </label>
@@ -86,7 +95,7 @@
   </div>
   <div class="mt-8 flex justify-end space-x-2">
     <button onclick={closeModal} class="button button-primary">Cancel</button>
-    <button onclick={addTarget} class="button button-primary">Save</button>
+    <button onclick={saveBucket} class="button button-primary">Save</button>
   </div>
 {/snippet}
 

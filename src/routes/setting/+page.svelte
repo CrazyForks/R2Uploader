@@ -7,28 +7,21 @@
     removeCustomProxy,
     selectCustomProxy,
   } from "$lib/store.svelte";
+  import type { Bucket } from "$lib/type";
   import { onMount } from "svelte";
   let showAddProxyModal = false;
   let showAddTargetModal = false;
 
   // 上传目标管理相关状态
-  let targets: Array<{
-    id?: number;
-    name: string;
-    description: string;
-    bucketName: string;
-    accountId: string;
-    accessKey: string;
-    secretKey: string;
-  }> = [];
+  let buckets: Array<Bucket> = [];
 
   onMount(async () => {
-    targets = await db.uploadTargets.toArray();
+    buckets = await db.buckets.toArray();
   });
 
   async function deleteTarget(id: number) {
-    await db.uploadTargets.delete(id);
-    targets = await db.uploadTargets.toArray();
+    await db.buckets.delete(id);
+    buckets = await db.buckets.toArray();
   }
 </script>
 
@@ -41,19 +34,19 @@
       <AddRemoteTargetModal />
     </div>
     <div class="targets-list">
-      {#each targets as target}
+      {#each buckets as bucket}
         <div
           class="flex items-center justify-between border-b border-slate-600 px-2 py-1 last:border-b-0"
         >
           <div class="flex-1">
             <div class="target-details">
-              <p>Bucket: {target.bucketName}</p>
-              <p>Account ID: {target.accountId}</p>
+              <p>Bucket: {bucket.bucketName}</p>
+              <p>Account ID: {bucket.accountId}</p>
             </div>
           </div>
           <button
             class="button button-danger text-sm"
-            onclick={() => deleteTarget(target.id!)}
+            onclick={() => deleteTarget(bucket.id!)}
           >
             Delete
           </button>
