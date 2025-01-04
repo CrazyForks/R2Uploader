@@ -58,7 +58,7 @@
       <label class="relative inline-flex cursor-pointer items-center">
         <input
           type="checkbox"
-          class="toggle checked:border-cyan-600 checked:bg-cyan-500"
+          class="toggle border-slate-600 checked:border-cyan-600 checked:bg-cyan-500 checked:text-white"
           bind:checked={appSettings.useSystemProxy}
         />
       </label>

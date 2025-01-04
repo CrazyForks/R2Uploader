@@ -67,10 +67,10 @@
 
 <style lang="postcss">
   .sidebar-link {
-    @apply flex cursor-pointer items-center gap-3 px-4 py-3 text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700;
+    @apply flex cursor-pointer items-center gap-3 px-4 py-3 text-slate-700 transition-colors dark:text-slate-200;
   }
 
   .sidebar-link[aria-current] {
-    @apply bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
+    @apply bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400;
   }
 </style>

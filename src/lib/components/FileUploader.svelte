@@ -227,7 +227,7 @@
           <p>您的存储桶已就绪</p>
           <div>
             拖放或
-            <button onclick={openFile} class="cursor-pointer pl-2 text-blue-500"
+            <button onclick={openFile} class="cursor-pointer pl-2 text-cyan-500"
               >点击选择文件</button
             >
           </div>
@@ -268,7 +268,7 @@
             <input
               type="checkbox"
               bind:checked={file.selected}
-              class="size-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+              class="size-4 rounded-md border-slate-300 text-cyan-600 focus:ring-cyan-500 dark:border-slate-600 dark:bg-slate-700"
             />
             <div class="flex-1">
               <div class="flex items-center gap-2">
@@ -300,7 +300,7 @@
 
 <style lang="postcss">
   .input {
-    @apply rounded-md bg-white/80 px-2 py-1 text-sm backdrop-blur-sm transition-all placeholder:text-slate-400/60 focus:ring-2 focus:ring-blue-500/50 focus:outline-none dark:bg-slate-700/80 dark:placeholder:text-slate-400/50 dark:focus:ring-blue-500/30;
+    @apply rounded-md bg-white/80 px-2 py-1 text-sm backdrop-blur-sm transition-all placeholder:text-slate-400/60 focus:ring-2 focus:ring-cyan-500/50 focus:outline-none dark:bg-slate-700/80 dark:placeholder:text-slate-400/50 dark:focus:ring-cyan-500/30;
   }
 
   .action-button {

@@ -207,7 +207,7 @@
 <style lang="postcss">
   /* Bits UI Select 样式 */
   :global(.select-trigger) {
-    @apply flex min-w-48 cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200;
+    @apply flex min-w-48 cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-cyan-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200;
   }
 
   :global(.select-trigger[disabled]) {
@@ -223,6 +223,6 @@
   }
 
   :global(.select-item[data-highlighted]) {
-    @apply bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
+    @apply bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400;
   }
 </style>
