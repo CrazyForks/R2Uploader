@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine};
 use dashmap::DashMap;
 use mime_guess::from_path;
 use once_cell::sync::Lazy;
@@ -36,16 +37,16 @@ pub fn get_proxy() -> Result<reqwest::Proxy, String> {
 pub async fn preview_file(path: String) -> Result<String, String> {
     let metadata = tokio::fs::metadata(&path)
         .await
-        .map_err(|e| format!("无法获取文件元数据: {}", e))?;
-    
+        .map_err(|e| format!("无法获取文件元数据：{}", e))?;
+
     if metadata.len() > 10 * 1024 * 1024 {
-        return Err("文件大小超过10MB限制".to_string());
+        return Err("文件大小超过 10MB 限制".to_string());
     }
 
     if path.ends_with(".txt") {
         let content = tokio::fs::read_to_string(&path)
             .await
-            .map_err(|e| format!("无法读取文件: {}", e))?;
+            .map_err(|e| format!("无法读取文件：{}", e))?;
         let lines: Vec<&str> = content.lines().take(100).collect();
         return Ok(lines.join("\n"));
     }
@@ -53,8 +54,8 @@ pub async fn preview_file(path: String) -> Result<String, String> {
     if path.ends_with(".png") || path.ends_with(".jpg") || path.ends_with(".jpeg") {
         let data = tokio::fs::read(&path)
             .await
-            .map_err(|e| format!("无法读取图片文件: {}", e))?;
-        let base64 = base64::encode(data);
+            .map_err(|e| format!("无法读取图片文件：{}", e))?;
+        let base64 = general_purpose::STANDARD.encode(data);
         return Ok(format!(
             "data:image/{};base64,{}",
             path.split('.').last().unwrap_or("png"),

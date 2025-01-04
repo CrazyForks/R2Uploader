@@ -165,33 +165,35 @@
     </LinkPreview.Trigger>
     <LinkPreview.Content side="top">
       <div
-        class="w-[320px] space-y-2 rounded-md bg-white/80 p-4 shadow-lg backdrop-blur-sm dark:bg-slate-800/80"
+        class="w-80 space-y-2 rounded-lg bg-slate-50/90 p-4 shadow-md backdrop-blur-sm dark:bg-slate-800/80"
       >
-        {#if previewLoading}
-          <div class="flex items-center justify-center p-4">
-            <div
-              class="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"
-            ></div>
-          </div>
-        {:else if previewError}
-          <div class="text-sm text-red-500">{previewError}</div>
-        {:else if previewContent}
-          {#if file.filename.endsWith(".png") || file.filename.endsWith(".jpg") || file.filename.endsWith(".jpeg")}
-            <img
-              src={previewContent}
-              alt="文件预览"
-              class="max-h-[200px] max-w-[300px] object-contain"
-            />
-          {:else if file.filename.endsWith(".txt")}
-            <div
-              class="max-h-[200px] overflow-y-auto rounded bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
-            >
-              {#each previewContent.split("\n") as line}
-                <div>{line}</div>
-              {/each}
+        <div class="flex items-center justify-center">
+          {#if previewLoading}
+            <div class="flex items-center justify-center p-4">
+              <div
+                class="size-8 animate-spin rounded-full border-b-2 border-gray-900"
+              ></div>
             </div>
+          {:else if previewError}
+            <div class="text-sm text-red-500">{previewError}</div>
+          {:else if previewContent}
+            {#if file.filename.endsWith(".png") || file.filename.endsWith(".jpg") || file.filename.endsWith(".jpeg")}
+              <img
+                src={previewContent}
+                alt="文件预览"
+                class="max-h-48 max-w-48 rounded object-contain"
+              />
+            {:else if file.filename.endsWith(".txt")}
+              <div
+                class="max-h-48 overflow-y-auto rounded bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
+              >
+                {#each previewContent.split("\n") as line}
+                  <div>{line}</div>
+                {/each}
+              </div>
+            {/if}
           {/if}
-        {/if}
+        </div>
 
         <div class="space-y-2 text-xs">
           <div class="flex items-center justify-between">
