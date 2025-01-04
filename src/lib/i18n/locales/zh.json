@@ -19,5 +19,46 @@
       "secretKey": "Secret Key",
       "customDomain": "自定义域名"
     }
+  },
+  "common": {
+    "upload": "上传",
+    "setting": "设置",
+    "loading": "加载中...",
+    "close": "关闭"
+  },
+  "uploadTargetSelector": {
+    "title": "上传目标",
+    "placeholder": "选择上传目标"
+  },
+  "textUploader": {
+    "textPlaceholder": "输入要上传的文本内容",
+    "filenamePlaceholder": "输入远程文件名"
+  },
+  "tabSwitcher": {
+    "file": "上传文件",
+    "folder": "上传文件夹",
+    "text": "上传文本",
+    "clipboard": "剪贴板"
+  },
+  "fileUploader": {
+    "previewFailed": "预览失败",
+    "uploadSuccess": "上传成功",
+    "uploadFailed": "上传失败，请重试",
+    "filePreview": "文件预览",
+    "filename": "文件名",
+    "remotePath": "远程路径",
+    "bucketReady": "您的存储桶已就绪",
+    "dragDrop": "拖放或",
+    "clickToSelect": "点击选择文件",
+    "globalPath": "全局路径",
+    "remotePathPlaceholder": "远程路径",
+    "filenamePlaceholder": "远程文件名"
+  },
+  "fileDrag": {
+    "dragHere": "拖动文件到此",
+    "releaseToConfirm": "松手即可确认"
+  },
+  "clipboardUploader": {
+    "refresh": "刷新剪贴板内容"
   }
 }

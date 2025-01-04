@@ -19,5 +19,46 @@
       "secretKey": "Secret Key",
       "customDomain": "Custom Domain"
     }
+  },
+  "common": {
+    "upload": "Upload",
+    "setting": "Setting",
+    "loading": "loading...",
+    "close": "close"
+  },
+  "uploadTargetSelector": {
+    "title": "Upload Target",
+    "placeholder": "Select upload target"
+  },
+  "textUploader": {
+    "textPlaceholder": "Enter text content to upload",
+    "filenamePlaceholder": "Enter remote filename"
+  },
+  "tabSwitcher": {
+    "file": "Upload File",
+    "folder": "Upload Folder",
+    "text": "Upload Text",
+    "clipboard": "Clipboard"
+  },
+  "fileUploader": {
+    "previewFailed": "Preview failed",
+    "uploadSuccess": "Upload successful",
+    "uploadFailed": "Upload failed, please try again",
+    "filePreview": "File preview",
+    "filename": "Filename",
+    "remotePath": "Remote path",
+    "bucketReady": "Your bucket is ready",
+    "dragDrop": "Drag and drop or",
+    "clickToSelect": "click to select files",
+    "globalPath": "Global path",
+    "remotePathPlaceholder": "Remote path",
+    "filenamePlaceholder": "Remote filename"
+  },
+  "fileDrag": {
+    "dragHere": "Drag files here",
+    "releaseToConfirm": "Release to confirm"
+  },
+  "clipboardUploader": {
+    "refresh": "Refresh clipboard content"
   }
 }

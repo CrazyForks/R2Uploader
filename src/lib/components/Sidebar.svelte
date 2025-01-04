@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { appSettings } from "$lib/store.svelte";
+  import { t } from "$lib/i18n/i18n";
   import {
     PanelRightClose,
     PanelRightOpen,
@@ -46,7 +47,7 @@
       >
         <Plus class="size-5" />
         {#if !appSettings.sidebarCollapsed}
-          <span class="text-nowrap">Upload</span>
+          <span class="text-nowrap">{$t('common.upload')}</span>
         {/if}
       </a>
     </li>
@@ -58,7 +59,7 @@
       >
         <Settings class="size-5" />
         {#if !appSettings.sidebarCollapsed}
-          <span class="text-nowrap">Setting</span>
+          <span class="text-nowrap">{$t('common.setting')}</span>
         {/if}
       </a>
     </li>

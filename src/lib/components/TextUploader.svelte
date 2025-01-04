@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n/i18n";
+  
   let {
     textContent,
     remoteFileName,
@@ -14,7 +16,7 @@
       <p
         class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
       >
-        文本内容
+        {$t('textUploader.textLabel')}
       </p>
       <textarea
         bind:value={textContent}
@@ -27,7 +29,7 @@
       <p
         class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
       >
-        远程文件名
+        {$t('textUploader.filenameLabel')}
       </p>
       <input
         bind:value={remoteFileName}

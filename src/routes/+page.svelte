@@ -193,15 +193,9 @@
       {#if uploadStatus === "uploading"}
         {$t("common.uploading")}
       {:else}
-        <Check class="size-6" />{$t("common.confirm_upload")}
+        <Check class="size-6" />{$t("common.upload")}
       {/if}
     </button>
-
-    {#if uploadStatus === "error"}
-      <button onclick={uploadFile} class="btn btn-default w-full">
-        {$t("common.retry_upload")}
-      </button>
-    {/if}
   </div>
 </div>
 
