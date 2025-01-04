@@ -1,14 +1,20 @@
 <script lang="ts">
   import { Upload, X, GripVertical, Eye, UploadCloud } from "lucide-svelte";
+  import { open } from "@tauri-apps/plugin-dialog";
   import { tick } from "svelte";
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
+  import { invoke } from "@tauri-apps/api/core";
+  import { setAlert } from "$lib/store.svelte";
+  import type { Selected } from "bits-ui";
+  import { sep } from "@tauri-apps/api/path";
 
   let {
     files = $bindable([]),
-    onFileSelect,
-    onRemove,
-    onRemoveAll,
+    uploadStatus = $bindable("idle"),
+    uploadStatusMap = $bindable({}),
+    intervalId = $bindable<number | undefined>(),
+    selectedTarget,
   }: {
     files: {
       id: string;
@@ -17,10 +23,18 @@
       remoteFilenamePrefix: string;
       selected?: boolean;
     }[];
-    onFileSelect: () => void;
-    onRemove: (index: number) => void;
-    onRemoveAll: () => void;
+    uploadStatus?: "idle" | "uploading" | "success" | "error";
+    uploadStatusMap?: Record<string, string>;
+    intervalId?: number | undefined;
+    selectedTarget?: Selected<{
+      bucketName: string;
+      accountId: string;
+      accessKey: string;
+      secretKey: string;
+    }>;
   } = $props();
+
+  let showUploadButton = $derived(files.length > 0);
 
   let showBigMenu = $derived(!files.length);
   let oldPrefix = $state("");
@@ -41,6 +55,75 @@
     });
     oldPrefix = prefix;
   }
+
+  async function checkUploadStatus() {
+    try {
+      const status = await invoke<Record<string, string>>("get_upload_status");
+      uploadStatusMap = status;
+
+      // 如果所有文件都上传完成，停止轮询
+      if (Object.keys(status).length === 0) {
+        clearInterval(intervalId);
+        intervalId = undefined;
+        uploadStatus = "success";
+        setAlert("上传成功");
+        files = [];
+      }
+    } catch (error) {
+      console.error("获取上传状态失败：", error);
+    }
+  }
+
+  async function uploadFile() {
+    if (!selectedTarget) return;
+    try {
+      uploadStatus = "uploading";
+
+      const filesToUpload = files.map((file) => ({
+        id: file.id,
+        source: { filePath: file.filename },
+        remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
+      }));
+
+      await invoke("r2_upload", {
+        bucketName: selectedTarget.value.bucketName,
+        accountId: selectedTarget.value.accountId,
+        accessKey: selectedTarget.value.accessKey,
+        secretKey: selectedTarget.value.secretKey,
+        files: filesToUpload,
+      });
+
+      // 启动状态轮询
+      if (!intervalId) {
+        intervalId = setInterval(checkUploadStatus, 500);
+      }
+    } catch (error: unknown) {
+      console.error(error);
+      uploadStatus = "error";
+      setAlert("上传失败，请重试");
+    }
+  }
+
+  async function openFile() {
+    const dialogFiles = await open({
+      multiple: true,
+      directory: false,
+    });
+    if (dialogFiles) {
+      dialogFiles.forEach((file) => {
+        files.push({
+          id: file,
+          filename: file,
+          remoteFilename: file.split(sep()).pop() || "unknown",
+          remoteFilenamePrefix: "",
+        });
+      });
+    }
+  }
+
+  function removeFile(index: number) {
+    files.splice(index, 1);
+  }
 </script>
 
 <div
@@ -54,9 +137,8 @@
           <p>您的存储桶已就绪</p>
           <div>
             拖放或
-            <button
-              onclick={onFileSelect}
-              class="cursor-pointer pl-2 text-blue-500">点击选择文件</button
+            <button onclick={openFile} class="cursor-pointer pl-2 text-blue-500"
+              >点击选择文件</button
             >
           </div>
         </div>
@@ -115,7 +197,7 @@
               <button class="action-button">
                 <Eye class="size-4" />
               </button>
-              <button onclick={() => onRemove(index)} class="action-button">
+              <button onclick={() => removeFile(index)} class="action-button">
                 <X class="size-4" />
               </button>
             </div>

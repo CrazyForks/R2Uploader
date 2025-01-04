@@ -7,40 +7,30 @@
   import { setAlert } from "$lib/store.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { sep } from "@tauri-apps/api/path";
-  import { open } from "@tauri-apps/plugin-dialog";
   import type { Selected } from "bits-ui";
   import { Check } from "lucide-svelte";
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
 
-  let files: {
-    id: string;
-    filename: string;
-    remoteFilename: string;
-    remoteFilenamePrefix: string;
-  }[] = $state([]);
   let dialogFiles: string[] = [];
   let textContent = $state("");
   let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
+  let files = $state<{
+    id: string;
+    filename: string;
+    remoteFilename: string;
+    remoteFilenamePrefix: string;
+  }[]>([]);
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
   let uploadStatusMap = $state<Record<string, string>>({});
-  let intervalId = $state<number>();
+  let intervalId = $state<number | undefined>();
+
   let clipboardFiles = $state<string[]>([]);
   let clipboardText = $state("");
   let clipboardHtml = $state("");
   let clipboardImage = $state("");
   let clipboardRtf = $state("");
-  let showUploadButton = $derived(
-    (activeTab === "file" && files.length > 0) ||
-      (activeTab === "text" && !!textContent) ||
-      (activeTab === "clipboard" &&
-        (!!clipboardFiles.length ||
-          !!clipboardText ||
-          !!clipboardHtml ||
-          !!clipboardImage ||
-          !!clipboardRtf)),
-  );
   let uploadTargets: Selected<UploadTarget>[] = $state([]);
   let selectedTarget: Selected<UploadTarget> | undefined = $state();
 
@@ -88,33 +78,8 @@
     files.splice(index, 1);
   }
 
-  function handleAddPrefix(prefix: string) {
-    files = files.map((file) => ({
-      ...file,
-      remoteFilename: prefix + file.remoteFilename,
-    }));
-  }
-
   function handleRemoveAll() {
     files = [];
-  }
-
-  async function openFile() {
-    const dialogFiles = await open({
-      multiple: true,
-      directory: false,
-    });
-    if (dialogFiles) {
-      console.log("dialog files: ", dialogFiles);
-      dialogFiles.forEach((file) => {
-        files.push({
-          id: file,
-          filename: file,
-          remoteFilename: file.split(sep()).pop() || "unknown",
-          remoteFilenamePrefix: "",
-        });
-      });
-    }
   }
 
   async function checkUploadStatus() {
@@ -199,9 +164,10 @@
       {#if activeTab === "file"}
         <FileUploader
           bind:files
-          onFileSelect={openFile}
-          onRemove={removeFile}
-          onRemoveAll={handleRemoveAll}
+          bind:uploadStatus
+          bind:uploadStatusMap
+          bind:intervalId
+          {selectedTarget}
         />
       {:else if activeTab === "text"}
         <!-- <TextUploader
@@ -222,27 +188,25 @@
     </div>
   </div>
 
-  {#if showUploadButton}
-    <div class="space-y-2 pt-4">
-      <button
-        onclick={uploadFile}
-        class="btn btn-primary w-full"
-        disabled={uploadStatus === "uploading"}
-      >
-        {#if uploadStatus === "uploading"}
-          上传中...
-        {:else}
-          <Check class="size-6" />确认上传
-        {/if}
-      </button>
-
-      {#if uploadStatus === "error"}
-        <button onclick={uploadFile} class="btn btn-default w-full">
-          重试上传
-        </button>
+  <div class="space-y-2 pt-4">
+    <button
+      onclick={uploadFile}
+      class="btn btn-primary w-full"
+      disabled={uploadStatus === "uploading"}
+    >
+      {#if uploadStatus === "uploading"}
+        上传中...
+      {:else}
+        <Check class="size-6" />确认上传
       {/if}
-    </div>
-  {/if}
+    </button>
+
+    {#if uploadStatus === "error"}
+      <button onclick={uploadFile} class="btn btn-default w-full">
+        重试上传
+      </button>
+    {/if}
+  </div>
 </div>
 
 <style lang="postcss">
