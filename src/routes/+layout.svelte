@@ -31,7 +31,7 @@
     }
   });
 
-  $inspect(appSettings.locale)
+  // $inspect(appSettings.locale)
 
   $effect(() => {
     db.appSettings.put({

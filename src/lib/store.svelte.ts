@@ -33,7 +33,13 @@ export function setDragPaths(paths: string[]) {
 }
 
 // app settings
-export let appSettings = $state({
+interface AppSettings {
+  sidebarCollapsed: boolean;
+  useSystemProxy: boolean;
+  locale: string;
+}
+
+export let appSettings = $state<AppSettings>({
   sidebarCollapsed: false,
   useSystemProxy: true,
   locale: "en",
@@ -45,5 +51,6 @@ export async function initAppSettings() {
   if (settings) {
     appSettings.sidebarCollapsed = settings.sidebarCollapsed;
     appSettings.useSystemProxy = settings.useSystemProxy;
+    appSettings.locale = settings.locale || "en";
   }
 }

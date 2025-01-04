@@ -13,6 +13,7 @@ export interface AppSettings {
   id?: number;
   sidebarCollapsed: boolean;
   useSystemProxy: boolean;
+  locale: string;
 }
 
 class AppDatabase extends Dexie {
@@ -22,10 +23,10 @@ class AppDatabase extends Dexie {
 
   constructor() {
     super("AppDatabase");
-    this.version(3).stores({
+    this.version(4).stores({
       buckets: "++id, bucketName",
       uploadHistory: "++id, fileName, remoteFileName, target, timestamp",
-      appSettings: "++id, sidebarCollapsed, useSystemProxy"
+      appSettings: "++id, sidebarCollapsed, useSystemProxy, locale"
     });
   }
 }
