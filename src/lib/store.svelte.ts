@@ -31,47 +31,8 @@ export function setDragPaths(paths: string[]) {
   dragState.paths = paths;
 }
 
-// 代理相关状态
-export const proxySettings = $state({
-  proxyType: "system", // system | custom | none
-  customProxies: [] as Array<{
-    id: string;
-    host: string;
-    port: number;
-    username?: string;
-    password?: string;
-  }>,
-  selectedCustomProxyId: null as string | null,
+// app settings
+export let appSettings = $state({
+  sidebarCollapsed: false,
+  useSystemProxy: true,
 });
-
-export function addCustomProxy(proxy: {
-  host: string;
-  port: number;
-  username?: string;
-  password?: string;
-}) {
-  proxySettings.customProxies = [
-    ...proxySettings.customProxies,
-    {
-      id: crypto.randomUUID(),
-      ...proxy,
-    },
-  ];
-}
-
-export function removeCustomProxy(id: string) {
-  proxySettings.customProxies = proxySettings.customProxies.filter(
-    (p) => p.id !== id,
-  );
-  if (proxySettings.selectedCustomProxyId === id) {
-    proxySettings.selectedCustomProxyId = null;
-  }
-}
-
-export function selectCustomProxy(id: string) {
-  proxySettings.selectedCustomProxyId = id;
-}
-
-export function setProxyType(type: "system" | "custom" | "none") {
-  proxySettings.proxyType = type;
-}

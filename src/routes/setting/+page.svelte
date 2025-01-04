@@ -1,15 +1,10 @@
 <script lang="ts">
   import AddRemoteTargetModal from "$lib/components/AddBucket.svelte";
   import db from "$lib/db";
-  import {
-    addCustomProxy,
-    proxySettings,
-    removeCustomProxy,
-    selectCustomProxy,
-  } from "$lib/store.svelte";
+  import { appSettings } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
+  import { Switch } from "bits-ui";
   import { onMount } from "svelte";
-  let showAddProxyModal = false;
 
   // 上传目标管理相关状态
   let buckets: Array<Bucket> = [];
@@ -60,67 +55,8 @@
 
   <div class="settings-section">
     <h2 class="section-title">代理设置</h2>
-    <div class="radio-group">
-      <label class="radio-item">
-        <input
-          type="radio"
-          name="proxyType"
-          value="system"
-          bind:group={proxySettings.proxyType}
-        />
-        <span>使用系统代理</span>
-      </label>
-      <label class="radio-item">
-        <input
-          type="radio"
-          name="proxyType"
-          value="custom"
-          bind:group={proxySettings.proxyType}
-        />
-        <span>使用自定义代理</span>
-      </label>
-      <label class="radio-item">
-        <input
-          type="radio"
-          name="proxyType"
-          value="none"
-          bind:group={proxySettings.proxyType}
-        />
-        <span>禁用代理</span>
-      </label>
-    </div>
-
-    {#if proxySettings.proxyType === "custom"}
-      <div class="proxy-list">
-        <button class="add-button" onclick={() => (showAddProxyModal = true)}>
-          添加代理
-        </button>
-        {#each proxySettings.customProxies as proxy}
-          <div class="proxy-item">
-            <div class="proxy-info">
-              <p>{proxy.host}:{proxy.port}</p>
-              {#if proxy.username}
-                <p class="proxy-username">用户名：{proxy.username}</p>
-              {/if}
-            </div>
-            <div class="proxy-actions">
-              <input
-                type="radio"
-                name="selectedProxy"
-                checked={proxySettings.selectedCustomProxyId === proxy.id}
-                onchange={() => selectCustomProxy(proxy.id)}
-              />
-              <button
-                class="delete-button"
-                onclick={() => removeCustomProxy(proxy.id)}
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
+    <p>使用系统代理</p>
+    {appSettings.useSystemProxy}
   </div>
 </div>
 
@@ -139,34 +75,6 @@
 
   .section-title {
     @apply font-semibold dark:text-slate-200;
-  }
-
-  .radio-group {
-    @apply space-y-1;
-  }
-
-  .radio-item {
-    @apply flex cursor-pointer items-center gap-2 py-1;
-  }
-
-  .proxy-list {
-    @apply mt-2 space-y-1;
-  }
-
-  .proxy-item {
-    @apply flex items-center justify-between rounded-lg p-1 hover:bg-slate-50 dark:hover:bg-slate-700;
-  }
-
-  .proxy-info {
-    @apply text-sm;
-  }
-
-  .proxy-username {
-    @apply text-xs text-slate-500 dark:text-slate-400;
-  }
-
-  .proxy-actions {
-    @apply flex items-center gap-2;
   }
 
   .targets-list {
