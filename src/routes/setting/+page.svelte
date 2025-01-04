@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AddRemoteTargetModal from "$lib/components/AddRemoteTargetModal.svelte";
+  import AddRemoteTargetModal from "$lib/components/AddBucket.svelte";
   import db from "$lib/db";
   import {
     addCustomProxy,

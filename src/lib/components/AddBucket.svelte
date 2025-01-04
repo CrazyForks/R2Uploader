@@ -4,22 +4,53 @@
   import type { Bucket } from "$lib/type";
 
   let {
-    bucket = {
+    bucket = $bindable({
       type: "r2",
       bucketName: "",
       accountId: "",
       accessKey: "",
       secretKey: "",
       customDomain: "",
-    },
+      s3Api: "",
+    }),
     onclose,
   }: {
     bucket?: Bucket;
     onclose?: () => void;
   } = $props();
 
+  // 解析 S3 API URL
+  function parseS3ApiUrl(url: string) {
+    if (!url) return;
+    try {
+      const urlObj = new URL(url);
+      const regex =
+        /^https:\/\/([a-zA-Z0-9]+)\.r2\.cloudflarestorage\.com\/([a-zA-Z0-9-]+)\/?$/;
+      if (!regex.test(url)) {
+        alert(
+          "S3 API URL 格式不正确，请使用格式：https://{accountId}.r2.cloudflarestorage.com/{bucketName}",
+        );
+        return;
+      }
+      const accountId = urlObj.hostname.split(".")[0];
+      const bucketName = urlObj.pathname.split("/")[1];
+      bucket.accountId = accountId;
+      bucket.bucketName = bucketName;
+    } catch (e) {
+      alert(
+        "S3 API URL 格式不正确，请使用格式：https://{accountId}.r2.cloudflarestorage.com/{bucketName}",
+      );
+      console.error("Invalid S3 API URL");
+    }
+  }
+
   // 定义输入框的配置
   const inputConfigs = $state([
+    {
+      id: "s3Api",
+      label: "S3 API",
+      focused: false,
+    },
     {
       id: "bucketName",
       label: "Bucket Name",
@@ -90,6 +121,12 @@
           class="input-field"
           onfocus={() => (config.focused = true)}
           onblur={() => (config.focused = false)}
+          onchange={(e: Event) => {
+            if (config.id === "s3Api") {
+              const target = e.target as HTMLInputElement;
+              parseS3ApiUrl(target.value);
+            }
+          }}
         />
         <label
           for={config.id}
