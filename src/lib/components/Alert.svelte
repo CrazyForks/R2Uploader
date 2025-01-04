@@ -3,14 +3,12 @@
   import { quadOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
-  // {t().console.useEffectToClearMessage}
   $effect(() => {
     if (alertMessage.message) {
       const timer = setTimeout(() => {
         alertMessage.message = "";
-      }, 2000); // {t().console.extendDisplayTime}
+      }, 2000);
 
-      // {t().console.clearTimer}
       return () => clearTimeout(timer);
     }
   });

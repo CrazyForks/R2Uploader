@@ -83,7 +83,6 @@
       const status = await invoke<Record<string, string>>("get_upload_status");
       uploadStatusMap = status;
 
-      // {t().console.stopPollingWhenComplete}
       if (Object.keys(status).length === 0) {
         clearInterval(intervalId);
         intervalId = undefined;
@@ -118,9 +117,8 @@
         files: filesToUpload,
       });
 
-      // {t().console.startPolling}
       if (!intervalId) {
-        // intervalId = setInterval(checkUploadStatus, 500);
+        intervalId = window.setInterval(checkUploadStatus, 500);
       }
     } catch (error: unknown) {
       console.error(error);

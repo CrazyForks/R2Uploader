@@ -96,13 +96,6 @@ export let en = $state({
     getStatusFailed: "Failed to get upload status",
     allFilesUploaded: "All files uploaded",
   },
-  console: {
-    startPolling: "Start status polling",
-    useEffectToClearMessage: "Use effect to ensure message auto clear",
-    extendDisplayTime: "Slightly extend display time",
-    clearTimer: "Clear timer",
-    stopPollingWhenComplete: "Stop polling when all files are uploaded",
-  },
 });
 
 export let zh = $state({
@@ -147,7 +140,7 @@ export let zh = $state({
     language: "Language",
     bucketDetails: {
       bucket: "存储桶",
-      accountId: "账户ID",
+      accountId: "账户 ID",
     },
   },
   uploadTargetSelector: {
@@ -197,13 +190,6 @@ export let zh = $state({
     uploadFailed: "上传失败，请重试",
     getStatusFailed: "获取上传状态失败",
     allFilesUploaded: "所有文件都上传完成",
-  },
-  console: {
-    startPolling: "启动状态轮询",
-    useEffectToClearMessage: "使用 effect 确保消息自动清除",
-    extendDisplayTime: "稍微延长一点显示时间",
-    clearTimer: "清理定时器",
-    stopPollingWhenComplete: "如果所有文件都上传完成，停止轮询",
   },
 });
 
