@@ -12,8 +12,10 @@
       secretKey: "",
       customDomain: "",
     },
+    onclose,
   }: {
     bucket?: Bucket;
+    onclose?: () => void;
   } = $props();
 
   // 定义输入框的配置
@@ -21,31 +23,26 @@
     {
       id: "bucketName",
       label: "Bucket Name",
-      value: bucket.bucketName,
       focused: false,
     },
     {
       id: "accountId",
       label: "Account ID",
-      value: bucket.accountId,
       focused: false,
     },
     {
       id: "accessKey",
       label: "Access Key",
-      value: bucket.accessKey,
       focused: false,
     },
     {
       id: "secretKey",
       label: "Secret Key",
-      value: bucket.secretKey,
       focused: false,
     },
     {
       id: "customDomain",
       label: "Custom Domain",
-      value: bucket.customDomain,
       focused: false,
     },
   ]);
@@ -55,10 +52,21 @@
     await db.buckets.put({
       ...bucket,
     });
+    bucket = {
+      type: "r2",
+      bucketName: "",
+      accountId: "",
+      accessKey: "",
+      secretKey: "",
+      customDomain: "",
+    };
     closeModal();
   }
 
   function closeModal() {
+    if (onclose) {
+      onclose();
+    }
     // 关闭模态框
     modalState.isShow = false;
   }
@@ -76,7 +84,7 @@
     {#each inputConfigs as config}
       <div class="input-container">
         <input
-          bind:value={config.value}
+          bind:value={bucket[config.id]}
           type="text"
           id={config.id}
           class="input-field"
@@ -86,7 +94,7 @@
         <label
           for={config.id}
           class="input-label"
-          class:input-label-active={config.focused || config.value}
+          class:input-label-active={config.focused || bucket[config.id]}
         >
           {config.label}
         </label>

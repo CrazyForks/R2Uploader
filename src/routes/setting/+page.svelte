@@ -10,7 +10,6 @@
   import type { Bucket } from "$lib/type";
   import { onMount } from "svelte";
   let showAddProxyModal = false;
-  let showAddTargetModal = false;
 
   // 上传目标管理相关状态
   let buckets: Array<Bucket> = [];
@@ -23,6 +22,10 @@
     await db.buckets.delete(id);
     buckets = await db.buckets.toArray();
   }
+
+  async function onAddBucketClose() {
+    buckets = await db.buckets.toArray();
+  }
 </script>
 
 <div class="settings-container">
@@ -31,7 +34,7 @@
   <div class="settings-section">
     <div class="flex items-center justify-between">
       <h2 class="section-title">Buckets</h2>
-      <AddRemoteTargetModal />
+      <AddRemoteTargetModal onclose={onAddBucketClose} />
     </div>
     <div class="targets-list">
       {#each buckets as bucket}
