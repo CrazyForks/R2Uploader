@@ -34,18 +34,19 @@
   let clipboardHtml = $state("");
   let clipboardImage = $state("");
   let clipboardRtf = $state("");
-  let uploadTargets: Selected<Bucket>[] = $state([]);
-  let selectedTarget: Selected<Bucket> | undefined = $state();
 
-  async function getUploadTargets() {
+  let buckets: Selected<Bucket>[] = $state([]);
+  let selectedBucket: Selected<Bucket> | undefined = $state();
+
+  async function getBuckets() {
     await db.buckets.toArray().then((targets) => {
-      uploadTargets = targets.map((target) => ({
+      buckets = targets.map((target) => ({
         value: target,
         label: target.bucketName,
       }));
     });
-    if (uploadTargets.length > 0) {
-      selectedTarget = uploadTargets[0];
+    if (buckets.length > 0) {
+      selectedBucket = buckets[0];
     }
   }
 
@@ -73,7 +74,7 @@
   }
 
   onMount(async () => {
-    getUploadTargets();
+    getBuckets();
     await checkClipboardContent();
   });
 
@@ -96,7 +97,7 @@
   }
 
   async function uploadFile() {
-    if (!selectedTarget) return;
+    if (!selectedBucket) return;
     try {
       uploadStatus = "uploading";
 
@@ -110,10 +111,10 @@
       }));
 
       await invoke("r2_upload", {
-        bucketName: selectedTarget.value.bucketName,
-        accountId: selectedTarget.value.accountId,
-        accessKey: selectedTarget.value.accessKey,
-        secretKey: selectedTarget.value.secretKey,
+        bucketName: selectedBucket.value.bucketName,
+        accountId: selectedBucket.value.accountId,
+        accessKey: selectedBucket.value.accessKey,
+        secretKey: selectedBucket.value.secretKey,
         files: filesToUpload,
       });
 
@@ -135,7 +136,7 @@
   </h1>
 
   <div>
-    {#if uploadTargets.length === 0}
+    {#if buckets.length === 0}
       <div
         class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
       >
@@ -143,10 +144,10 @@
       </div>
     {:else}
       <UploadTargetSelector
-        {uploadTargets}
-        {selectedTarget}
+        uploadTargets={buckets}
+        selectedTarget={selectedBucket}
         onSelectedChange={(e) => {
-          selectedTarget = {
+          selectedBucket = {
             value: e!.value,
             label: e?.value.bucketName || "unknown",
           };
@@ -162,7 +163,7 @@
           bind:uploadStatus
           bind:uploadStatusMap
           bind:intervalId
-          {selectedTarget}
+          selectedTarget={selectedBucket}
         />
       {:else if activeTab === "text"}
         <!-- <TextUploader
@@ -186,7 +187,7 @@
   <div class="space-y-2 pt-4">
     <button
       onclick={uploadFile}
-      class="btn btn-primary w-full"
+      class="btn w-full rounded-lg bg-cyan-500"
       disabled={uploadStatus === "uploading"}
     >
       {#if uploadStatus === "uploading"}
@@ -207,7 +208,7 @@
 <style lang="postcss">
   /* Bits UI Select 样式 */
   :global(.select-trigger) {
-    @apply flex min-w-48 cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-cyan-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200;
+    @apply flex min-w-48 cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-2 text-gray-700 transition-colors hover:border-cyan-500 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200;
   }
 
   :global(.select-trigger[disabled]) {
@@ -215,7 +216,7 @@
   }
 
   :global(.select-content) {
-    @apply mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-700;
+    @apply mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-700;
   }
 
   :global(.select-item) {
