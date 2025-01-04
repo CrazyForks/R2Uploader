@@ -1,4 +1,5 @@
 import type { Snippet } from "svelte";
+import db from "./db";
 
 export let alertMessage = $state({
   message: "",
@@ -36,3 +37,23 @@ export let appSettings = $state({
   sidebarCollapsed: false,
   useSystemProxy: true,
 });
+
+// initialize app settings from database
+async function initAppSettings() {
+  const settings = await db.appSettings.get(1);
+  if (settings) {
+    appSettings.sidebarCollapsed = settings.sidebarCollapsed;
+    appSettings.useSystemProxy = settings.useSystemProxy;
+  }
+}
+
+// save app settings to database
+export async function saveAppSettings() {
+  await db.appSettings.put({
+    id: 1,
+    ...appSettings,
+  });
+}
+
+// initialize settings on load
+initAppSettings();

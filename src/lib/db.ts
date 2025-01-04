@@ -9,15 +9,23 @@ export interface UploadHistory {
   timestamp: Date;
 }
 
+export interface AppSettings {
+  id?: number;
+  sidebarCollapsed: boolean;
+  useSystemProxy: boolean;
+}
+
 class AppDatabase extends Dexie {
   buckets!: Dexie.Table<Bucket, number>;
   uploadHistory!: Dexie.Table<UploadHistory, number>;
+  appSettings!: Dexie.Table<AppSettings, number>;
 
   constructor() {
     super("AppDatabase");
-    this.version(2).stores({
+    this.version(3).stores({
       buckets: "++id, bucketName",
       uploadHistory: "++id, fileName, remoteFileName, target, timestamp",
+      appSettings: "++id, sidebarCollapsed, useSystemProxy"
     });
   }
 }

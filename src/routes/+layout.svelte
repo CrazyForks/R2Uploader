@@ -6,8 +6,9 @@
   let { children } = $props();
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { onDestroy, onMount } from "svelte";
-  import { setIsDragging } from "$lib/store.svelte";
+  import { appSettings, setIsDragging } from "$lib/store.svelte";
   import Modal from "$lib/components/Modal.svelte";
+  import db from "$lib/db";
 
   let unlisten: UnlistenFn;
 
@@ -21,6 +22,13 @@
     if (unlisten) {
       unlisten();
     }
+  });
+
+  $effect(() => {
+    db.appSettings.put({
+      id: 1,
+      ...$state.snapshot(appSettings),
+    });
   });
 </script>
 
