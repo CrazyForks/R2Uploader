@@ -9,89 +9,71 @@
     Settings,
   } from "lucide-svelte";
 
-  function getRounded() {
-    return appSettings.sidebarCollapsed ? "rounded-none" : "rounded-xl";
-  }
+  const links = [
+    { href: "/", icon: Plus, label: "common.upload" },
+    { href: "/setting", icon: Settings, label: "common.setting" },
+  ];
 </script>
 
 {#snippet Desktop()}
   <nav
-    class="hidden min-h-dvh border-r border-slate-200 bg-white transition-all md:block dark:border-slate-700 dark:bg-slate-800 {appSettings.sidebarCollapsed
-      ? 'w-12'
-      : 'w-36'}"
+    class="hidden min-h-dvh border-r border-slate-200 bg-white transition-all md:block dark:border-slate-700 dark:bg-slate-800"
+    style="width: {appSettings.sidebarCollapsed ? '3rem' : '9rem'}"
   >
-    <ul
-      class="flex flex-col items-center justify-center space-y-2 overflow-hidden"
-    >
+    <ul class="flex flex-col items-center space-y-2 overflow-hidden">
       <li
-        class="flex w-full items-center {appSettings.sidebarCollapsed
+        class="flex w-full {appSettings.sidebarCollapsed
           ? 'justify-center'
           : 'justify-end'}"
       >
         <button
           onclick={() =>
             (appSettings.sidebarCollapsed = !appSettings.sidebarCollapsed)}
-          class="sidebar-link gapped bg {getRounded()}"
+          class="sidebar-link gapped"
         >
-          {#if !appSettings.sidebarCollapsed}
-            <PanelRightOpen class="size-5" />
-          {:else}
+          {#if appSettings.sidebarCollapsed}
             <PanelRightClose class="size-5" />
+          {:else}
+            <PanelRightOpen class="size-5" />
           {/if}
         </button>
       </li>
-      <li>
-        <a
-          href="/"
-          class="sidebar-link gapped bg {getRounded()}"
-          class:min-w-28={!appSettings.sidebarCollapsed}
-          aria-current={page.route.id === "/" ? "page" : null}
-        >
-          <Plus class="size-5" />
-          {#if !appSettings.sidebarCollapsed}
-            <span class="text-nowrap">{$t("common.upload")}</span>
-          {/if}
-        </a>
-      </li>
-      <li>
-        <a
-          href="/setting"
-          class="sidebar-link gapped bg {getRounded()}"
-          class:min-w-28={!appSettings.sidebarCollapsed}
-          aria-current={page.route.id === "/setting" ? "page" : null}
-        >
-          <Settings class="size-5" />
-          {#if !appSettings.sidebarCollapsed}
-            <span class="text-nowrap">{$t("common.setting")}</span>
-          {/if}
-        </a>
-      </li>
+      {#each links as { href, icon: Icon, label }}
+        <li>
+          <a
+            {href}
+            class="sidebar-link gapped bg {appSettings.sidebarCollapsed
+              ? 'rounded-none'
+              : 'rounded-xl'}"
+            class:min-w-28={!appSettings.sidebarCollapsed}
+            aria-current={page.route.id === href ? "page" : null}
+          >
+            <Icon class="size-5" />
+            {#if !appSettings.sidebarCollapsed}
+              <span class="text-nowrap">{$t(label)}</span>
+            {/if}
+          </a>
+        </li>
+      {/each}
     </ul>
   </nav>
 {/snippet}
 
 {#snippet Mobile()}
-  <div class="fixed right-0 bottom-0 left-0 md:hidden">
+  <div class="fixed inset-x-0 bottom-0 md:hidden">
     <nav
-      class="flex items-center justify-around
-      border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-700"
+      class="flex items-center justify-around border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-700"
     >
-      <a
-        href="/"
-        class="sidebar-link flex flex-col gap-1"
-        aria-current={page.route.id === "/" ? "page" : null}
-      >
-        <Plus class="size-5" />
-        <span class="text-nowrap">{$t("common.upload")}</span>
-      </a>
-      <a
-        href="/setting"
-        class="sidebar-link flex-col gap-1"
-        aria-current={page.route.id === "/setting" ? "page" : null}
-      >
-        <Settings class="size-5" />
-        <span class="text-nowrap">{$t("common.setting")}</span>
-      </a>
+      {#each links as { href, icon: Icon, label }}
+        <a
+          {href}
+          class="sidebar-link flex-col gap-1"
+          aria-current={page.route.id === href ? "page" : null}
+        >
+          <Icon class="size-5" />
+          <span class="text-nowrap">{$t(label)}</span>
+        </a>
+      {/each}
     </nav>
   </div>
 {/snippet}
