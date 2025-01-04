@@ -50,31 +50,37 @@
       id: "s3Api",
       label: "S3 API",
       focused: false,
+      required: false,
     },
     {
       id: "bucketName",
       label: "Bucket Name",
       focused: false,
+      required: true,
     },
     {
       id: "accountId",
       label: "Account ID",
       focused: false,
+      required: true,
     },
     {
       id: "accessKey",
       label: "Access Key",
       focused: false,
+      required: true,
     },
     {
       id: "secretKey",
       label: "Secret Key",
       focused: false,
+      required: true,
     },
     {
       id: "customDomain",
       label: "Custom Domain",
       focused: false,
+      required: false,
     },
   ]);
 
@@ -157,7 +163,7 @@
             class="input-label"
             class:input-label-active={config.focused || bucket[config.id]}
           >
-            {config.label}
+            {config.label}{config.required ? "*" : ""}
           </label>
         </div>
       {/each}
