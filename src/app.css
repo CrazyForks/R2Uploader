@@ -41,6 +41,18 @@ body {
   @apply bg-slate-400 dark:bg-slate-500;
 }
 
+.button {
+  @apply cursor-pointer rounded-lg px-4 py-2 hover:bg-cyan-50 dark:hover:bg-slate-700;
+}
+
+.button-primary {
+  @apply text-cyan-500;
+}
+
+.button-danger {
+  @apply text-rose-500;
+}
+
 /* .btn {
   @apply flex cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-4 text-lg shadow-sm transition-all hover:shadow-md;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import db from "$lib/db";
   import { modalState } from "$lib/store.svelte";
 
   // 定义输入框的配置
@@ -25,17 +26,29 @@
     },
   ]);
 
-  function handleSubmit() {
-    const newTarget = inputConfigs.reduce(
-      (acc, config) => {
-        acc[config.id] = config.value;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
+  let newTarget = {
+    name: "",
+    description: "",
+    bucketName: "",
+    accountId: "",
+    accessKey: "",
+    secretKey: "",
+  };
 
-    // 你可以在这里处理提交逻辑，比如发送数据到服务器
-    console.log(newTarget);
+  // 上传目标管理功能
+  async function addTarget() {
+    const id = await db.uploadTargets.add({
+      ...newTarget,
+      type: "r2",
+    });
+    newTarget = {
+      name: "",
+      description: "",
+      bucketName: "",
+      accountId: "",
+      accessKey: "",
+      secretKey: "",
+    };
   }
 
   function closeModal() {
@@ -59,7 +72,6 @@
           bind:value={config.value}
           type="text"
           id={config.id}
-          placeholder={config.label}
           class="input-field"
         />
         <label
@@ -73,18 +85,14 @@
     {/each}
   </div>
   <div class="mt-8 flex justify-end space-x-2">
-    <button onclick={closeModal} class="button">取消</button>
-    <button onclick={handleSubmit} class="button">添加</button>
+    <button onclick={closeModal} class="button button-primary">Cancel</button>
+    <button onclick={addTarget} class="button button-primary">Save</button>
   </div>
 {/snippet}
 
-<button onclick={show}>添加</button>
+<button class="button button-primary" onclick={show}>Add New</button>
 
 <style lang="postcss">
-  .button {
-    @apply cursor-pointer rounded-lg px-4 py-2 text-cyan-500 hover:bg-cyan-50;
-  }
-
   .input-container {
     @apply relative mb-6;
   }
@@ -94,11 +102,11 @@
   }
 
   .input-field:focus {
-    @apply border-blue-500;
+    @apply border-cyan-500;
   }
 
   .input-label {
-    @apply pointer-events-none absolute top-2 left-0 opacity-0 transition-all;
+    @apply pointer-events-none absolute top-2 left-0 opacity-30 transition-all;
   }
 
   .input-label-active {
