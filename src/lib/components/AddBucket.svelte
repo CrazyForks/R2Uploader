@@ -28,9 +28,11 @@
       const regex =
         /^https:\/\/([a-zA-Z0-9]+)\.r2\.cloudflarestorage\.com\/([a-zA-Z0-9-]+)\/?$/;
       if (!regex.test(url)) {
-        alert(
-          "S3 API URL 格式不正确，请使用格式：https://{accountId}.r2.cloudflarestorage.com/{bucketName}",
-        );
+        const s3ApiInput = inputConfigs.find((c) => c.id === "s3Api");
+        if (s3ApiInput) {
+          s3ApiInput.label = "S3 API 格式不正确，请参阅帮助";
+          s3ApiInput.error = true;
+        }
         return;
       }
       const accountId = urlObj.hostname.split(".")[0];
@@ -38,9 +40,11 @@
       bucket.accountId = accountId;
       bucket.bucketName = bucketName;
     } catch (e) {
-      alert(
-        "S3 API URL 格式不正确，请使用格式：https://{accountId}.r2.cloudflarestorage.com/{bucketName}",
-      );
+      const s3ApiInput = inputConfigs.find((c) => c.id === "s3Api");
+      if (s3ApiInput) {
+        s3ApiInput.label = "S3 API 格式不正确，请参阅帮助";
+        s3ApiInput.error = true;
+      }
       console.error("Invalid S3 API URL");
     }
   }
@@ -51,6 +55,7 @@
       label: "S3 API",
       focused: false,
       required: false,
+      error: false,
     },
     {
       id: "bucketName",
@@ -151,9 +156,13 @@
             class="input-field"
             onfocus={() => (config.focused = true)}
             onblur={() => (config.focused = false)}
-            onchange={(e: Event) => {
+            oninput={(e: Event) => {
               if (config.id === "s3Api") {
                 const target = e.target as HTMLInputElement;
+                if (config.error) {
+                  config.label = "S3 API";
+                  config.error = false;
+                }
                 parseS3ApiUrl(target.value);
               }
             }}
@@ -162,6 +171,7 @@
             for={config.id}
             class="input-label"
             class:input-label-active={config.focused || bucket[config.id]}
+            class:error={config.error}
           >
             {config.label}{config.required ? "*" : ""}
           </label>
@@ -191,6 +201,14 @@
   }
 
   .input-label-active {
-    @apply -translate-y-5 text-sm text-cyan-500 opacity-100;
+    @apply -translate-y-5 text-sm opacity-100;
+  }
+
+  .input-label-active:not(.error) {
+    @apply text-cyan-500;
+  }
+
+  .input-label-active.error {
+    @apply text-rose-500;
   }
 </style>
