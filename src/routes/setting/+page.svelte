@@ -3,7 +3,6 @@
   import db from "$lib/db";
   import { appSettings } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
-  import { Switch } from "bits-ui";
   import { onMount } from "svelte";
 
   // 上传目标管理相关状态
@@ -24,7 +23,7 @@
 </script>
 
 <div class="settings-container">
-  <h1 class="settings-title">Settings</h1>
+  <h1 class="px-4 py-1 text-lg font-bold">Settings</h1>
 
   <div class="settings-section">
     <div class="flex items-center justify-between">
@@ -54,19 +53,22 @@
   </div>
 
   <div class="settings-section">
-    <h2 class="section-title">代理设置</h2>
-    <p>使用系统代理</p>
-    {appSettings.useSystemProxy}
+    <div class="flex items-center justify-between">
+      <span class="text-sm">使用系统代理</span>
+      <label class="relative inline-flex cursor-pointer items-center">
+        <input
+          type="checkbox"
+          class="toggle checked:border-cyan-600 checked:bg-cyan-500"
+          bind:checked={appSettings.useSystemProxy}
+        />
+      </label>
+    </div>
   </div>
 </div>
 
 <style lang="postcss">
   .settings-container {
     @apply mx-auto max-w-3xl space-y-2 py-2;
-  }
-
-  .settings-title {
-    @apply mb-3 text-xl font-bold dark:text-white;
   }
 
   .settings-section {
