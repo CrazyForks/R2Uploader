@@ -1,3 +1,5 @@
+import type { Snippet } from "svelte";
+
 export let alertMessage = $state({
   message: "",
 });
@@ -5,6 +7,16 @@ export let alertMessage = $state({
 export function setAlert(message: string) {
   alertMessage.message = message;
 }
+
+interface ModalState {
+  isShow: boolean;
+  children: Snippet | undefined;
+}
+
+export let modalState: ModalState = $state({
+  isShow: false,
+  children: undefined,
+});
 
 export let dragState: { isDragging: boolean; paths: string[] } = $state({
   isDragging: false,

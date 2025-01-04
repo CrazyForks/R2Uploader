@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AddRemoteTargetModal from "$lib/components/AddRemoteTargetModal.svelte";
   import db from "$lib/db";
   import {
     addCustomProxy,
@@ -171,9 +172,7 @@
   <h2 class="mb-8 text-2xl font-bold dark:text-white">上传目标管理</h2>
 
   <div class="config-card mb-8">
-    <button onclick={() => (showAddTargetModal = true)} class="form-button">
-      添加新的 R2 配置
-    </button>
+    <AddRemoteTargetModal />
   </div>
 
   <div class="config-card">

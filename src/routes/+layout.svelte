@@ -7,6 +7,7 @@
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { onDestroy, onMount } from "svelte";
   import { setIsDragging } from "$lib/store.svelte";
+  import Modal from "$lib/components/Modal.svelte";
 
   let unlisten: UnlistenFn;
 
@@ -25,6 +26,7 @@
 
 <FileDrag />
 <Alert />
+<Modal />
 
 <div class="flex h-screen bg-slate-50 dark:bg-slate-900">
   <Sidebar />

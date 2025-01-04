@@ -215,10 +215,12 @@
 {/snippet}
 
 <div
-  class="max-h-96 space-y-2 overflow-y-auto rounded-xl border border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-lg transition-colors dark:border-slate-700/30 dark:bg-slate-800/80 hover:shadow-md"
+  class="max-h-96 space-y-2 overflow-y-auto rounded-xl border border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-lg transition-colors hover:shadow-md dark:border-slate-700/30 dark:bg-slate-800/80"
 >
   {#if showBigMenu}
-    <div class="flex h-64 items-center justify-center bg-gradient-to-b from-white/50 to-white/30 dark:from-slate-800/50 dark:to-slate-800/30">
+    <div
+      class="flex h-64 items-center justify-center bg-gradient-to-b from-white/50 to-white/30 dark:from-slate-800/50 dark:to-slate-800/30"
+    >
       <div class="flex items-center justify-center gap-12">
         <UploadCloud class="size-32" />
         <div class="flex flex-1 flex-col items-center gap-3">
@@ -234,7 +236,9 @@
     </div>
   {:else}
     <div class="">
-      <div class="flex h-12 items-center gap-4 bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80">
+      <div
+        class="flex h-12 items-center gap-4 bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80"
+      >
         <div class="px-2">
           <input
             bind:value={prefix}
@@ -296,10 +300,10 @@
 
 <style lang="postcss">
   .input {
-    @apply rounded-md bg-white/80 px-2 py-1 text-sm placeholder:text-slate-400/60 focus:ring-2 focus:ring-blue-500/50 focus:outline-none backdrop-blur-sm transition-all dark:bg-slate-700/80 dark:placeholder:text-slate-400/50 dark:focus:ring-blue-500/30;
+    @apply rounded-md bg-white/80 px-2 py-1 text-sm backdrop-blur-sm transition-all placeholder:text-slate-400/60 focus:ring-2 focus:ring-blue-500/50 focus:outline-none dark:bg-slate-700/80 dark:placeholder:text-slate-400/50 dark:focus:ring-blue-500/30;
   }
 
   .action-button {
-    @apply cursor-pointer rounded-md p-1 text-slate-500 hover:bg-slate-200/50 hover:shadow-sm backdrop-blur-sm transition-all dark:text-slate-400 dark:hover:bg-slate-600/50;
+    @apply cursor-pointer rounded-md p-1 text-slate-500 backdrop-blur-sm transition-all hover:bg-slate-200/50 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-600/50;
   }
 </style>

@@ -27,6 +27,7 @@
     "@tailwindcss/vite": "^4.0.0-beta.8",
     "@tauri-apps/cli": "^2.2.2",
     "bits-ui": "^0.22.0",
+    "daisyui": "^5.0.0-beta.1",
     "lucide-svelte": "^0.469.0",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.2",
