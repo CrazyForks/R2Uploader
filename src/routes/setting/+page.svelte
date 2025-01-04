@@ -8,6 +8,7 @@
   } from "$lib/store.svelte";
   import { onMount } from "svelte";
   let showAddProxyModal = false;
+  let showAddTargetModal = false;
 
   // 新代理表单状态
   let newProxy = {
@@ -129,7 +130,7 @@
 
     {#if proxySettings.proxyType === "custom"}
       <div class="space-y-4">
-        <button on:click={() => (showAddProxyModal = true)} class="form-button">
+        <button onclick={() => (showAddProxyModal = true)} class="form-button">
           添加代理
         </button>
 
@@ -150,11 +151,11 @@
                   type="radio"
                   name="selectedProxy"
                   checked={proxySettings.selectedCustomProxyId === proxy.id}
-                  on:change={() => selectCustomProxy(proxy.id)}
+                  onchange={() => selectCustomProxy(proxy.id)}
                   class="form-radio"
                 />
                 <button
-                  on:click={() => removeCustomProxy(proxy.id)}
+                  onclick={() => removeCustomProxy(proxy.id)}
                   class="delete-button"
                 >
                   删除
@@ -170,39 +171,9 @@
   <h2 class="mb-8 text-2xl font-bold dark:text-white">上传目标管理</h2>
 
   <div class="config-card mb-8">
-    <h2 class="mb-4 text-xl font-semibold dark:text-slate-200">
+    <button onclick={() => (showAddTargetModal = true)} class="form-button">
       添加新的 R2 配置
-    </h2>
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <input
-        bind:value={newTarget.bucketName}
-        required
-        placeholder="Bucket Name"
-        class="form-input"
-      />
-      <input
-        bind:value={newTarget.accountId}
-        required
-        placeholder="Account ID"
-        class="form-input"
-      />
-      <input
-        bind:value={newTarget.accessKey}
-        required
-        placeholder="Access Key"
-        class="form-input"
-      />
-      <input
-        type="password"
-        bind:value={newTarget.secretKey}
-        required
-        placeholder="Secret Key"
-        class="form-input"
-      />
-    </div>
-    <button type="submit" class="form-button mt-4" on:click={addTarget}
-      >添加</button
-    >
+    </button>
   </div>
 
   <div class="config-card">
@@ -228,7 +199,7 @@
           </div>
           <button
             class="delete-button mt-2"
-            on:click={() => deleteTarget(target.id!)}
+            onclick={() => deleteTarget(target.id!)}
           >
             删除
           </button>
@@ -273,12 +244,12 @@
 
       <div class="mt-4 flex justify-end space-x-2">
         <button
-          on:click={() => (showAddProxyModal = false)}
+          onclick={() => (showAddProxyModal = false)}
           class="delete-button"
         >
           取消
         </button>
-        <button on:click={addProxy} class="form-button"> 添加 </button>
+        <button onclick={addProxy} class="form-button"> 添加 </button>
       </div>
     </div>
   </div>

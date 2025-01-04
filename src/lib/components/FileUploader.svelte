@@ -215,10 +215,10 @@
 {/snippet}
 
 <div
-  class="max-h-96 space-y-2 overflow-y-auto rounded-xl border border-white/20 bg-white/80 shadow-lg backdrop-blur-lg dark:border-slate-700/20 dark:bg-slate-800/80"
+  class="max-h-96 space-y-2 overflow-y-auto rounded-xl border border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-lg transition-colors dark:border-slate-700/30 dark:bg-slate-800/80 hover:shadow-md"
 >
   {#if showBigMenu}
-    <div class="flex h-64 items-center justify-center">
+    <div class="flex h-64 items-center justify-center bg-gradient-to-b from-white/50 to-white/30 dark:from-slate-800/50 dark:to-slate-800/30">
       <div class="flex items-center justify-center gap-12">
         <UploadCloud class="size-32" />
         <div class="flex flex-1 flex-col items-center gap-3">
@@ -234,7 +234,7 @@
     </div>
   {:else}
     <div class="">
-      <div class="flex h-12 items-center gap-4 bg-slate-900">
+      <div class="flex h-12 items-center gap-4 bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80">
         <div class="px-2">
           <input
             bind:value={prefix}
@@ -252,7 +252,7 @@
       >
         {#each files as file, index (file.id)}
           <div
-            class="flex items-center gap-4 rounded-md bg-slate-50 p-2 dark:bg-slate-700"
+            class="flex items-center gap-4 rounded-md bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
             animate:flip={{ duration: flipDurationMs }}
           >
             <div
@@ -296,10 +296,10 @@
 
 <style lang="postcss">
   .input {
-    @apply rounded-md bg-slate-100 px-2 py-1 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-600;
+    @apply rounded-md bg-white/80 px-2 py-1 text-sm placeholder:text-slate-400/60 focus:ring-2 focus:ring-blue-500/50 focus:outline-none backdrop-blur-sm transition-all dark:bg-slate-700/80 dark:placeholder:text-slate-400/50 dark:focus:ring-blue-500/30;
   }
 
   .action-button {
-    @apply cursor-pointer rounded-md p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600;
+    @apply cursor-pointer rounded-md p-1 text-slate-500 hover:bg-slate-200/50 hover:shadow-sm backdrop-blur-sm transition-all dark:text-slate-400 dark:hover:bg-slate-600/50;
   }
 </style>

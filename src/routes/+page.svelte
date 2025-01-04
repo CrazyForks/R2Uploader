@@ -16,12 +16,14 @@
   let textContent = $state("");
   let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
-  let files = $state<{
-    id: string;
-    filename: string;
-    remoteFilename: string;
-    remoteFilenamePrefix: string;
-  }[]>([]);
+  let files = $state<
+    {
+      id: string;
+      filename: string;
+      remoteFilename: string;
+      remoteFilenamePrefix: string;
+    }[]
+  >([]);
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
   let uploadStatusMap = $state<Record<string, string>>({});
   let intervalId = $state<number | undefined>();
@@ -73,14 +75,6 @@
     getUploadTargets();
     await checkClipboardContent();
   });
-
-  function removeFile(index: number) {
-    files.splice(index, 1);
-  }
-
-  function handleRemoveAll() {
-    files = [];
-  }
 
   async function checkUploadStatus() {
     try {
