@@ -60,7 +60,7 @@
 {/snippet}
 
 {#snippet Mobile()}
-  <div class="fixed inset-x-0 bottom-0 md:hidden">
+  <div class="fixed inset-x-0 bottom-0 z-50 md:hidden">
     <nav
       class="flex items-center justify-around border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-700"
     >

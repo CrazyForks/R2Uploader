@@ -14,7 +14,6 @@
       source: { fileContent: textContent },
       remoteFilename,
       remoteFilenamePrefix: "",
-      selected: true,
     });
     closeModal();
   }

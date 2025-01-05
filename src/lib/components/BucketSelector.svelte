@@ -16,7 +16,7 @@
 </script>
 
 <div
-  class="flex items-center justify-between rounded-lg border border-slate-300 bg-slate-100/80 p-2 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+  class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100/80 p-2 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
 >
   <p class="font-bold text-slate-700 dark:text-slate-300">
     {t().uploadTargetSelector.title}

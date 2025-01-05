@@ -111,13 +111,11 @@
     try {
       uploadStatus = "uploading";
 
-      const filesToUpload = filesState.files
-        .filter((file) => file.selected)
-        .map((file) => ({
-          id: file.id,
-          source: file.source,
-          remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
-        }));
+      const filesToUpload = filesState.files.map((file) => ({
+        id: file.id,
+        source: file.source,
+        remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
+      }));
 
       await invoke("r2_upload", {
         bucketName: selectedTarget.value.bucketName,
@@ -170,7 +168,6 @@
             },
             remoteFilename: handleRelativePath(detail.relativePath),
             remoteFilenamePrefix: "",
-            selected: true,
           });
         });
       }
@@ -285,7 +282,9 @@
   <div class="flex items-center justify-center gap-12">
     <UploadCloud class="hidden size-32 text-slate-400 sm:block" />
     <div class="flex flex-1 flex-col items-start gap-3">
-      <p class="dark:text-slate-300">您的存储桶已就绪，拖放文件到此，或：</p>
+      <p class="text-slate-500 dark:text-slate-300">
+        您的存储桶已就绪，拖放文件到此，或：
+      </p>
       <div class="grid grid-cols-2 gap-2">
         <button onclick={openFile} class="button button-primary"
           >选择文件</button
@@ -304,27 +303,37 @@
   </div>
 {:else}
   <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
+    <!-- 功能条 -->
     <div
-      class="flex h-12 items-center gap-4 rounded-t-lg bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80"
+      class="flex items-center gap-2 rounded-t-lg bg-slate-200 p-1 shadow backdrop-blur-sm dark:bg-slate-700/80"
     >
-      <div class="px-2">
-        <input
-          bind:value={prefix}
-          oninput={onChangePrefix}
-          class="input w-36"
-          placeholder="全局路径"
-        />
-      </div>
+      <input
+        bind:value={prefix}
+        oninput={onChangePrefix}
+        class="input w-36"
+        placeholder="全局路径"
+      />
+      <div class="flex-1"></div>
+      <button
+        onclick={() => (filesState.files = [])}
+        class="cursor-pointer rounded-md border px-2 text-sm text-cyan-500"
+        >清空</button
+      >
+      <button
+        onclick={uploadFile}
+        class="cursor-pointer rounded-md bg-cyan-500 px-6 text-white hover:bg-cyan-400"
+        >上传</button
+      >
     </div>
     <section
       use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
       onconsider={handleSort}
       onfinalize={handleSort}
-      class="flex-1 space-y-2 overflow-y-auto p-2"
+      class="flex-1 space-y-2 overflow-y-auto p-2 dark:text-slate-100"
     >
       {#each filesState.files as file, index (file.id)}
         <div
-          class="flex items-center gap-4 rounded-md bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
+          class="flex items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
           animate:flip={{ duration: flipDurationMs }}
         >
           <div
@@ -333,11 +342,6 @@
           >
             <GripVertical class="size-4" />
           </div>
-          <input
-            type="checkbox"
-            bind:checked={file.selected}
-            class="size-4 rounded-md border-slate-300 text-cyan-600 focus:ring-cyan-500 dark:border-slate-600 dark:bg-slate-700"
-          />
           <div class="flex-1">
             <div class="flex items-center gap-2">
               <input
@@ -345,7 +349,7 @@
                 class="input w-24"
                 placeholder="远程路径"
               />
-              <span>/</span>
+              <span class="text-slate-400">/</span>
               <input
                 bind:value={file.remoteFilename}
                 class="input flex-1"
