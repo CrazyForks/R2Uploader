@@ -5,7 +5,7 @@
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
   import { invoke } from "@tauri-apps/api/core";
-  import { setAlert } from "$lib/store.svelte";
+  import { dragState, setAlert } from "$lib/store.svelte";
   import { LinkPreview, type Selected } from "bits-ui";
   import { sep } from "@tauri-apps/api/path";
 
@@ -44,6 +44,19 @@
   let previewContent = $state<string | null>(null);
   let previewLoading = $state(false);
   let previewError = $state<string | null>(null);
+
+  $effect(() => {
+    if (dragState.paths.length > 0) {
+      dragState.paths.forEach((path) => {
+        files.push({
+          id: path,
+          filename: path,
+          remoteFilename: path.split(sep()).pop() || "unknown",
+          remoteFilenamePrefix: "",
+        });
+      });
+    }
+  });
 
   async function previewFile(path: string) {
     previewLoading = true;
@@ -223,12 +236,20 @@
     >
       <div class="flex items-center justify-center gap-12">
         <UploadCloud class="size-32" />
-        <div class="flex flex-1 flex-col items-center gap-3">
-          <p>您的存储桶已就绪</p>
-          <div>
-            拖放或
-            <button onclick={openFile} class="cursor-pointer pl-2 text-cyan-500"
-              >点击选择文件</button
+        <div class="flex flex-1 flex-col items-start gap-3">
+          <p>您的存储桶已就绪，拖放到此，或：</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick={openFile} class="button button-primary"
+              >选择文件</button
+            >
+            <button onclick={openFile} class="button button-primary"
+              >选择文件夹</button
+            >
+            <button onclick={openFile} class="button button-primary"
+              >选择剪贴板</button
+            >
+            <button onclick={openFile} class="button button-primary"
+              >选择新建文本</button
             >
           </div>
         </div>

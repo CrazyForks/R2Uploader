@@ -1,21 +1,15 @@
 <script lang="ts">
+  import BucketSelector from "$lib/components/BucketSelector.svelte";
   import FileUploader from "$lib/components/FileUploader.svelte";
-  import TabSwitcher from "$lib/components/TabSwitcher.svelte";
-  import UploadTargetSelector from "$lib/components/UploadTargetSelector.svelte";
   import db from "$lib/db";
+  import { t } from "$lib/i18n.svelte";
   import { setAlert } from "$lib/store.svelte";
+  import type { Bucket } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
-  import { sep } from "@tauri-apps/api/path";
   import type { Selected } from "bits-ui";
   import { Check } from "lucide-svelte";
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
-  import type { Bucket } from "$lib/type";
-  import { t } from "$lib/i18n.svelte";
-
-  let dialogFiles: string[] = [];
-  let textContent = $state("");
-  let activeTab = $state<"file" | "folder" | "text" | "clipboard">("file");
 
   let files = $state<
     {
@@ -28,15 +22,19 @@
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
   let uploadStatusMap = $state<Record<string, string>>({});
   let intervalId = $state<number | undefined>();
-
   let clipboardFiles = $state<string[]>([]);
   let clipboardText = $state("");
   let clipboardHtml = $state("");
   let clipboardImage = $state("");
   let clipboardRtf = $state("");
-
   let buckets: Selected<Bucket>[] = $state([]);
   let selectedBucket: Selected<Bucket> | undefined = $state();
+  let textContent = $state("");
+
+  onMount(async () => {
+    getBuckets();
+    // await checkClipboardContent();
+  });
 
   async function getBuckets() {
     await db.buckets.toArray().then((targets) => {
@@ -73,11 +71,6 @@
     }
   }
 
-  onMount(async () => {
-    getBuckets();
-    await checkClipboardContent();
-  });
-
   async function checkUploadStatus() {
     try {
       const status = await invoke<Record<string, string>>("get_upload_status");
@@ -102,10 +95,11 @@
 
       const filesToUpload = files.map((file) => ({
         id: file.id,
-        source:
-          activeTab === "text"
-            ? { fileContent: textContent }
-            : { filePath: file.filename },
+        // source:
+        //   activeTab === "text"
+        //     ? { fileContent: textContent }
+        //     : { filePath: file.filename },
+        source: { filePath: file.filename },
         remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
       }));
 
@@ -141,9 +135,9 @@
         {t().common.noBucketWarning}
       </div>
     {:else}
-      <UploadTargetSelector
-        uploadTargets={buckets}
-        selectedTarget={selectedBucket}
+      <BucketSelector
+        {buckets}
+        {selectedBucket}
         onSelectedChange={(e) => {
           selectedBucket = {
             value: e!.value,
@@ -153,23 +147,21 @@
       />
     {/if}
     <div class="space-y-4">
-      <TabSwitcher {activeTab} onTabChange={(tab) => (activeTab = tab)} />
-
-      {#if activeTab === "file"}
-        <FileUploader
-          bind:files
-          bind:uploadStatus
-          bind:uploadStatusMap
-          bind:intervalId
-          selectedTarget={selectedBucket}
-        />
-      {:else if activeTab === "text"}
-        <!-- <TextUploader
+      <!-- {#if activeTab === "file"} -->
+      <FileUploader
+        bind:files
+        bind:uploadStatus
+        bind:uploadStatusMap
+        bind:intervalId
+        selectedTarget={selectedBucket}
+      />
+      <!-- {:else if activeTab === "text"} -->
+      <!-- <TextUploader
           {textContent}
           remoteFileName={remoteFileNames.join(",")}
         /> -->
-      {:else if activeTab === "clipboard"}
-        <!-- <ClipboardUploader
+      <!-- {:else if activeTab === "clipboard"} -->
+      <!-- <ClipboardUploader
           {clipboardText}
           {clipboardHtml}
           {clipboardImage}
@@ -178,7 +170,7 @@
           remoteFileName={remoteFileNames.join(",")}
           onRefreshClipboard={checkClipboardContent}
         /> -->
-      {/if}
+      <!-- {/if} -->
     </div>
   </div>
 
