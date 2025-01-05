@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  include: modal, toggle;
+}
 
 html {
   @apply bg-slate-50 dark:bg-slate-900;

@@ -148,13 +148,7 @@
     {/if}
     <div class="space-y-4">
       <!-- {#if activeTab === "file"} -->
-      <FileUploader
-        bind:files
-        bind:uploadStatus
-        bind:uploadStatusMap
-        bind:intervalId
-        selectedTarget={selectedBucket}
-      />
+      <FileUploader selectedTarget={selectedBucket} />
       <!-- {:else if activeTab === "text"} -->
       <!-- <TextUploader
           {textContent}

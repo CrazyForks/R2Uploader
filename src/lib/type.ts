@@ -8,3 +8,11 @@ export interface Bucket {
   customDomain: string;
   [key: string]: string | number | undefined;
 }
+
+export interface File {
+  id: string;
+  filename: string;
+  remoteFilename: string;
+  remoteFilenamePrefix: string;
+  selected: boolean;
+}

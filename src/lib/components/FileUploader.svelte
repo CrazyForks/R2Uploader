@@ -5,24 +5,18 @@
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
   import { invoke } from "@tauri-apps/api/core";
-  import { dragState, setAlert } from "$lib/store.svelte";
+  import { dragState, setAlert, setDragPaths } from "$lib/store.svelte";
   import { LinkPreview, type Selected } from "bits-ui";
   import { sep } from "@tauri-apps/api/path";
+  import type { File } from "$lib/type";
+  import { filesState } from "$lib/files.svelte";
 
   let {
-    files = $bindable([]),
     uploadStatus = $bindable("idle"),
     uploadStatusMap = $bindable({}),
     intervalId = $bindable<number | undefined>(),
     selectedTarget,
   }: {
-    files: {
-      id: string;
-      filename: string;
-      remoteFilename: string;
-      remoteFilenamePrefix: string;
-      selected?: boolean;
-    }[];
     uploadStatus?: "idle" | "uploading" | "success" | "error";
     uploadStatusMap?: Record<string, string>;
     intervalId?: number | undefined;
@@ -34,8 +28,8 @@
     }>;
   } = $props();
 
-  let showUploadButton = $derived(files.length > 0);
-  let showBigMenu = $derived(!files.length);
+  let showUploadButton = $derived(filesState.files.length > 0);
+  let showBigMenu = $derived(!filesState.files.length);
   let oldPrefix = $state("");
   let prefix = $state("");
   const flipDurationMs = 200;
@@ -48,6 +42,7 @@
   $effect(() => {
     if (dragState.paths.length > 0) {
       parsePaths(dragState.paths);
+      setDragPaths([]);
     }
   });
 
@@ -65,12 +60,12 @@
   }
 
   function handleSort(e: CustomEvent) {
-    files = e.detail.items;
+    filesState.files = e.detail.items;
   }
 
   async function onChangePrefix() {
     await tick();
-    files.forEach((file) => {
+    filesState.files.forEach((file) => {
       if (file.remoteFilenamePrefix === oldPrefix) {
         file.remoteFilenamePrefix = prefix;
       }
@@ -88,7 +83,11 @@
         intervalId = undefined;
         uploadStatus = "success";
         setAlert("上传成功");
-        files = [];
+        // files = [];
+
+        //
+        //
+        //
       }
     } catch (error) {
       console.error("获取上传状态失败：", error);
@@ -100,7 +99,7 @@
     try {
       uploadStatus = "uploading";
 
-      const filesToUpload = files.map((file) => ({
+      const filesToUpload = filesState.files.map((file) => ({
         id: file.id,
         source: { filePath: file.filename },
         remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
@@ -139,14 +138,12 @@
       const details = await getFileDetails(file);
       if (details && details.length > 0) {
         details.forEach((detail) => {
-          console.log(detail);
-          console.log(detail.path, detail.relativePath);
-          files.push({
+          filesState.files.push({
             id: detail.id,
             filename: detail.path,
-            // remoteFilename 去掉开头的 sep
             remoteFilename: handleRelativePath(detail.relativePath),
             remoteFilenamePrefix: "",
+            selected: true,
           });
         });
       }
@@ -181,7 +178,7 @@
   }
 
   function removeFile(index: number) {
-    files.splice(index, 1);
+    filesState.files.splice(index, 1);
   }
 </script>
 
@@ -302,12 +299,12 @@
         </div>
       </div>
       <section
-        use:dragHandleZone={{ items: files, flipDurationMs }}
+        use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
         onconsider={handleSort}
         onfinalize={handleSort}
         class="space-y-2 px-2 py-4"
       >
-        {#each files as file, index (file.id)}
+        {#each filesState.files as file, index (file.id)}
           <div
             class="flex items-center gap-4 rounded-md bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
             animate:flip={{ duration: flipDurationMs }}
