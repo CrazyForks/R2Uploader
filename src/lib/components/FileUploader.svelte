@@ -303,7 +303,7 @@
     </div>
   </div>
 {:else}
-  <div class="h-full w-full">
+  <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
     <div
       class="flex h-12 items-center gap-4 rounded-t-lg bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80"
     >
@@ -320,7 +320,7 @@
       use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
       onconsider={handleSort}
       onfinalize={handleSort}
-      class="h-full space-y-2 overflow-y-auto px-2 py-4"
+      class="flex-1 space-y-2 overflow-y-auto p-2"
     >
       {#each filesState.files as file, index (file.id)}
         <div

@@ -90,7 +90,7 @@
     />
   {/if}
   <div
-    class="flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+    class="flex flex-1 flex-col items-center justify-center rounded-lg border border-slate-300 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800 min-h-0"
   >
     {#if buckets.length}
       <FileUploader selectedTarget={selectedBucket} />

@@ -45,7 +45,7 @@
 <Alert />
 <Modal />
 
-<div class="flex h-screen bg-slate-50 dark:bg-slate-900">
+<div class="flex h-full bg-slate-50 dark:bg-slate-900">
   <Sidebar />
   <main class="flex-1 overflow-hidden">
     {@render children()}
