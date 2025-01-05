@@ -30,52 +30,14 @@
   }
 </script>
 
-<div class="settings-container">
-  <h1 class="px-4 py-1 text-lg font-bold">{t().common.setting}</h1>
+<div class="mx-auto flex h-full max-w-4xl flex-col gap-2 p-2">
+  <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">
+    {t().common.setting}
+  </h1>
 
-  <div class="settings-section">
+  <div class="settings-section space-y-2 p-2">
     <div class="flex items-center justify-between">
-      <h2 class="section-title">{t().settings.buckets}</h2>
-      <AddRemoteTargetModal onclose={onAddBucketClose} />
-    </div>
-    <div class="targets-list">
-      {#each buckets as bucket}
-        <div
-          class="flex items-center justify-between border-b border-slate-600 px-2 py-1 last:border-b-0"
-        >
-          <div class="flex-1">
-            <div class="target-details">
-              <p>{t().settings.bucketDetails.bucket}: {bucket.bucketName}</p>
-              <p>{t().settings.bucketDetails.accountId}: {bucket.accountId}</p>
-            </div>
-          </div>
-          <button
-            class="button button-danger text-sm"
-            onclick={() => deleteTarget(bucket.id!)}
-          >
-            {t().common.delete}
-          </button>
-        </div>
-      {/each}
-    </div>
-  </div>
-
-  <div class="settings-section">
-    <div class="flex items-center justify-between">
-      <span class="text-sm">{t().common.useSystemProxy}</span>
-      <label class="relative inline-flex cursor-pointer items-center">
-        <input
-          type="checkbox"
-          class="toggle border-slate-600 checked:border-cyan-600 checked:bg-cyan-500 checked:text-white"
-          bind:checked={appSettings.useSystemProxy}
-        />
-      </label>
-    </div>
-  </div>
-
-  <div class="settings-section">
-    <div class="flex items-center justify-between">
-      <span class="text-sm">{t().settings.language}</span>
+      <span>{t().settings.language}</span>
       <Select.Root
         items={languages}
         onSelectedChange={(selected) => {
@@ -103,27 +65,53 @@
         </Select.Content>
       </Select.Root>
     </div>
+    <div class="flex items-center justify-between">
+      <span>{t().common.useSystemProxy}</span>
+      <input
+        type="checkbox"
+        class="toggle border-slate-600 checked:border-cyan-600 checked:bg-cyan-500 checked:text-white"
+        bind:checked={appSettings.useSystemProxy}
+      />
+    </div>
+  </div>
+
+  <div class="settings-section flex min-h-0 flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-2 pt-2">
+      <h2 class="font-bold text-slate-700 dark:text-slate-300">
+        {t().settings.buckets}
+      </h2>
+      <AddRemoteTargetModal onclose={onAddBucketClose} />
+    </div>
+    <div class="min-h-0 overflow-y-auto px-2 pb-2">
+      {#each buckets as bucket}
+        <div
+          class="flex items-center justify-between border-b py-1 last:border-b-0 dark:border-slate-700"
+        >
+          <div class="flex-1">
+            <div class="target-details">
+              <p>{t().settings.bucketDetails.bucket}: {bucket.bucketName}</p>
+              <p>{t().settings.bucketDetails.accountId}: {bucket.accountId}</p>
+            </div>
+          </div>
+          <button class="button button-primary text-sm">Edit</button>
+          <button
+            class="button button-danger text-sm"
+            onclick={() => deleteTarget(bucket.id!)}
+          >
+            {t().common.delete}
+          </button>
+        </div>
+      {/each}
+    </div>
   </div>
 </div>
 
 <style lang="postcss">
-  .settings-container {
-    @apply mx-auto max-w-3xl space-y-2 py-2;
-  }
-
   .settings-section {
-    @apply space-y-2 bg-white px-4 py-2 shadow dark:bg-slate-800;
-  }
-
-  .section-title {
-    @apply font-semibold dark:text-slate-200;
-  }
-
-  .targets-list {
-    @apply mt-2 space-y-1;
+    @apply rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800;
   }
 
   .target-details {
-    @apply mt-1 text-xs text-slate-500 dark:text-slate-400;
+    @apply text-xs text-slate-500 dark:text-slate-400;
   }
 </style>
