@@ -6,6 +6,7 @@ use s3::{creds::Credentials, Bucket, Region};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
+use uuid::Uuid;
 
 static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
 static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(16)));
@@ -31,6 +32,57 @@ pub fn get_proxy() -> Result<reqwest::Proxy, String> {
     let proxy = reqwest::Proxy::https(format!("http://{}:{}", proxy.host, proxy.port).as_str())
         .map_err(|e| format!("can not create proxy: {}", e))?;
     Ok(proxy)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileDetail {
+    pub id: String,
+    pub path: String,
+    pub relative_path: String,
+    pub is_dir: bool,
+}
+
+#[tauri::command]
+pub async fn get_file_details(path: String) -> Result<Vec<FileDetail>, String> {
+    Box::pin(async move {
+        let metadata = tokio::fs::metadata(&path)
+            .await
+            .map_err(|e| format!("无法获取文件元数据：{}", e))?;
+
+        let mut result = Vec::new();
+        let base_path = std::path::Path::new(&path)
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| "".to_string());
+
+        if metadata.is_dir() {
+            let mut entries = tokio::fs::read_dir(&path)
+                .await
+                .map_err(|e| format!("无法读取目录：{}", e))?;
+
+            while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
+                let child_path = entry.path().to_string_lossy().to_string();
+                let child_details = get_file_details(child_path).await?;
+                result.extend(child_details);
+            }
+        } else {
+            let relative_path = path
+                .strip_prefix(&base_path)
+                .map(|p| p.to_string())
+                .unwrap_or_else(|| path.clone());
+
+            result.push(FileDetail {
+                id: Uuid::new_v4().to_string(),
+                path: path.clone(),
+                relative_path,
+                is_dir: false,
+            });
+        }
+
+        Ok(result)
+    })
+    .await
 }
 
 #[tauri::command]

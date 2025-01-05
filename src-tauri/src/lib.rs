@@ -9,7 +9,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             manager::r2_upload,
             manager::get_upload_status,
-            manager::preview_file
+            manager::preview_file,
+            manager::get_file_details,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
