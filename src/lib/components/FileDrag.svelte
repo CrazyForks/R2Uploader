@@ -37,7 +37,7 @@
 </script>
 
 <div class="overlay" class:active={dragState.isDragging}>
-  <div class="flex flex-col items-center gap-4 rounded-2xl p-8 text-center">
+  <div class="flex flex-col items-center gap-4 rounded-xl p-8 text-center">
     <UploadCloud class="size-16 text-slate-300" />
     <p class="text-2xl font-medium text-slate-300">拖动文件到此</p>
     <p class="text-slate-300">松手即可确认</p>

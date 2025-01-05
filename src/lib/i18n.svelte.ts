@@ -49,8 +49,8 @@ export let en = $state({
     },
   },
   uploadTargetSelector: {
-    title: "Upload Target",
-    placeholder: "Select upload target",
+    title: "Bucket",
+    placeholder: "Select Bucket",
   },
   textUploader: {
     textPlaceholder: "Enter text content to upload",
@@ -144,8 +144,8 @@ export let zh = $state({
     },
   },
   uploadTargetSelector: {
-    title: "上传目标",
-    placeholder: "选择上传目标",
+    title: "存储桶",
+    placeholder: "选择存储桶",
   },
   textUploader: {
     textPlaceholder: "输入要上传的文本内容",

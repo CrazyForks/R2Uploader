@@ -5,11 +5,18 @@
   import { dragHandleZone, dragHandle } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
   import { invoke } from "@tauri-apps/api/core";
-  import { dragState, setAlert, setDragPaths } from "$lib/store.svelte";
+  import {
+    dragState,
+    modalState,
+    setAlert,
+    setDragPaths,
+    showModal,
+  } from "$lib/store.svelte";
   import { LinkPreview, type Selected } from "bits-ui";
   import { sep } from "@tauri-apps/api/path";
   import type { File } from "$lib/type";
   import { filesState } from "$lib/files.svelte";
+  import TextUploader from "./TextUploader.svelte";
 
   let {
     uploadStatus = $bindable("idle"),
@@ -46,11 +53,16 @@
     }
   });
 
-  async function previewFile(path: string) {
+  async function previewFile(file: File) {
     previewLoading = true;
     previewError = null;
     try {
-      previewContent = await invoke<string>("preview_file", { path });
+      if ("filePath" in file.source) {
+        const path = file.source.filePath;
+        previewContent = await invoke<string>("preview_file", { path });
+      } else {
+        previewContent = file.source.fileContent || "";
+      }
     } catch (error) {
       previewError = error instanceof Error ? error.message : "预览失败";
       setAlert(previewError);
@@ -99,11 +111,13 @@
     try {
       uploadStatus = "uploading";
 
-      const filesToUpload = filesState.files.map((file) => ({
-        id: file.id,
-        source: { filePath: file.filename },
-        remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
-      }));
+      const filesToUpload = filesState.files
+        .filter((file) => file.selected)
+        .map((file) => ({
+          id: file.id,
+          source: file.source,
+          remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
+        }));
 
       await invoke("r2_upload", {
         bucketName: selectedTarget.value.bucketName,
@@ -133,14 +147,27 @@
     }
   }
 
+  async function openDir() {
+    const dialogFiles = await open({
+      multiple: true,
+      directory: true,
+    });
+    if (dialogFiles) {
+      await parsePaths(dialogFiles);
+    }
+  }
+
   async function parsePaths(paths: string[]) {
     paths.forEach(async (file) => {
       const details = await getFileDetails(file);
       if (details && details.length > 0) {
         details.forEach((detail) => {
           filesState.files.push({
+            type: "file",
             id: detail.id,
-            filename: detail.path,
+            source: {
+              filePath: detail.path,
+            },
             remoteFilename: handleRelativePath(detail.relativePath),
             remoteFilenamePrefix: "",
             selected: true,
@@ -182,19 +209,17 @@
   }
 </script>
 
-{#snippet preview(file: {
-  id: string;
-  filename: string;
-  remoteFilename: string;
-  remoteFilenamePrefix: string;
-  selected?: boolean;
-})}
+{#snippet text()}
+  <TextUploader />
+{/snippet}
+
+{#snippet preview(file: File)}
   <LinkPreview.Root
     openDelay={100}
     closeDelay={100}
     onOpenChange={(isOpen) => {
       if (isOpen) {
-        previewFile(file.filename);
+        previewFile(file);
       } else {
         previewContent = null;
       }
@@ -219,13 +244,13 @@
           {:else if previewError}
             <div class="text-sm text-red-500">{previewError}</div>
           {:else if previewContent}
-            {#if file.filename.endsWith(".png") || file.filename.endsWith(".jpg") || file.filename.endsWith(".jpeg")}
+            {#if file.type === "image"}
               <img
                 src={previewContent}
                 alt="文件预览"
                 class="max-h-48 max-w-48 rounded object-contain"
               />
-            {:else if file.filename.endsWith(".txt")}
+            {:else if file.type === "text"}
               <div
                 class="max-h-48 overflow-y-auto rounded bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
               >
@@ -257,28 +282,29 @@
 {/snippet}
 
 <div
-  class="max-h-96 space-y-2 overflow-y-auto rounded-xl border border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-lg transition-colors hover:shadow-md dark:border-slate-700/30 dark:bg-slate-800/80"
+  class="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-lg transition-colors hover:shadow-md dark:border-slate-700/30 dark:bg-slate-800/80"
 >
   {#if showBigMenu}
     <div
       class="flex h-64 items-center justify-center bg-gradient-to-b from-white/50 to-white/30 dark:from-slate-800/50 dark:to-slate-800/30"
     >
       <div class="flex items-center justify-center gap-12">
-        <UploadCloud class="size-32" />
+        <UploadCloud class="hidden size-32 sm:block" />
         <div class="flex flex-1 flex-col items-start gap-3">
-          <p>您的存储桶已就绪，拖放到此，或：</p>
+          <p>您的存储桶已就绪，拖放文件到此，或：</p>
           <div class="grid grid-cols-2 gap-2">
             <button onclick={openFile} class="button button-primary"
               >选择文件</button
             >
-            <button onclick={openFile} class="button button-primary"
+            <button onclick={openDir} class="button button-primary"
               >选择文件夹</button
             >
             <button onclick={openFile} class="button button-primary"
               >选择剪贴板</button
             >
-            <button onclick={openFile} class="button button-primary"
-              >选择新建文本</button
+            <button
+              onclick={() => showModal(text)}
+              class="button button-primary">选择新建文本</button
             >
           </div>
         </div>

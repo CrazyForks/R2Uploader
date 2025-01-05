@@ -44,7 +44,7 @@
             {href}
             class="sidebar-link gapped bg {appSettings.sidebarCollapsed
               ? 'rounded-none'
-              : 'rounded-xl'}"
+              : 'rounded-lg'}"
             class:min-w-28={!appSettings.sidebarCollapsed}
             aria-current={page.route.id === href ? "page" : null}
           >

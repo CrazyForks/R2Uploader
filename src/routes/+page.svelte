@@ -11,14 +11,6 @@
   import { onMount } from "svelte";
   import clipboard from "tauri-plugin-clipboard-api";
 
-  let files = $state<
-    {
-      id: string;
-      filename: string;
-      remoteFilename: string;
-      remoteFilenamePrefix: string;
-    }[]
-  >([]);
   let uploadStatus = $state<"idle" | "uploading" | "success" | "error">("idle");
   let uploadStatusMap = $state<Record<string, string>>({});
   let intervalId = $state<number | undefined>();
@@ -70,67 +62,17 @@
       setAlert(t().common.clipboardReadError);
     }
   }
-
-  async function checkUploadStatus() {
-    try {
-      const status = await invoke<Record<string, string>>("get_upload_status");
-      uploadStatusMap = status;
-
-      if (Object.keys(status).length === 0) {
-        clearInterval(intervalId);
-        intervalId = undefined;
-        uploadStatus = "success";
-        setAlert(t().alert.uploadSuccess);
-        files = [];
-      }
-    } catch (error) {
-      console.error(t().alert.getStatusFailed, error);
-    }
-  }
-
-  async function uploadFile() {
-    if (!selectedBucket) return;
-    try {
-      uploadStatus = "uploading";
-
-      const filesToUpload = files.map((file) => ({
-        id: file.id,
-        // source:
-        //   activeTab === "text"
-        //     ? { fileContent: textContent }
-        //     : { filePath: file.filename },
-        source: { filePath: file.filename },
-        remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
-      }));
-
-      await invoke("r2_upload", {
-        bucketName: selectedBucket.value.bucketName,
-        accountId: selectedBucket.value.accountId,
-        accessKey: selectedBucket.value.accessKey,
-        secretKey: selectedBucket.value.secretKey,
-        files: filesToUpload,
-      });
-
-      if (!intervalId) {
-        intervalId = window.setInterval(checkUploadStatus, 500);
-      }
-    } catch (error: unknown) {
-      console.error(error);
-      uploadStatus = "error";
-      setAlert(t().common.uploadError);
-    }
-  }
 </script>
 
-<div class="mx-auto max-w-4xl p-6">
+<div class="mx-auto max-w-4xl p-2">
   <h1 class="mb-6 text-2xl font-bold text-slate-800 dark:text-slate-200">
     {t().common.upload}
   </h1>
 
-  <div>
+  <div class="space-y-2">
     {#if buckets.length === 0}
       <div
-        class="mb-4 rounded-lg bg-yellow-50 p-4 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
+        class="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
       >
         {t().common.noBucketWarning}
       </div>
@@ -139,50 +81,25 @@
         {buckets}
         {selectedBucket}
         onSelectedChange={(e) => {
-          selectedBucket = {
-            value: e!.value,
-            label: e?.value.bucketName || "unknown",
-          };
+          if (e) {
+            selectedBucket = {
+              value: e.value,
+              label: e.value.bucketName,
+            };
+          }
         }}
       />
     {/if}
-    <div class="space-y-4">
-      <!-- {#if activeTab === "file"} -->
-      <FileUploader selectedTarget={selectedBucket} />
-      <!-- {:else if activeTab === "text"} -->
-      <!-- <TextUploader
-          {textContent}
-          remoteFileName={remoteFileNames.join(",")}
-        /> -->
-      <!-- {:else if activeTab === "clipboard"} -->
-      <!-- <ClipboardUploader
-          {clipboardText}
-          {clipboardHtml}
-          {clipboardImage}
-          {clipboardRtf}
-          {clipboardFiles}
-          remoteFileName={remoteFileNames.join(",")}
-          onRefreshClipboard={checkClipboardContent}
-        /> -->
-      <!-- {/if} -->
+    <div>
+      {#if buckets.length}
+        <FileUploader selectedTarget={selectedBucket} />
+      {:else}
+        <div
+          class="flex h-64 items-center justify-center rounded-lg border border-slate-300 bg-slate-200/80 text-slate-600 dark:border-slate-700 dark:bg-slate-800"
+        >
+          <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
+        </div>
+      {/if}
     </div>
   </div>
-
-  <div class="space-y-2 pt-4">
-    <button
-      onclick={uploadFile}
-      class="btn w-full rounded-lg bg-cyan-500"
-      disabled={uploadStatus === "uploading"}
-    >
-      {#if uploadStatus === "uploading"}
-        {t().common.uploading}
-      {:else}
-        <Check class="size-6" />
-        {t().common.upload}
-      {/if}
-    </button>
-  </div>
 </div>
-
-<style lang="postcss">
-</style>

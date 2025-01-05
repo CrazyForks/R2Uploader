@@ -1,7 +1,7 @@
 <script lang="ts">
   import db from "$lib/db";
   import { t } from "$lib/i18n.svelte";
-  import { modalState } from "$lib/store.svelte";
+  import { modalState, showModal } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
   let showHelp = $state(false);
@@ -112,11 +112,6 @@
       customDomain: "",
     };
   }
-
-  function show() {
-    modalState.children = content;
-    modalState.isShow = true;
-  }
 </script>
 
 {#snippet content()}
@@ -187,7 +182,7 @@
   {/if}
 {/snippet}
 
-<button class="button button-primary" onclick={show}
+<button class="button button-primary" onclick={() => showModal(content)}
   >{t().addBucket.addNew}</button
 >
 

@@ -19,6 +19,16 @@ export let modalState: ModalState = $state({
   children: undefined,
 });
 
+export function closeModal() {
+  modalState.isShow = false;
+  modalState.children = undefined;
+}
+
+export function showModal(children: Snippet) {
+  modalState.isShow = true;
+  modalState.children = children;
+}
+
 export let dragState: { isDragging: boolean; paths: string[] } = $state({
   isDragging: false,
   paths: [],

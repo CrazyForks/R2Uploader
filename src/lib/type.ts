@@ -10,8 +10,9 @@ export interface Bucket {
 }
 
 export interface File {
+  type: "text" | "image" | "file";
   id: string;
-  filename: string;
+  source: { filePath: string } | { fileContent: string };
   remoteFilename: string;
   remoteFilenamePrefix: string;
   selected: boolean;
