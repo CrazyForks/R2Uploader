@@ -9,10 +9,10 @@
     Settings,
   } from "lucide-svelte";
 
-  const links = [
+  const links = $derived([
     { href: "/", icon: Plus, label: t().common.upload },
     { href: "/setting", icon: Settings, label: t().common.setting },
-  ];
+  ]);
 </script>
 
 {#snippet Desktop()}

@@ -10,8 +10,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri",
-    "format": "prettier --write ./src",
-    "postinstall": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide"
+    "format": "prettier --write ./src"
   },
   "license": "MIT",
   "dependencies": {

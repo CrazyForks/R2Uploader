@@ -136,8 +136,8 @@ export let zh = $state({
     noBucketWarning: "请先在设置中添加存储桶",
   },
   settings: {
-    buckets: "Buckets",
-    language: "Language",
+    buckets: "存储桶",
+    language: "语言",
     bucketDetails: {
       bucket: "存储桶",
       accountId: "账户 ID",
