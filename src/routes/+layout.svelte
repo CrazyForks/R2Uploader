@@ -47,7 +47,7 @@
 
 <div class="flex h-screen bg-slate-50 dark:bg-slate-900">
   <Sidebar />
-  <main class="flex-1 overflow-y-auto">
+  <main class="flex-1 overflow-hidden">
     {@render children()}
   </main>
 </div>

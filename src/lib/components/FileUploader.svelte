@@ -281,98 +281,89 @@
   </LinkPreview.Root>
 {/snippet}
 
-<div
-  class="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-lg transition-colors hover:shadow-md dark:border-slate-700/30 dark:bg-slate-800/80"
->
-  {#if showBigMenu}
+{#if showBigMenu}
+  <div class="flex items-center justify-center gap-12">
+    <UploadCloud class="hidden size-32 text-slate-400 sm:block" />
+    <div class="flex flex-1 flex-col items-start gap-3">
+      <p class="dark:text-slate-300">您的存储桶已就绪，拖放文件到此，或：</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick={openFile} class="button button-primary"
+          >选择文件</button
+        >
+        <button onclick={openDir} class="button button-primary"
+          >选择文件夹</button
+        >
+        <button onclick={openFile} class="button button-primary"
+          >选择剪贴板</button
+        >
+        <button onclick={() => showModal(text)} class="button button-primary"
+          >选择新建文本</button
+        >
+      </div>
+    </div>
+  </div>
+{:else}
+  <div class="h-full w-full">
     <div
-      class="flex h-64 items-center justify-center bg-gradient-to-b from-white/50 to-white/30 dark:from-slate-800/50 dark:to-slate-800/30"
+      class="flex h-12 items-center gap-4 rounded-t-lg bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80"
     >
-      <div class="flex items-center justify-center gap-12">
-        <UploadCloud class="hidden size-32 sm:block" />
-        <div class="flex flex-1 flex-col items-start gap-3">
-          <p>您的存储桶已就绪，拖放文件到此，或：</p>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick={openFile} class="button button-primary"
-              >选择文件</button
-            >
-            <button onclick={openDir} class="button button-primary"
-              >选择文件夹</button
-            >
-            <button onclick={openFile} class="button button-primary"
-              >选择剪贴板</button
-            >
-            <button
-              onclick={() => showModal(text)}
-              class="button button-primary">选择新建文本</button
-            >
-          </div>
-        </div>
+      <div class="px-2">
+        <input
+          bind:value={prefix}
+          oninput={onChangePrefix}
+          class="input w-36"
+          placeholder="全局路径"
+        />
       </div>
     </div>
-  {:else}
-    <div class="">
-      <div
-        class="flex h-12 items-center gap-4 bg-slate-50/80 backdrop-blur-sm dark:bg-slate-700/80"
-      >
-        <div class="px-2">
-          <input
-            bind:value={prefix}
-            oninput={onChangePrefix}
-            class="input w-36"
-            placeholder="全局路径"
-          />
-        </div>
-      </div>
-      <section
-        use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
-        onconsider={handleSort}
-        onfinalize={handleSort}
-        class="space-y-2 px-2 py-4"
-      >
-        {#each filesState.files as file, index (file.id)}
+    <section
+      use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
+      onconsider={handleSort}
+      onfinalize={handleSort}
+      class="h-full space-y-2 overflow-y-auto px-2 py-4"
+    >
+      {#each filesState.files as file, index (file.id)}
+        <div
+          class="flex items-center gap-4 rounded-md bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
+          animate:flip={{ duration: flipDurationMs }}
+        >
           <div
-            class="flex items-center gap-4 rounded-md bg-white/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
-            animate:flip={{ duration: flipDurationMs }}
+            use:dragHandle
+            class=" text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
           >
-            <div
-              use:dragHandle
-              class=" text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
-            >
-              <GripVertical class="size-4" />
-            </div>
-            <input
-              type="checkbox"
-              bind:checked={file.selected}
-              class="size-4 rounded-md border-slate-300 text-cyan-600 focus:ring-cyan-500 dark:border-slate-600 dark:bg-slate-700"
-            />
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <input
-                  bind:value={file.remoteFilenamePrefix}
-                  class="input w-24"
-                  placeholder="远程路径"
-                />
-                <span>/</span>
-                <input
-                  bind:value={file.remoteFilename}
-                  class="input flex-1"
-                  placeholder="远程文件名"
-                />
-              </div>
-            </div>
-            <div>
-              {@render preview(file)}
-              <button onclick={() => removeFile(index)} class="action-button">
-                <X class="size-4" />
-              </button>
+            <GripVertical class="size-4" />
+          </div>
+          <input
+            type="checkbox"
+            bind:checked={file.selected}
+            class="size-4 rounded-md border-slate-300 text-cyan-600 focus:ring-cyan-500 dark:border-slate-600 dark:bg-slate-700"
+          />
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <input
+                bind:value={file.remoteFilenamePrefix}
+                class="input w-24"
+                placeholder="远程路径"
+              />
+              <span>/</span>
+              <input
+                bind:value={file.remoteFilename}
+                class="input flex-1"
+                placeholder="远程文件名"
+              />
             </div>
           </div>
-        {/each}
-      </section>
-    </div>
-  {/if}
-</div>
+          <div>
+            {@render preview(file)}
+            <button onclick={() => removeFile(index)} class="action-button">
+              <X class="size-4" />
+            </button>
+          </div>
+        </div>
+      {/each}
+    </section>
+  </div>
+{/if}
 
 <style lang="postcss">
   .input {

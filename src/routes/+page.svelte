@@ -64,42 +64,38 @@
   }
 </script>
 
-<div class="mx-auto max-w-4xl p-2">
-  <h1 class="mb-6 text-2xl font-bold text-slate-800 dark:text-slate-200">
+<div class="mx-auto flex h-full max-w-4xl flex-col gap-2 p-2">
+  <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">
     {t().common.upload}
   </h1>
 
-  <div class="space-y-2">
-    {#if buckets.length === 0}
-      <div
-        class="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
-      >
-        {t().common.noBucketWarning}
-      </div>
-    {:else}
-      <BucketSelector
-        {buckets}
-        {selectedBucket}
-        onSelectedChange={(e) => {
-          if (e) {
-            selectedBucket = {
-              value: e.value,
-              label: e.value.bucketName,
-            };
-          }
-        }}
-      />
-    {/if}
-    <div>
-      {#if buckets.length}
-        <FileUploader selectedTarget={selectedBucket} />
-      {:else}
-        <div
-          class="flex h-64 items-center justify-center rounded-lg border border-slate-300 bg-slate-200/80 text-slate-600 dark:border-slate-700 dark:bg-slate-800"
-        >
-          <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
-        </div>
-      {/if}
+  {#if buckets.length === 0}
+    <div
+      class="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
+    >
+      {t().common.noBucketWarning}
     </div>
+  {:else}
+    <BucketSelector
+      {buckets}
+      {selectedBucket}
+      onSelectedChange={(e) => {
+        if (e) {
+          selectedBucket = {
+            value: e.value,
+            label: e.value.bucketName,
+          };
+        }
+      }}
+    />
+  {/if}
+  <div
+    class="flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+  >
+    {#if buckets.length}
+      <FileUploader selectedTarget={selectedBucket} />
+    {:else}
+      <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
+    {/if}
   </div>
 </div>
