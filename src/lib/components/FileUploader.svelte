@@ -47,14 +47,7 @@
 
   $effect(() => {
     if (dragState.paths.length > 0) {
-      dragState.paths.forEach((path) => {
-        files.push({
-          id: path,
-          filename: path,
-          remoteFilename: path.split(sep()).pop() || "unknown",
-          remoteFilenamePrefix: "",
-        });
-      });
+      parsePaths(dragState.paths);
     }
   });
 
@@ -137,14 +130,53 @@
       directory: false,
     });
     if (dialogFiles) {
-      dialogFiles.forEach((file) => {
-        files.push({
-          id: file,
-          filename: file,
-          remoteFilename: file.split(sep()).pop() || "unknown",
-          remoteFilenamePrefix: "",
+      await parsePaths(dialogFiles);
+    }
+  }
+
+  async function parsePaths(paths: string[]) {
+    paths.forEach(async (file) => {
+      const details = await getFileDetails(file);
+      if (details && details.length > 0) {
+        details.forEach((detail) => {
+          console.log(detail);
+          console.log(detail.path, detail.relativePath);
+          files.push({
+            id: detail.id,
+            filename: detail.path,
+            // remoteFilename 去掉开头的 sep
+            remoteFilename: handleRelativePath(detail.relativePath),
+            remoteFilenamePrefix: "",
+          });
         });
+      }
+    });
+  }
+
+  // 如果以 sep 开头，去掉 sep，如果 sep() 不是 /，替换为 /
+  function handleRelativePath(path: string) {
+    const s = sep();
+    return path.startsWith(s)
+      ? path.slice(s.length).replaceAll(s, "/")
+      : path.replaceAll(s, "/");
+  }
+
+  interface FileDetail {
+    id: string;
+    path: string;
+    relativePath: string;
+    isDir: boolean;
+  }
+
+  async function getFileDetails(path: string) {
+    try {
+      const details: Array<FileDetail> = await invoke("get_file_details", {
+        path,
       });
+      return details;
+    } catch (e) {
+      console.error(e);
+      setAlert("获取文件详情失败");
     }
   }
 
