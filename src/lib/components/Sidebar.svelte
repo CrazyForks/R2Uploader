@@ -15,6 +15,9 @@
   ]);
 </script>
 
+{@render Desktop()}
+{@render Mobile()}
+
 {#snippet Desktop()}
   <nav
     class="hidden min-h-dvh border-r border-slate-200 bg-white transition-all md:block dark:border-slate-700 dark:bg-slate-800"
@@ -77,9 +80,6 @@
     </nav>
   </div>
 {/snippet}
-
-{@render Desktop()}
-{@render Mobile()}
 
 <style lang="postcss">
   .sidebar-link {

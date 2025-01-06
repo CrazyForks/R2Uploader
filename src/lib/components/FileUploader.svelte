@@ -10,7 +10,7 @@
   import type { File } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { LinkPreview, type Selected } from "bits-ui";
+  import { LinkPreview } from "bits-ui";
   import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
   import { onDestroy, onMount, tick } from "svelte";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
@@ -27,8 +27,6 @@
     intervalId?: number | undefined;
   } = $props();
 
-  let showUploadButton = $derived(filesState.files.length > 0);
-  let showBigMenu = $derived(!filesState.files.length);
   let oldPrefix = $state("");
   let prefix = $state("");
   const flipDurationMs = 200;
@@ -176,6 +174,18 @@
     filesState.files.splice(index, 1);
   }
 </script>
+
+<div
+  class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+>
+  {#if !bucketsState.selected}
+    <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
+  {:else if !filesState.files.length}
+    {@render ready()}
+  {:else}
+    {@render uploader()}
+  {/if}
+</div>
 
 {#snippet text()}
   <TextUploader />
@@ -341,18 +351,6 @@
     </section>
   </div>
 {/snippet}
-
-<div
-  class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
->
-  {#if !bucketsState.selected}
-    <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
-  {:else if showBigMenu}
-    {@render ready()}
-  {:else}
-    {@render uploader()}
-  {/if}
-</div>
 
 <style lang="postcss">
   .input {
