@@ -16,3 +16,10 @@ export interface File {
   remoteFilename: string;
   remoteFilenamePrefix: string;
 }
+
+export interface FileDetail {
+  id: string;
+  path: string;
+  relativePath: string;
+  isDir: boolean;
+}

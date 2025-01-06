@@ -17,6 +17,7 @@
   import type { File } from "$lib/type";
   import { filesState } from "$lib/files.svelte";
   import TextUploader from "./TextUploader.svelte";
+  import { checkClipboardContent, parsePaths } from "$lib/tools";
 
   let {
     uploadStatus = $bindable("idle"),
@@ -155,52 +156,6 @@
     }
   }
 
-  async function parsePaths(paths: string[]) {
-    paths.forEach(async (file) => {
-      const details = await getFileDetails(file);
-      if (details && details.length > 0) {
-        details.forEach((detail) => {
-          filesState.files.push({
-            type: "file",
-            id: detail.id,
-            source: {
-              filePath: detail.path,
-            },
-            remoteFilename: handleRelativePath(detail.relativePath),
-            remoteFilenamePrefix: "",
-          });
-        });
-      }
-    });
-  }
-
-  // 如果以 sep 开头，去掉 sep，如果 sep() 不是 /，替换为 /
-  function handleRelativePath(path: string) {
-    const s = sep();
-    return path.startsWith(s)
-      ? path.slice(s.length).replaceAll(s, "/")
-      : path.replaceAll(s, "/");
-  }
-
-  interface FileDetail {
-    id: string;
-    path: string;
-    relativePath: string;
-    isDir: boolean;
-  }
-
-  async function getFileDetails(path: string) {
-    try {
-      const details: Array<FileDetail> = await invoke("get_file_details", {
-        path,
-      });
-      return details;
-    } catch (e) {
-      console.error(e);
-      setAlert("获取文件详情失败");
-    }
-  }
-
   function removeFile(index: number) {
     filesState.files.splice(index, 1);
   }
@@ -292,7 +247,7 @@
         <button onclick={openDir} class="button button-primary"
           >选择文件夹</button
         >
-        <button onclick={openFile} class="button button-primary"
+        <button onclick={checkClipboardContent} class="button button-primary"
           >选择剪贴板</button
         >
         <button onclick={() => showModal(text)} class="button button-primary"
