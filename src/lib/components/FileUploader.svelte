@@ -15,7 +15,7 @@
   import { onDestroy, onMount, tick } from "svelte";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
-  import TextUploader from "./AddTextContent.svelte";
+  import AddTextContent from "./AddTextContent.svelte";
 
   let {
     uploadStatus = $bindable("idle"),
@@ -188,7 +188,7 @@
 </div>
 
 {#snippet text()}
-  <TextUploader />
+  <AddTextContent />
 {/snippet}
 
 {#snippet preview(file: File)}
@@ -210,11 +210,11 @@
     </LinkPreview.Trigger>
     <LinkPreview.Content side="top">
       <div
-        class="w-80 space-y-2 rounded-lg bg-slate-50/90 p-4 shadow-md backdrop-blur-sm dark:bg-slate-800/80"
+        class="w-80 space-y-2 rounded-lg bg-slate-50/90 p-2 shadow-md backdrop-blur-sm dark:bg-slate-900/80"
       >
         <div class="flex items-center justify-center">
           {#if previewLoading}
-            <div class="flex items-center justify-center p-4">
+            <div class="flex items-center justify-center p-2">
               <div
                 class="size-8 animate-spin rounded-full border-b-2 border-slate-900"
               ></div>
@@ -226,15 +226,13 @@
               <img
                 src={previewContent}
                 alt="文件预览"
-                class="max-h-48 max-w-48 rounded object-contain"
+                class="max-h-48 max-w-48 rounded-md object-contain"
               />
             {:else if file.type === "text"}
               <div
-                class="max-h-48 overflow-y-auto rounded bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
+                class="max-h-48 overflow-auto rounded-md bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
               >
-                {#each previewContent.split("\n") as line}
-                  <div>{line}</div>
-                {/each}
+                <p>{previewContent}</p>
               </div>
             {/if}
           {/if}
