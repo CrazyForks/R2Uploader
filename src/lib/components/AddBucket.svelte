@@ -1,26 +1,44 @@
 <script lang="ts">
   import db from "$lib/db";
   import { t } from "$lib/i18n.svelte";
-  import { modalState, showModal } from "$lib/store.svelte";
+  import { closeModal, modalState, showModal } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
   let showHelp = $state(false);
 
   let {
-    bucket = $bindable({
-      type: "r2",
-      bucketName: "",
-      accountId: "",
-      accessKey: "",
-      secretKey: "",
-      customDomain: "",
-      s3Api: "",
-    }),
     onclose,
+    show = $bindable(false),
+    editBucketId = $bindable<number | undefined>(undefined),
   }: {
-    bucket?: Bucket;
     onclose?: () => void;
+    show: boolean;
+    editBucketId?: number;
   } = $props();
+
+  let bucket: Bucket = $state({
+    type: "r2",
+    bucketName: "",
+    accountId: "",
+    accessKey: "",
+    secretKey: "",
+    customDomain: "",
+    s3Api: "",
+  });
+
+  $effect(() => {
+    if (show) {
+      showModal(content);
+      modalState.onClose = onClose;
+    }
+    if (editBucketId) {
+      db.buckets.get(editBucketId).then((b) => {
+        if (b) {
+          bucket = b;
+        }
+      });
+    }
+  });
 
   function parseS3ApiUrl(url: string) {
     if (!url) return;
@@ -98,11 +116,10 @@
     closeModal();
   }
 
-  function closeModal() {
+  function onClose() {
     if (onclose) {
       onclose();
     }
-    modalState.isShow = false;
     bucket = {
       type: "r2",
       bucketName: "",
@@ -110,7 +127,10 @@
       accessKey: "",
       secretKey: "",
       customDomain: "",
+      s3Api: "",
     };
+    show = false;
+    editBucketId = undefined;
   }
 </script>
 
@@ -181,10 +201,6 @@
     </div>
   {/if}
 {/snippet}
-
-<button class="button button-primary" onclick={() => showModal(content)}
-  >{t().addBucket.addNew}</button
->
 
 <style lang="postcss">
   .input-field {

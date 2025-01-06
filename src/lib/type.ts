@@ -6,6 +6,7 @@ export interface Bucket {
   accessKey: string;
   secretKey: string;
   customDomain: string;
+  s3Api?: string;
   [key: string]: string | number | undefined;
 }
 

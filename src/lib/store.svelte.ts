@@ -13,21 +13,22 @@ export function setAlert(message: string) {
 interface ModalState {
   isShow: boolean;
   children: Snippet | undefined;
+  onClose?: () => void;
 }
 
 export let modalState: ModalState = $state({
   isShow: false,
   children: undefined,
+  onClose: undefined,
 });
 
 export function closeModal() {
   modalState.isShow = false;
-  modalState.children = undefined;
 }
 
 export function showModal(children: Snippet) {
-  modalState.isShow = true;
   modalState.children = children;
+  modalState.isShow = true;
 }
 
 export let dragState: { isDragging: boolean; paths: string[] } = $state({

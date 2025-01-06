@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AddRemoteTargetModal from "$lib/components/AddBucket.svelte";
+  import AddBucket from "$lib/components/AddBucket.svelte";
   import db from "$lib/db";
   import { t } from "$lib/i18n.svelte";
   import { appSettings } from "$lib/store.svelte";
@@ -15,6 +15,8 @@
 
   // 上传目标管理相关状态
   let buckets: Array<Bucket> = $state([]);
+  let addBucketModalShow = $state(false);
+  let editBucketId: number | undefined = $state();
 
   onMount(async () => {
     buckets = await db.buckets.toArray();
@@ -51,6 +53,12 @@
     }
   }
 </script>
+
+<AddBucket
+  onclose={onAddBucketClose}
+  bind:show={addBucketModalShow}
+  bind:editBucketId
+/>
 
 <div class="mx-auto flex h-full max-w-4xl flex-col gap-2 p-2">
   <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">
@@ -102,7 +110,11 @@
       <h2 class="font-bold text-slate-700 dark:text-slate-300">
         {t().settings.buckets}
       </h2>
-      <AddRemoteTargetModal onclose={onAddBucketClose} />
+      <button
+        class="button button-primary"
+        onclick={() => (addBucketModalShow = true)}
+        >{t().addBucket.addNew}</button
+      >
     </div>
     <div class="min-h-0 overflow-y-auto px-2 pb-2">
       {#each buckets as bucket}
@@ -127,7 +139,13 @@
               {t().settings.setDefault}
             </button>
           {/if}
-          <button class="button button-primary button-opacity text-sm">
+          <button
+            class="button button-primary button-opacity text-sm"
+            onclick={() => {
+              editBucketId = bucket.id;
+              addBucketModalShow = true;
+            }}
+          >
             Edit
           </button>
           <button

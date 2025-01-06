@@ -13,6 +13,10 @@
 
   function onclose() {
     modalState.isShow = false;
+    if (modalState.onClose) {
+      modalState.onClose();
+      modalState.onClose = undefined;
+    }
     modalState.children = undefined;
   }
 
