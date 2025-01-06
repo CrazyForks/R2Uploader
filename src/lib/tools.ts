@@ -107,3 +107,18 @@ export async function checkClipboardContent() {
     console.error("clipboard error:", error);
   }
 }
+
+export function copyFieldsSimple<T extends object>(source: T, target: T): T {
+  Object.assign(target, source);
+  return target;
+}
+
+// 拷贝没有的字段
+export function copyNotExistsFields<T extends object>(source: T, target: T): T {
+  for (const key in source) {
+    if (!(key in target)) {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}

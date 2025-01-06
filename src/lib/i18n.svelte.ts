@@ -44,9 +44,11 @@ export let en = $state({
     buckets: "Buckets",
     language: "Language",
     bucketDetails: {
-      bucket: "Bucket",
+      bucket: "Bucket", 
       accountId: "Account ID",
     },
+    defaultBucket: "Default Bucket",
+    setDefault: "Set as Default"
   },
   uploadTargetSelector: {
     title: "Bucket",
@@ -142,6 +144,8 @@ export let zh = $state({
       bucket: "存储桶",
       accountId: "账户 ID",
     },
+    defaultBucket: "默认存储桶",
+    setDefault: "设为默认"
   },
   uploadTargetSelector: {
     title: "存储桶",

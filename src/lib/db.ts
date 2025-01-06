@@ -14,6 +14,7 @@ export interface AppSettings {
   sidebarCollapsed: boolean;
   useSystemProxy: boolean;
   locale: string;
+  defaultBucketId?: number;
 }
 
 class AppDatabase extends Dexie {
@@ -23,10 +24,10 @@ class AppDatabase extends Dexie {
 
   constructor() {
     super("AppDatabase");
-    this.version(4).stores({
+    this.version(5).stores({
       buckets: "++id, bucketName",
       uploadHistory: "++id, fileName, remoteFileName, target, timestamp",
-      appSettings: "++id, sidebarCollapsed, useSystemProxy, locale"
+      appSettings: "++id, sidebarCollapsed, useSystemProxy, locale, defaultBucketId"
     });
   }
 }

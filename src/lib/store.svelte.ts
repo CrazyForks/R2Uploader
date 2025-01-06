@@ -1,5 +1,6 @@
 import type { Snippet } from "svelte";
 import db from "./db";
+import { copyFieldsSimple } from "./tools";
 
 export let alertMessage = $state({
   message: "",
@@ -47,20 +48,20 @@ interface AppSettings {
   sidebarCollapsed: boolean;
   useSystemProxy: boolean;
   locale: string;
+  defaultBucketId: number | undefined;
 }
 
 export let appSettings = $state<AppSettings>({
   sidebarCollapsed: false,
   useSystemProxy: true,
   locale: "en",
+  defaultBucketId: undefined,
 });
 
 // initialize app settings from database
 export async function initAppSettings() {
   const settings = await db.appSettings.get(1);
   if (settings) {
-    appSettings.sidebarCollapsed = settings.sidebarCollapsed;
-    appSettings.useSystemProxy = settings.useSystemProxy;
-    appSettings.locale = settings.locale || "en";
+    copyFieldsSimple(settings, appSettings);
   }
 }

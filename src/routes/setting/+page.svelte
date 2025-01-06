@@ -1,12 +1,12 @@
 <script lang="ts">
   import AddRemoteTargetModal from "$lib/components/AddBucket.svelte";
-  import { Select } from "bits-ui";
   import db from "$lib/db";
+  import { t } from "$lib/i18n.svelte";
   import { appSettings } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
-  import { onMount } from "svelte";
+  import { Select } from "bits-ui";
   import { ChevronsUpDown } from "lucide-svelte";
-  import { t } from "$lib/i18n.svelte";
+  import { onMount } from "svelte";
 
   const languages = [
     { value: "en", label: "English" },
@@ -14,19 +14,41 @@
   ];
 
   // 上传目标管理相关状态
-  let buckets: Array<Bucket> = [];
+  let buckets: Array<Bucket> = $state([]);
 
   onMount(async () => {
     buckets = await db.buckets.toArray();
   });
 
-  async function deleteTarget(id: number) {
+  async function setDefaultBucket(id: number) {
+    appSettings.defaultBucketId = id;
+  }
+
+  async function deleteBucket(id: number) {
     await db.buckets.delete(id);
     buckets = await db.buckets.toArray();
+    checkDefaultBucket();
   }
 
   async function onAddBucketClose() {
     buckets = await db.buckets.toArray();
+    // 如果只有一个存储桶且没有默认存储桶，自动设置为默认
+    if (buckets.length === 1 && !appSettings.defaultBucketId) {
+      await setDefaultBucket(buckets[0].id!);
+    }
+  }
+
+  function checkDefaultBucket() {
+    // 如果 buckets 中已经没有 defaultBucketId 对应的存储桶，检查 buckets 的数量，如果大于 0，使用第一个存储桶作为默认存储桶
+    if (appSettings.defaultBucketId) {
+      const defaultBucket = buckets.find(
+        (bucket) => bucket.id === appSettings.defaultBucketId,
+      );
+      if (!defaultBucket) {
+        // 如果 defaultBucketId 对应的存储桶被删除，清空 defaultBucketId
+        appSettings.defaultBucketId = undefined;
+      }
+    }
   }
 </script>
 
@@ -93,10 +115,24 @@
               <p>{t().settings.bucketDetails.accountId}: {bucket.accountId}</p>
             </div>
           </div>
-          <button class="button button-primary text-sm">Edit</button>
+          {#if appSettings.defaultBucketId === bucket.id}
+            <span class="target-details">
+              {t().settings.defaultBucket}
+            </span>
+          {:else}
+            <button
+              class="button button-primary button-opacity text-sm"
+              onclick={() => setDefaultBucket(bucket.id!)}
+            >
+              {t().settings.setDefault}
+            </button>
+          {/if}
+          <button class="button button-primary button-opacity text-sm">
+            Edit
+          </button>
           <button
-            class="button button-danger text-sm"
-            onclick={() => deleteTarget(bucket.id!)}
+            class="button button-danger button-opacity text-sm"
+            onclick={() => deleteBucket(bucket.id!)}
           >
             {t().common.delete}
           </button>
@@ -113,5 +149,9 @@
 
   .target-details {
     @apply text-xs text-slate-500 dark:text-slate-400;
+  }
+
+  .button-opacity {
+    @apply opacity-90 hover:opacity-100;
   }
 </style>
