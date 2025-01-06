@@ -15,7 +15,7 @@
   import { onDestroy, onMount, tick } from "svelte";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
-  import TextUploader from "./TextUploader.svelte";
+  import TextUploader from "./AddTextContent.svelte";
 
   let {
     uploadStatus = $bindable("idle"),
