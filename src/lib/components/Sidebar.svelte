@@ -3,14 +3,14 @@
   import { t } from "$lib/i18n.svelte";
   import { appSettings } from "$lib/store.svelte";
   import {
+    CloudUpload,
     PanelRightClose,
     PanelRightOpen,
-    Plus,
     Settings,
   } from "lucide-svelte";
 
   const links = $derived([
-    { href: "/", icon: Plus, label: t().common.upload },
+    { href: "/", icon: CloudUpload, label: t().common.upload },
     { href: "/setting", icon: Settings, label: t().common.setting },
   ]);
 </script>
