@@ -1,39 +1,30 @@
 <script lang="ts">
-  import { Upload, X, GripVertical, Eye, UploadCloud } from "lucide-svelte";
-  import { open } from "@tauri-apps/plugin-dialog";
-  import { tick } from "svelte";
-  import { dragHandleZone, dragHandle } from "svelte-dnd-action";
-  import { flip } from "svelte/animate";
-  import { invoke } from "@tauri-apps/api/core";
+  import { bucketsState, filesState } from "$lib/files.svelte";
   import {
     dragState,
-    modalState,
     setAlert,
     setDragPaths,
     showModal,
   } from "$lib/store.svelte";
-  import { LinkPreview, type Selected } from "bits-ui";
-  import { sep } from "@tauri-apps/api/path";
-  import type { File } from "$lib/type";
-  import { filesState } from "$lib/files.svelte";
-  import TextUploader from "./TextUploader.svelte";
   import { checkClipboardContent, parsePaths } from "$lib/tools";
+  import type { File } from "$lib/type";
+  import { invoke } from "@tauri-apps/api/core";
+  import { open } from "@tauri-apps/plugin-dialog";
+  import { LinkPreview, type Selected } from "bits-ui";
+  import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
+  import { onDestroy, onMount, tick } from "svelte";
+  import { dragHandle, dragHandleZone } from "svelte-dnd-action";
+  import { flip } from "svelte/animate";
+  import TextUploader from "./TextUploader.svelte";
 
   let {
     uploadStatus = $bindable("idle"),
     uploadStatusMap = $bindable({}),
     intervalId = $bindable<number | undefined>(),
-    selectedTarget,
   }: {
     uploadStatus?: "idle" | "uploading" | "success" | "error";
     uploadStatusMap?: Record<string, string>;
     intervalId?: number | undefined;
-    selectedTarget?: Selected<{
-      bucketName: string;
-      accountId: string;
-      accessKey: string;
-      secretKey: string;
-    }>;
   } = $props();
 
   let showUploadButton = $derived(filesState.files.length > 0);
@@ -47,6 +38,14 @@
   let previewLoading = $state(false);
   let previewError = $state<string | null>(null);
 
+  onMount(() => {
+    window.addEventListener("keydown", handleKeyDown);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener("keydown", handleKeyDown);
+  });
+
   $effect(() => {
     if (dragState.paths.length > 0) {
       parsePaths(dragState.paths);
@@ -54,6 +53,23 @@
     }
   });
 
+  function handleKeyDown(e: KeyboardEvent) {
+    // 如果当前焦点是输入框，则不处理
+    if (
+      e.target instanceof HTMLInputElement ||
+      e.target instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+
+    // 处理 ctrl+v
+    if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+      e.preventDefault();
+      checkClipboardContent();
+    }
+  }
+
+  // 预览文件
   async function previewFile(file: File) {
     previewLoading = true;
     previewError = null;
@@ -108,7 +124,7 @@
   }
 
   async function uploadFile() {
-    if (!selectedTarget) return;
+    if (!bucketsState.selected) return;
     try {
       uploadStatus = "uploading";
 
@@ -119,10 +135,10 @@
       }));
 
       await invoke("r2_upload", {
-        bucketName: selectedTarget.value.bucketName,
-        accountId: selectedTarget.value.accountId,
-        accessKey: selectedTarget.value.accessKey,
-        secretKey: selectedTarget.value.secretKey,
+        bucketName: bucketsState.selected.value.bucketName,
+        accountId: bucketsState.selected.value.accountId,
+        accessKey: bucketsState.selected.value.accessKey,
+        secretKey: bucketsState.selected.value.secretKey,
         files: filesToUpload,
       });
 
@@ -136,7 +152,7 @@
     }
   }
 
-  async function openFile() {
+  async function openDialogForFiles() {
     const dialogFiles = await open({
       multiple: true,
       directory: false,
@@ -146,7 +162,7 @@
     }
   }
 
-  async function openDir() {
+  async function openDialogForDir() {
     const dialogFiles = await open({
       multiple: true,
       directory: true,
@@ -233,7 +249,7 @@
   </LinkPreview.Root>
 {/snippet}
 
-{#if showBigMenu}
+{#snippet ready()}
   <div class="flex items-center justify-center gap-12">
     <UploadCloud class="hidden size-32 text-slate-400 sm:block" />
     <div class="flex flex-1 flex-col items-start gap-3">
@@ -241,10 +257,10 @@
         您的存储桶已就绪，拖放文件到此，或：
       </p>
       <div class="grid grid-cols-2 gap-2">
-        <button onclick={openFile} class="button button-primary"
+        <button onclick={openDialogForFiles} class="button button-primary"
           >选择文件</button
         >
-        <button onclick={openDir} class="button button-primary"
+        <button onclick={openDialogForDir} class="button button-primary"
           >选择文件夹</button
         >
         <button onclick={checkClipboardContent} class="button button-primary"
@@ -256,7 +272,9 @@
       </div>
     </div>
   </div>
-{:else}
+{/snippet}
+
+{#snippet uploader()}
   <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
     <!-- 功能条 -->
     <div
@@ -322,7 +340,19 @@
       {/each}
     </section>
   </div>
-{/if}
+{/snippet}
+
+<div
+  class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+>
+  {#if !bucketsState.selected}
+    <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
+  {:else if showBigMenu}
+    {@render ready()}
+  {:else}
+    {@render uploader()}
+  {/if}
+</div>
 
 <style lang="postcss">
   .input {
