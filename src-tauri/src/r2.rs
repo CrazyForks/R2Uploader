@@ -3,6 +3,7 @@ use aws_config::ConfigLoader;
 use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{CompletedMultipartUpload, CompletedPart};
 use aws_sdk_s3::Client;
+use aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder;
 use base64::engine::general_purpose;
 use base64::Engine;
 use dashmap::DashMap;
@@ -15,6 +16,7 @@ use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
+use sysproxy::Sysproxy;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
 use tokio::sync::Semaphore;
@@ -190,9 +192,12 @@ impl R2Client {
         secret_key: &str,
     ) -> Result<Self, String> {
         let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
-        let proxy_connector = create_proxy_connector();
-        let http_client = aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new()
-            .build(proxy_connector.unwrap());
+
+        // Create HTTP client with or without proxy
+        let http_client = match create_proxy_connector() {
+            Some(proxy_connector) => HyperClientBuilder::new().build(proxy_connector),
+            None => HyperClientBuilder::new().build(HttpConnector::new()),
+        };
 
         let config = ConfigLoader::default()
             .region(Region::new("auto"))
@@ -385,15 +390,15 @@ impl R2Client {
 }
 
 fn create_proxy_connector() -> Option<ProxyConnector<HttpConnector>> {
-    let proxy = std::env::var("HTTP_PROXY")
-        .or_else(|_| std::env::var("http_proxy"))
-        .ok();
-
-    match proxy {
-        Some(proxy_url) => {
-            let proxy = Proxy::new(hyper_proxy::Intercept::All, proxy_url.parse().unwrap());
-            Some(ProxyConnector::from_proxy(HttpConnector::new(), proxy).unwrap())
+    match sysproxy::Sysproxy::get_system_proxy() {
+        Ok(proxy) if !proxy.host.is_empty() && proxy.port > 0 && proxy.enable => {
+            // Try to create proxy URI and connector
+            let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
+                .parse()
+                .ok()?;
+            let proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
+            ProxyConnector::from_proxy(HttpConnector::new(), proxy).ok()
         }
-        None => None,
+        _ => None, // Return None if no proxy or error getting proxy
     }
 }
