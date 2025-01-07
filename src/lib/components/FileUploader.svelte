@@ -38,20 +38,24 @@
 
   onMount(async () => {
     window.addEventListener("keydown", handleKeyDown);
-    
+
     // 监听上传进度事件
     await listen<UploadProgress>("upload-progress", (event) => {
+      console.log("event: ", event);
       const progress = event.payload;
       uploadStatusMap[progress.taskId] = progress;
-      
+
       // 检查是否所有文件都已完成上传
       const allCompleted = Object.values(uploadStatusMap).every(
-        (p) => p.status.type === "success" || p.status.type === "error" || p.status.type === "cancelled"
+        (p) =>
+          p.status.type === "success" ||
+          p.status.type === "error" ||
+          p.status.type === "cancelled",
       );
-      
+
       if (allCompleted) {
         const hasError = Object.values(uploadStatusMap).some(
-          (p) => p.status.type === "error"
+          (p) => p.status.type === "error",
         );
         uploadStatus = hasError ? "error" : "success";
         setAlert(hasError ? "部分文件上传失败" : "上传成功");
@@ -128,7 +132,10 @@
       const filesToUpload = filesState.files.map((file) => ({
         id: file.id,
         source: file.source,
-        remoteFilename: `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
+        remoteFilename:
+          file.remoteFilenamePrefix === ""
+            ? file.remoteFilename
+            : `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
       }));
 
       await invoke("r2_upload", {
@@ -217,7 +224,7 @@
                 />
               </div>
               <div class="mt-1 text-xs text-slate-500">
-                {Math.floor(progress.status.progress * 100)}% - 
+                {Math.floor(progress.status.progress * 100)}% -
                 {(progress.status.bytesUploaded / 1024 / 1024).toFixed(2)}MB /
                 {(progress.status.totalBytes / 1024 / 1024).toFixed(2)}MB
                 {#if progress.status.speed > 0}

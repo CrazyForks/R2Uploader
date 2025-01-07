@@ -51,15 +51,15 @@ pub async fn r2_upload(
     for file in files {
         let client = client.clone();
         let semaphore = semaphore.clone();
-        let task_id = Uuid::new_v4().to_string();
         let app_handle = app.clone();
         let filename = file.remote_filename.clone();
+        let file_id = file.id.clone();
 
         // 发送初始状态
         let _ = app_handle.emit(
             "upload-progress",
             UploadProgress {
-                task_id: task_id.clone(),
+                file_id: file_id.clone(),
                 filename: filename.clone(),
                 status: UploadStatus::Uploading {
                     progress: 0.0,
@@ -79,7 +79,7 @@ pub async fn r2_upload(
             let result = match &file.source {
                 UploadSource::FilePath(path) => {
                     client
-                        .stream_upload_file(&app_handle, &path, &filename, &task_id)
+                        .stream_upload_file(&app_handle, &path, &filename, &file_id)
                         .await
                 }
                 UploadSource::FileContent(content) => {
@@ -88,7 +88,7 @@ pub async fn r2_upload(
                         .map_err(|e| e.to_string())?;
                     let content = String::from_utf8(decoded).map_err(|e| e.to_string())?;
                     client
-                        .upload_content(&app_handle, &content, &filename, &task_id)
+                        .upload_content(&app_handle, &content, &filename, &file_id)
                         .await
                 }
             };
@@ -105,7 +105,7 @@ pub async fn r2_upload(
             let _ = app_handle.emit(
                 "upload-progress",
                 UploadProgress {
-                    task_id: task_id.clone(),
+                    file_id: file_id.clone(),
                     filename,
                     status: final_status,
                     timestamp: SystemTime::now()
@@ -130,17 +130,17 @@ pub async fn r2_upload(
 #[tauri::command]
 pub async fn cancel_upload(
     app_handle: tauri::AppHandle,
-    task_id: String,
+    file_id: String,
     filename: String,
 ) -> Result<(), String> {
-    if let Some(mut status) = UPLOAD_STATUS.get_mut(&task_id) {
+    if let Some(mut status) = UPLOAD_STATUS.get_mut(&file_id) {
         *status = "cancelled".to_string();
 
         // 发送取消状态
         let _ = app_handle.emit(
             "upload-progress",
             UploadProgress {
-                task_id,
+                file_id,
                 filename,
                 status: UploadStatus::Cancelled,
                 timestamp: SystemTime::now()
@@ -219,16 +219,18 @@ impl R2Client {
         app_handle: &tauri::AppHandle,
         content: &str,
         remote_filename: &str,
-        task_id: &str,
+        file_id: &str,
     ) -> Result<(), String> {
         self.client
             .put_object()
             .bucket(&self.bucket_name)
             .key(remote_filename)
-            .content_type(from_path(remote_filename).first_or_octet_stream().as_ref())
-            .body(aws_sdk_s3::primitives::ByteStream::from(
-                content.as_bytes().to_vec(),
-            ))
+            .body(content.as_bytes().to_vec().into())
+            .content_type(
+                from_path(remote_filename)
+                    .first_or_octet_stream()
+                    .to_string(),
+            )
             .send()
             .await
             .map_err(|e| e.to_string())?;
@@ -319,63 +321,96 @@ impl R2Client {
         app_handle: &tauri::AppHandle,
         path: &str,
         remote_filename: &str,
-        task_id: &str,
+        file_id: &str,
     ) -> Result<(), String> {
         const CHUNK_SIZE: usize = 5 * 1024 * 1024; // 5MB chunks
 
-        let upload_id = self.create_multipart_upload(remote_filename).await?;
         let mut file = tokio::fs::File::open(path)
             .await
             .map_err(|e| e.to_string())?;
+        let file_size = file
+            .metadata()
+            .await
+            .map_err(|e| e.to_string())?
+            .len() as usize;
+
+        if file_size < CHUNK_SIZE {
+            let mut buffer = Vec::new();
+            file.read_to_end(&mut buffer)
+                .await
+                .map_err(|e| e.to_string())?;
+            self.client
+                .put_object()
+                .bucket(&self.bucket_name)
+                .key(remote_filename)
+                .body(buffer.into())
+                .content_type(
+                    from_path(remote_filename)
+                        .first_or_octet_stream()
+                        .to_string(),
+                )
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+            return Ok(());
+        }
+
+        let upload_id = self.create_multipart_upload(remote_filename).await?;
         let mut part_number = 1;
         let mut completed_parts = Vec::new();
-        let mut buffer = Vec::with_capacity(CHUNK_SIZE);
+        let mut buffer = vec![0; CHUNK_SIZE];
+        let mut bytes_uploaded = 0;
+        let start_time = SystemTime::now();
 
         loop {
             let n = file
-                .read_buf(&mut buffer)
+                .read(&mut buffer)
                 .await
                 .map_err(|e| e.to_string())?;
-            if n == 0 && buffer.is_empty() {
+            if n == 0 {
                 break;
             }
 
-            if buffer.len() >= CHUNK_SIZE || (n == 0 && !buffer.is_empty()) {
-                let upload_data = std::mem::replace(&mut buffer, Vec::with_capacity(CHUNK_SIZE));
-                let completed_part = self
-                    .upload_part(remote_filename, &upload_id, part_number, upload_data)
-                    .await?;
-                completed_parts.push(completed_part);
-                part_number += 1;
-
-                // 发送进度更新
-                let _ = app_handle.emit(
-                    "upload-progress",
-                    UploadProgress {
-                        task_id: task_id.to_string(),
-                        filename: remote_filename.to_string(),
-                        status: UploadStatus::Uploading {
-                            progress: (part_number as f64 - 1.0)
-                                / (file.metadata().await.unwrap().len() as f64 / CHUNK_SIZE as f64),
-                            bytes_uploaded: ((part_number - 1) * CHUNK_SIZE as i32) as u64,
-                            total_bytes: file.metadata().await.unwrap().len(),
-                            speed: 0.0,
-                        },
-                        timestamp: SystemTime::now()
-                            .duration_since(UNIX_EPOCH)
-                            .unwrap()
-                            .as_secs(),
-                    },
-                );
-            }
-        }
-
-        if !completed_parts.is_empty() {
-            self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
+            let part = self
+                .upload_part(
+                    remote_filename,
+                    &upload_id,
+                    part_number,
+                    buffer[..n].to_vec(),
+                )
                 .await?;
+
+            completed_parts.push(part);
+            bytes_uploaded += n;
+            let elapsed = SystemTime::now()
+                .duration_since(start_time)
+                .unwrap_or_default()
+                .as_secs_f64();
+            let speed = bytes_uploaded as f64 / elapsed;
+
+            let _ = app_handle.emit(
+                "upload-progress",
+                UploadProgress {
+                    file_id: file_id.to_string(),
+                    filename: remote_filename.to_string(),
+                    status: UploadStatus::Uploading {
+                        progress: bytes_uploaded as f64 / file_size as f64,
+                        bytes_uploaded: bytes_uploaded as u64,
+                        total_bytes: file_size as u64,
+                        speed,
+                    },
+                    timestamp: SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
+                },
+            );
+
+            part_number += 1;
         }
 
-        Ok(())
+        self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
+            .await
     }
 
     pub async fn ping(&self) -> Result<(), String> {

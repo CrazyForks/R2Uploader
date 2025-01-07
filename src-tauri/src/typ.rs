@@ -44,7 +44,7 @@ pub enum UploadStatus {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadProgress {
-    pub task_id: String,
+    pub file_id: String,
     pub filename: String,
     pub status: UploadStatus,
     pub timestamp: u64,
