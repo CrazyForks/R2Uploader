@@ -1,5 +1,6 @@
 use aws_config::ConfigLoader;
-use aws_sdk_s3::config::{Builder, Credentials, Region};
+use aws_sdk_s3::config::{Credentials, Region};
+use aws_sdk_s3::types::CompletedPart;
 use aws_sdk_s3::Client;
 use base64::{engine::general_purpose, Engine};
 use dashmap::DashMap;
@@ -27,16 +28,9 @@ impl R2Client {
     ) -> Result<Self, String> {
         let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
 
-        let proxy = sysproxy::Sysproxy::get_system_proxy()
-            .map_err(|e| format!("can not get system proxy: {}", e))?;
-        let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
-            .parse()
-            .map_err(|e| format!("can not parse proxy uri: {}", e))?;
-        let proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
-        let connector = HttpConnector::new();
-        let a_proxy = ProxyConnector::from_proxy(connector, proxy).unwrap();
-        let http_client =
-            aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new().build(a_proxy);
+        let proxy_connector = create_proxy_connector()?;
+        let http_client = aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new()
+            .build(proxy_connector);
 
         let config = ConfigLoader::default()
             .region(Region::new("auto"))
@@ -53,31 +47,6 @@ impl R2Client {
             bucket_name: bucket_name.to_string(),
             account_id: account_id.to_string(),
         })
-    }
-
-    async fn upload_file(&self, path: &str, remote_filename: &str) -> Result<(), String> {
-        let content_type = from_path(remote_filename).first_or_octet_stream();
-        let content_type = content_type.as_ref();
-
-        let _metadata = tokio::fs::metadata(path)
-            .await
-            .map_err(|e| e.to_string())?;
-
-        let body = aws_sdk_s3::primitives::ByteStream::from_path(path)
-            .await
-            .map_err(|e| e.to_string())?;
-
-        self.client
-            .put_object()
-            .bucket(&self.bucket_name)
-            .key(remote_filename)
-            .content_type(content_type)
-            .body(body)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        Ok(())
     }
 
     async fn upload_content(&self, content: &str, remote_filename: &str) -> Result<(), String> {
@@ -98,10 +67,172 @@ impl R2Client {
 
         Ok(())
     }
+
+    async fn create_multipart_upload(&self, remote_filename: &str) -> Result<String, String> {
+        let content_type = from_path(remote_filename).first_or_octet_stream();
+        let content_type = content_type.as_ref();
+
+        let result = self
+            .client
+            .create_multipart_upload()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .content_type(content_type)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        result
+            .upload_id()
+            .ok_or_else(|| "Failed to get upload ID".to_string())
+            .map(|id| id.to_string())
+    }
+
+    async fn abort_multipart_upload(
+        &self,
+        remote_filename: &str,
+        upload_id: &str,
+    ) -> Result<(), String> {
+        self.client
+            .abort_multipart_upload()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .upload_id(upload_id)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+
+    async fn complete_multipart_upload(
+        &self,
+        remote_filename: &str,
+        upload_id: &str,
+        parts: Vec<CompletedPart>,
+    ) -> Result<(), String> {
+        let completed_multipart_upload = aws_sdk_s3::types::CompletedMultipartUpload::builder()
+            .set_parts(Some(parts))
+            .build();
+
+        self.client
+            .complete_multipart_upload()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .upload_id(upload_id)
+            .multipart_upload(completed_multipart_upload)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+
+    async fn upload_part(
+        &self,
+        remote_filename: &str,
+        upload_id: &str,
+        part_number: i32,
+        body: Vec<u8>,
+    ) -> Result<CompletedPart, String> {
+        let result = self
+            .client
+            .upload_part()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .upload_id(upload_id)
+            .part_number(part_number)
+            .body(aws_sdk_s3::primitives::ByteStream::from(body))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let e_tag = result
+            .e_tag()
+            .ok_or_else(|| "Failed to get ETag".to_string())?
+            .to_string();
+
+        Ok(CompletedPart::builder()
+            .e_tag(e_tag)
+            .part_number(part_number)
+            .build())
+    }
+
+    async fn stream_upload_file(
+        &self,
+        path: &str,
+        remote_filename: &str,
+        task_id: &str,
+    ) -> Result<(), String> {
+        const CHUNK_SIZE: usize = 5 * 1024 * 1024; // 5MB chunks
+
+        let upload_id = self.create_multipart_upload(remote_filename).await?;
+
+        let mut file = tokio::fs::File::open(path)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let mut part_number = 1;
+        let mut completed_parts = Vec::new();
+        let mut buffer = Vec::with_capacity(CHUNK_SIZE);
+
+        loop {
+            if UPLOAD_STATUS
+                .get(task_id)
+                .map_or(false, |status| status.as_str() == "cancelled")
+            {
+                // 如果上传被取消，中止多部分上传
+                self.abort_multipart_upload(remote_filename, &upload_id)
+                    .await?;
+                return Err("Upload cancelled".to_string());
+            }
+
+            use tokio::io::AsyncReadExt;
+            let n = file
+                .read_buf(&mut buffer)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if n == 0 {
+                break;
+            }
+
+            if buffer.len() >= CHUNK_SIZE || n == 0 {
+                let chunk = buffer.split_off(0);
+                let completed_part = self
+                    .upload_part(remote_filename, &upload_id, part_number, chunk)
+                    .await?;
+
+                completed_parts.push(completed_part);
+                part_number += 1;
+            }
+        }
+
+        if !completed_parts.is_empty() {
+            self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
+                .await?;
+        }
+
+        Ok(())
+    }
+}
+
+fn create_proxy_connector() -> Result<ProxyConnector<HttpConnector>, String> {
+    let proxy = sysproxy::Sysproxy::get_system_proxy()
+        .map_err(|e| format!("Failed to get system proxy: {}", e))?;
+
+    let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
+        .parse()
+        .map_err(|e| format!("Failed to parse proxy URI: {}", e))?;
+
+    let proxy = Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
+    let connector = HttpConnector::new();
+
+    ProxyConnector::from_proxy(connector, proxy)
+        .map_err(|e| format!("Failed to create proxy connector: {}", e))
 }
 
 static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
-static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(16)));
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -116,16 +247,6 @@ pub struct File {
     pub id: String,
     pub source: UploadSource,
     pub remote_filename: String,
-}
-
-pub fn get_proxy() -> Result<Proxy, String> {
-    let proxy = sysproxy::Sysproxy::get_system_proxy()
-        .map_err(|e| format!("can not get system proxy: {}", e))?;
-    let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
-        .parse()
-        .map_err(|e| format!("can not parse proxy uri: {}", e))?;
-    let mut proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
-    Ok(proxy)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -250,6 +371,16 @@ pub async fn ping_bucket(
 }
 
 #[tauri::command]
+pub async fn cancel_upload(task_id: String) -> Result<(), String> {
+    if let Some(mut status) = UPLOAD_STATUS.get_mut(&task_id) {
+        *status = "cancelled".to_string();
+        Ok(())
+    } else {
+        Err("Upload task not found".to_string())
+    }
+}
+
+#[tauri::command]
 pub async fn r2_upload(
     bucket_name: &str,
     account_id: &str,
@@ -259,48 +390,50 @@ pub async fn r2_upload(
 ) -> Result<(), String> {
     let client = R2Client::new(bucket_name, account_id, access_key, secret_key).await?;
 
-    tokio::spawn(async move {
-        let client = Arc::new(client);
+    for file in files {
+        // 使用文件的id作为上传任务的id
+        UPLOAD_STATUS.insert(file.id.clone(), "uploading".to_string());
 
-        for file in files {
-            let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.unwrap();
-            let client = client.clone();
+        let result = match &file.source {
+            UploadSource::FilePath(path) => {
+                println!(
+                    "Uploading file to bucket: {}, account_id: {}, file_path: {}",
+                    client.bucket_name, client.account_id, path
+                );
+                client
+                    .stream_upload_file(path, &file.remote_filename, &file.id)
+                    .await
+            }
+            UploadSource::FileContent(content) => {
+                println!(
+                    "Uploading content to bucket: {}, account_id: {}",
+                    client.bucket_name, client.account_id
+                );
+                client.upload_content(content, &file.remote_filename).await
+            }
+        };
 
-            tokio::spawn(async move {
-                let file_id = file.id.clone();
-                UPLOAD_STATUS.insert(file_id.clone(), "uploading".to_string());
-
-                let result: Result<(), String> = match file.source {
-                    UploadSource::FilePath(path) => {
-                        println!(
-                            "Uploading file to bucket: {}, account_id: {}, file_path: {}",
-                            client.bucket_name, client.account_id, path
-                        );
-                        client.upload_file(&path, &file.remote_filename).await
-                    }
-                    UploadSource::FileContent(content) => {
-                        println!(
-                            "Uploading content to bucket: {}, account_id: {}",
-                            client.bucket_name, client.account_id
-                        );
-                        client.upload_content(&content, &file.remote_filename).await
-                    }
-                };
-
-                match result {
-                    Ok(_) => {
-                        UPLOAD_STATUS.insert(file_id, "success".to_string());
-                    }
-                    Err(e) => {
-                        UPLOAD_STATUS.insert(file_id, format!("failed: {}", e));
-                    }
+        // 根据上传结果更新状态
+        match result {
+            Ok(_) => {
+                if UPLOAD_STATUS
+                    .get(&file.id)
+                    .map_or(false, |status| status.as_str() != "cancelled")
+                {
+                    UPLOAD_STATUS.insert(file.id.clone(), "completed".to_string());
                 }
-
-                drop(permit);
-                Ok::<(), String>(())
-            });
+            }
+            Err(e) => {
+                if UPLOAD_STATUS
+                    .get(&file.id)
+                    .map_or(false, |status| status.as_str() != "cancelled")
+                {
+                    UPLOAD_STATUS.insert(file.id.clone(), format!("error: {}", e));
+                }
+                return Err(e);
+            }
         }
-    });
+    }
 
     Ok(())
 }
