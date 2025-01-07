@@ -12,6 +12,94 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
 use uuid::Uuid;
 
+struct R2Client {
+    client: Client,
+    bucket_name: String,
+    account_id: String,
+}
+
+impl R2Client {
+    async fn new(
+        bucket_name: &str,
+        account_id: &str,
+        access_key: &str,
+        secret_key: &str,
+    ) -> Result<Self, String> {
+        let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
+
+        let proxy = sysproxy::Sysproxy::get_system_proxy()
+            .map_err(|e| format!("can not get system proxy: {}", e))?;
+        let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
+            .parse()
+            .map_err(|e| format!("can not parse proxy uri: {}", e))?;
+        let proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
+        let connector = HttpConnector::new();
+        let a_proxy = ProxyConnector::from_proxy(connector, proxy).unwrap();
+        let http_client =
+            aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new().build(a_proxy);
+
+        let config = ConfigLoader::default()
+            .region(Region::new("auto"))
+            .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
+            .credentials_provider(credentials)
+            .http_client(http_client)
+            .load()
+            .await;
+
+        let client = Client::new(&config);
+
+        Ok(Self {
+            client,
+            bucket_name: bucket_name.to_string(),
+            account_id: account_id.to_string(),
+        })
+    }
+
+    async fn upload_file(&self, path: &str, remote_filename: &str) -> Result<(), String> {
+        let content_type = from_path(remote_filename).first_or_octet_stream();
+        let content_type = content_type.as_ref();
+
+        let _metadata = tokio::fs::metadata(path)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let body = aws_sdk_s3::primitives::ByteStream::from_path(path)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        self.client
+            .put_object()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .content_type(content_type)
+            .body(body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+
+    async fn upload_content(&self, content: &str, remote_filename: &str) -> Result<(), String> {
+        let content_type = from_path(remote_filename).first_or_octet_stream();
+        let content_type = content_type.as_ref();
+
+        let body = aws_sdk_s3::primitives::ByteStream::from(content.as_bytes().to_vec());
+
+        self.client
+            .put_object()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .content_type(content_type)
+            .body(body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+}
+
 static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
 static UPLOAD_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| Arc::new(Semaphore::new(16)));
 
@@ -169,31 +257,7 @@ pub async fn r2_upload(
     secret_key: &str,
     files: Vec<File>,
 ) -> Result<(), String> {
-    let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
-
-    let proxy = sysproxy::Sysproxy::get_system_proxy()
-        .map_err(|e| format!("can not get system proxy: {}", e))?;
-    let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
-        .parse()
-        .map_err(|e| format!("can not parse proxy uri: {}", e))?;
-    let proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
-    let connector = HttpConnector::new();
-    let a_proxy = ProxyConnector::from_proxy(connector, proxy).unwrap();
-    let client =
-        aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new().build(a_proxy);
-
-    let config = ConfigLoader::default()
-        .region(Region::new("auto"))
-        .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
-        .credentials_provider(credentials)
-        .http_client(client)
-        .load()
-        .await;
-
-    let client = Client::new(&config);
-
-    let bucket_name = bucket_name.to_string();
-    let account_id = account_id.to_string();
+    let client = R2Client::new(bucket_name, account_id, access_key, secret_key).await?;
 
     tokio::spawn(async move {
         let client = Arc::new(client);
@@ -201,60 +265,25 @@ pub async fn r2_upload(
         for file in files {
             let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.unwrap();
             let client = client.clone();
-            let bucket_name = bucket_name.clone();
-            let account_id = account_id.clone();
 
             tokio::spawn(async move {
                 let file_id = file.id.clone();
                 UPLOAD_STATUS.insert(file_id.clone(), "uploading".to_string());
 
-                let content_type = from_path(&file.remote_filename).first_or_octet_stream();
-                let content_type = content_type.as_ref();
-
                 let result: Result<(), String> = match file.source {
                     UploadSource::FilePath(path) => {
                         println!(
                             "Uploading file to bucket: {}, account_id: {}, file_path: {}",
-                            &bucket_name, &account_id, path
+                            client.bucket_name, client.account_id, path
                         );
-
-                        let _metadata = tokio::fs::metadata(&path)
-                            .await
-                            .map_err(|e| e.to_string())?;
-
-                        let body = aws_sdk_s3::primitives::ByteStream::from_path(&path)
-                            .await
-                            .map_err(|e| e.to_string())?;
-
-                        client
-                            .put_object()
-                            .bucket(&bucket_name)
-                            .key(&file.remote_filename)
-                            .content_type(content_type)
-                            .body(body)
-                            .send()
-                            .await
-                            .map_err(|e| e.to_string())?;
-                        Ok(())
+                        client.upload_file(&path, &file.remote_filename).await
                     }
                     UploadSource::FileContent(content) => {
                         println!(
                             "Uploading content to bucket: {}, account_id: {}",
-                            bucket_name, account_id
+                            client.bucket_name, client.account_id
                         );
-                        let body =
-                            aws_sdk_s3::primitives::ByteStream::from(content.as_bytes().to_vec());
-
-                        client
-                            .put_object()
-                            .bucket(&bucket_name)
-                            .key(&file.remote_filename)
-                            .content_type(content_type)
-                            .body(body)
-                            .send()
-                            .await
-                            .map_err(|e| e.to_string())?;
-                        Ok(())
+                        client.upload_content(&content, &file.remote_filename).await
                     }
                 };
 
