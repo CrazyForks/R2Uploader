@@ -142,10 +142,16 @@ pub async fn ping_bucket(
         "r2-uploader",
     );
 
+    let proxy = get_proxy()?;
     let config = ConfigLoader::default()
         .region(Region::new("auto"))
         .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
         .credentials_provider(credentials)
+        .http_client(
+            aws_smithy_client::hyper_ext::Adapter::builder()
+                .proxy(proxy)
+                .build()
+        )
         .load()
         .await;
 
