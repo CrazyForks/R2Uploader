@@ -30,7 +30,7 @@
   let oldPrefix = $state("");
   let prefix = $state("");
   const flipDurationMs = 200;
-  let isUploading = $state(true);
+  let isUploading = $state(false);
 
   // 预览相关状态
   let previewContent = $state<string | null>(null);

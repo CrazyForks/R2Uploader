@@ -2,7 +2,9 @@ use base64::{engine::general_purpose, Engine};
 use dashmap::DashMap;
 use mime_guess::from_path;
 use once_cell::sync::Lazy;
-use s3::{creds::Credentials, Bucket, Region};
+use aws_config::ConfigLoader;
+use aws_sdk_s3::config::{Builder, Credentials, Region};
+use aws_sdk_s3::Client;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
@@ -132,24 +134,31 @@ pub async fn ping_bucket(
     access_key: &str,
     secret_key: &str,
 ) -> Result<(), String> {
-    let bucket = Bucket::new(
-        bucket_name,
-        Region::R2 {
-            account_id: account_id.to_string(),
-        },
-        Credentials::new(Some(access_key), Some(secret_key), None, None, None)
-            .map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?
-    .with_path_style();
+    let credentials = Credentials::new(
+        access_key,
+        secret_key,
+        None,
+        None,
+        "r2-uploader",
+    );
 
-    bucket.set_proxy(get_proxy()?).map_err(|e| e.to_string())?;
+    let config = ConfigLoader::default()
+        .region(Region::new("auto"))
+        .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
+        .credentials_provider(credentials)
+        .load()
+        .await;
 
-    let result = bucket
-        .list("".into(), None)
+    let client = Client::new(&config);
+
+    let result = client
+        .list_objects_v2()
+        .bucket(bucket_name)
+        .send()
         .await
         .map_err(|e| e.to_string())?;
-    println!("Bucket contents: {:?}", result);
+
+    println!("Bucket contents: {:?}", result.contents);
 
     Ok(())
 }
@@ -162,28 +171,32 @@ pub async fn r2_upload(
     secret_key: &str,
     files: Vec<File>,
 ) -> Result<(), String> {
-    let bucket = Bucket::new(
-        bucket_name,
-        Region::R2 {
-            account_id: account_id.to_string(),
-        },
-        Credentials::new(Some(access_key), Some(secret_key), None, None, None)
-            .map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?
-    .with_path_style();
+    let credentials = Credentials::new(
+        access_key,
+        secret_key,
+        None,
+        None,
+        "r2-uploader",
+    );
 
-    bucket.set_proxy(get_proxy()?).map_err(|e| e.to_string())?;
+    let config = ConfigLoader::default()
+        .region(Region::new("auto"))
+        .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
+        .credentials_provider(credentials)
+        .load()
+        .await;
+
+    let client = Client::new(&config);
 
     let bucket_name = bucket_name.to_string();
     let account_id = account_id.to_string();
 
     tokio::spawn(async move {
-        let bucket = Arc::new(bucket);
+        let client = Arc::new(client);
 
         for file in files {
             let permit = UPLOAD_SEMAPHORE.clone().acquire_owned().await.unwrap();
-            let bucket = bucket.clone();
+            let client = client.clone();
             let bucket_name = bucket_name.clone();
             let account_id = account_id.clone();
 
@@ -205,15 +218,17 @@ pub async fn r2_upload(
                             .await
                             .map_err(|e| e.to_string())?;
 
-                        let mut f = tokio::fs::File::open(&path)
+                        let body = aws_sdk_s3::primitives::ByteStream::from_path(&path)
                             .await
                             .map_err(|e| e.to_string())?;
-                        bucket
-                            .put_object_stream_with_content_type(
-                                &mut f,
-                                &file.remote_filename,
-                                content_type,
-                            )
+
+                        client
+                            .put_object()
+                            .bucket(&bucket_name)
+                            .key(&file.remote_filename)
+                            .content_type(content_type)
+                            .body(body)
+                            .send()
                             .await
                             .map_err(|e| e.to_string())?;
                         Ok(())
@@ -223,13 +238,15 @@ pub async fn r2_upload(
                             "Uploading content to bucket: {}, account_id: {}",
                             bucket_name, account_id
                         );
-                        let file_data = content.as_bytes().to_vec();
-                        bucket
-                            .put_object_with_content_type(
-                                &file.remote_filename,
-                                &file_data,
-                                content_type,
-                            )
+                        let body = aws_sdk_s3::primitives::ByteStream::from(content.as_bytes().to_vec());
+
+                        client
+                            .put_object()
+                            .bucket(&bucket_name)
+                            .key(&file.remote_filename)
+                            .content_type(content_type)
+                            .body(body)
+                            .send()
                             .await
                             .map_err(|e| e.to_string())?;
                         Ok(())
