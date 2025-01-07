@@ -30,6 +30,7 @@
   let oldPrefix = $state("");
   let prefix = $state("");
   const flipDurationMs = 200;
+  let isUploading = $state(true);
 
   // 预览相关状态
   let previewContent = $state<string | null>(null);
@@ -182,13 +183,47 @@
     <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
   {:else if !filesState.files.length}
     {@render ready()}
-  {:else}
+  {:else if !isUploading}
     {@render uploader()}
+  {:else}
+    {@render uploadStatusDisplay()}
   {/if}
 </div>
 
 {#snippet text()}
   <AddTextContent />
+{/snippet}
+
+{#snippet uploadStatusDisplay()}
+  <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
+    <!-- 功能条 -->
+    <div
+      class="flex items-center gap-2 rounded-t-lg bg-slate-200 p-1 shadow backdrop-blur-sm dark:bg-slate-700/80"
+    >
+      上传中
+    </div>
+
+    {#each filesState.files as file, index (file.id)}
+      <div class="flex items-center gap-2 p-2">
+        <div class="w-48 truncate">{file.remoteFilename}</div>
+        <div class="flex-1">
+          {#if uploadStatusMap[file.id] === "uploading"}
+            <div class="h-2 w-full rounded-full bg-slate-200">
+              <div
+                class="h-2 w-1/2 animate-pulse rounded-full bg-cyan-500"
+              ></div>
+            </div>
+          {:else if uploadStatusMap[file.id] === "success"}
+            <div class="text-sm text-green-500">上传成功</div>
+          {:else if uploadStatusMap[file.id] === "error"}
+            <div class="text-sm text-red-500">上传失败</div>
+          {:else}
+            <div class="text-sm text-slate-400">等待上传</div>
+          {/if}
+        </div>
+      </div>
+    {/each}
+  </div>
 {/snippet}
 
 {#snippet preview(file: File)}
