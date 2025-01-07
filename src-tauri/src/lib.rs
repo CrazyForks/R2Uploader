@@ -11,6 +11,7 @@ pub fn run() {
             manager::get_upload_status,
             manager::preview_file,
             manager::get_file_details,
+            manager::ping_bucket,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

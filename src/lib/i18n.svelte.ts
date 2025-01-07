@@ -17,6 +17,7 @@ export let en = $state({
     cancel: "Cancel",
     save: "Save",
     addNew: "Add New Bucket",
+    requiredField: "This field is required",
     labels: {
       s3Api: "S3 API",
       bucketName: "Bucket Name",

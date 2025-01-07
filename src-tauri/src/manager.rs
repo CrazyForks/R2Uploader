@@ -126,6 +126,35 @@ pub async fn preview_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn ping_bucket(
+    bucket_name: &str,
+    account_id: &str,
+    access_key: &str,
+    secret_key: &str,
+) -> Result<(), String> {
+    let bucket = Bucket::new(
+        bucket_name,
+        Region::R2 {
+            account_id: account_id.to_string(),
+        },
+        Credentials::new(Some(access_key), Some(secret_key), None, None, None)
+            .map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?
+    .with_path_style();
+
+    bucket.set_proxy(get_proxy()?).map_err(|e| e.to_string())?;
+
+    let result = bucket
+        .list("".into(), None)
+        .await
+        .map_err(|e| e.to_string())?;
+    println!("Bucket contents: {:?}", result);
+
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn r2_upload(
     bucket_name: &str,
     account_id: &str,

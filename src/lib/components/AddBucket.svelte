@@ -3,6 +3,7 @@
   import { t } from "$lib/i18n.svelte";
   import { closeModal, modalState, showModal } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
+  import { invoke } from "@tauri-apps/api/core";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
   let showHelp = $state(false);
 
@@ -16,6 +17,8 @@
     editBucketId?: number;
   } = $props();
 
+  let checkResult = $state(false);
+  
   let bucket: Bucket = $state({
     type: "r2",
     bucketName: "",
@@ -116,6 +119,16 @@
     closeModal();
   }
 
+  async function checkButket() {
+    try {
+      await invoke("ping_bucket", bucket);
+      checkResult = true;
+    } catch (e) {
+      checkResult = false;
+      console.error(e);
+    }
+  }
+
   function onClose() {
     if (onclose) {
       onclose();
@@ -195,9 +208,15 @@
       <button onclick={closeModal} class="button button-primary"
         >{t().addBucket.cancel}</button
       >
-      <button onclick={saveBucket} class="button button-primary"
-        >{t().addBucket.save}</button
-      >
+      {#if !checkResult}
+        <button onclick={checkButket} class="button button-primary"
+          >Check</button
+        >
+      {:else}
+        <button onclick={saveBucket} class="button button-primary"
+          >{t().addBucket.save}</button
+        >
+      {/if}
     </div>
   {/if}
 {/snippet}
