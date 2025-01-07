@@ -1,4 +1,4 @@
-use crate::typ::{File, UploadSource};
+use crate::typ::{File, UploadProgress, UploadSource, UploadStatus};
 use aws_config::ConfigLoader;
 use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{CompletedMultipartUpload, CompletedPart};
@@ -10,7 +10,12 @@ use hyper::client::HttpConnector;
 use hyper_proxy::{Proxy, ProxyConnector};
 use mime_guess::from_path;
 use once_cell::sync::Lazy;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
+use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
 use tokio::sync::Semaphore;
 use uuid::Uuid;
@@ -30,6 +35,7 @@ pub async fn ping_bucket(
 
 #[tauri::command]
 pub async fn r2_upload(
+    app: AppHandle,
     bucket_name: &str,
     account_id: &str,
     access_key: &str,
@@ -44,18 +50,34 @@ pub async fn r2_upload(
         let client = client.clone();
         let semaphore = semaphore.clone();
         let task_id = Uuid::new_v4().to_string();
-        UPLOAD_STATUS.insert(task_id.clone(), "uploading".to_string());
+        let app_handle = app.clone();
+        let filename = file.remote_filename.clone();
+
+        // 发送初始状态
+        let _ = app_handle.emit(
+            "upload-progress",
+            UploadProgress {
+                task_id: task_id.clone(),
+                filename: filename.clone(),
+                status: UploadStatus::Uploading {
+                    progress: 0.0,
+                    bytes_uploaded: 0,
+                    total_bytes: 0,
+                    speed: 0.0,
+                },
+                timestamp: SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
+        );
 
         let handle = tokio::spawn(async move {
             let _permit = semaphore.acquire().await.unwrap();
             let result = match &file.source {
                 UploadSource::FilePath(path) => {
                     client
-                        .stream_upload_file(&path, &file.remote_filename, &task_id, |id| {
-                            UPLOAD_STATUS
-                                .get(id)
-                                .map_or(false, |status| status.as_str() == "cancelled")
-                        })
+                        .stream_upload_file(&app_handle, &path, &filename, &task_id)
                         .await
                 }
                 UploadSource::FileContent(content) => {
@@ -63,15 +85,35 @@ pub async fn r2_upload(
                         .decode(content)
                         .map_err(|e| e.to_string())?;
                     let content = String::from_utf8(decoded).map_err(|e| e.to_string())?;
-                    client.upload_content(&content, &file.remote_filename).await
+                    client
+                        .upload_content(&app_handle, &content, &filename, &task_id)
+                        .await
                 }
             };
 
-            match result {
-                Ok(_) => UPLOAD_STATUS.insert(task_id, "success".to_string()),
-                Err(e) => UPLOAD_STATUS.insert(task_id, format!("error: {}", e)),
+            // 发送最终状态
+            let final_status = match &result {
+                Ok(_) => UploadStatus::Success,
+                Err(e) => UploadStatus::Error {
+                    message: e.to_string(),
+                    code: "UPLOAD_ERROR".to_string(),
+                },
             };
-            Ok::<(), String>(())
+
+            let _ = app_handle.emit(
+                "upload-progress",
+                UploadProgress {
+                    task_id: task_id.clone(),
+                    filename,
+                    status: final_status,
+                    timestamp: SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
+                },
+            );
+
+            result
         });
         handles.push(handle);
     }
@@ -84,9 +126,28 @@ pub async fn r2_upload(
 }
 
 #[tauri::command]
-pub async fn cancel_upload(task_id: String) -> Result<(), String> {
+pub async fn cancel_upload(
+    app_handle: tauri::AppHandle,
+    task_id: String,
+    filename: String,
+) -> Result<(), String> {
     if let Some(mut status) = UPLOAD_STATUS.get_mut(&task_id) {
         *status = "cancelled".to_string();
+
+        // 发送取消状态
+        let _ = app_handle.emit(
+            "upload-progress",
+            UploadProgress {
+                task_id,
+                filename,
+                status: UploadStatus::Cancelled,
+                timestamp: SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            },
+        );
+
         Ok(())
     } else {
         Err("Upload task not found".to_string())
@@ -148,7 +209,13 @@ impl R2Client {
         })
     }
 
-    pub async fn upload_content(&self, content: &str, remote_filename: &str) -> Result<(), String> {
+    pub async fn upload_content(
+        &self,
+        app_handle: &tauri::AppHandle,
+        content: &str,
+        remote_filename: &str,
+        task_id: &str,
+    ) -> Result<(), String> {
         self.client
             .put_object()
             .bucket(&self.bucket_name)
@@ -244,10 +311,10 @@ impl R2Client {
 
     pub async fn stream_upload_file(
         &self,
+        app_handle: &tauri::AppHandle,
         path: &str,
         remote_filename: &str,
         task_id: &str,
-        is_cancelled: impl Fn(&str) -> bool,
     ) -> Result<(), String> {
         const CHUNK_SIZE: usize = 5 * 1024 * 1024; // 5MB chunks
 
@@ -260,12 +327,6 @@ impl R2Client {
         let mut buffer = Vec::with_capacity(CHUNK_SIZE);
 
         loop {
-            if is_cancelled(task_id) {
-                self.abort_multipart_upload(remote_filename, &upload_id)
-                    .await?;
-                return Err("Upload cancelled".to_string());
-            }
-
             let n = file
                 .read_buf(&mut buffer)
                 .await
@@ -281,6 +342,26 @@ impl R2Client {
                     .await?;
                 completed_parts.push(completed_part);
                 part_number += 1;
+
+                // 发送进度更新
+                let _ = app_handle.emit(
+                    "upload-progress",
+                    UploadProgress {
+                        task_id: task_id.to_string(),
+                        filename: remote_filename.to_string(),
+                        status: UploadStatus::Uploading {
+                            progress: (part_number as f64 - 1.0)
+                                / (file.metadata().await.unwrap().len() as f64 / CHUNK_SIZE as f64),
+                            bytes_uploaded: ((part_number - 1) * CHUNK_SIZE as i32) as u64,
+                            total_bytes: file.metadata().await.unwrap().len(),
+                            speed: 0.0,
+                        },
+                        timestamp: SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs(),
+                    },
+                );
             }
         }
 

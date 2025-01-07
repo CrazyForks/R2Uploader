@@ -24,3 +24,22 @@ export interface FileDetail {
   relativePath: string;
   isDir: boolean;
 }
+
+export interface UploadProgress {
+  taskId: string;
+  filename: string;
+  status: UploadStatus;
+  timestamp: number;
+}
+
+export type UploadStatus =
+  | {
+      type: "uploading";
+      progress: number;
+      bytesUploaded: number;
+      totalBytes: number;
+      speed: number;
+    }
+  | { type: "success" }
+  | { type: "error"; message: string; code: string }
+  | { type: "cancelled" };

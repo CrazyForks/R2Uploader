@@ -7,8 +7,9 @@
     showModal,
   } from "$lib/store.svelte";
   import { checkClipboardContent, parsePaths } from "$lib/tools";
-  import type { File } from "$lib/type";
+  import type { File, UploadProgress } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
   import { open } from "@tauri-apps/plugin-dialog";
   import { LinkPreview } from "bits-ui";
   import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
@@ -19,12 +20,10 @@
 
   let {
     uploadStatus = $bindable("idle"),
-    uploadStatusMap = $bindable({}),
-    intervalId = $bindable<number | undefined>(),
+    uploadStatusMap = $bindable<Record<string, UploadProgress>>({}),
   }: {
     uploadStatus?: "idle" | "uploading" | "success" | "error";
-    uploadStatusMap?: Record<string, string>;
-    intervalId?: number | undefined;
+    uploadStatusMap?: Record<string, UploadProgress>;
   } = $props();
 
   let oldPrefix = $state("");
@@ -37,8 +36,27 @@
   let previewLoading = $state(false);
   let previewError = $state<string | null>(null);
 
-  onMount(() => {
+  onMount(async () => {
     window.addEventListener("keydown", handleKeyDown);
+    
+    // 监听上传进度事件
+    await listen<UploadProgress>("upload-progress", (event) => {
+      const progress = event.payload;
+      uploadStatusMap[progress.taskId] = progress;
+      
+      // 检查是否所有文件都已完成上传
+      const allCompleted = Object.values(uploadStatusMap).every(
+        (p) => p.status.type === "success" || p.status.type === "error" || p.status.type === "cancelled"
+      );
+      
+      if (allCompleted) {
+        const hasError = Object.values(uploadStatusMap).some(
+          (p) => p.status.type === "error"
+        );
+        uploadStatus = hasError ? "error" : "success";
+        setAlert(hasError ? "部分文件上传失败" : "上传成功");
+      }
+    });
   });
 
   onDestroy(() => {
@@ -101,31 +119,11 @@
     oldPrefix = prefix;
   }
 
-  async function checkUploadStatus() {
-    try {
-      const status = await invoke<Record<string, string>>("get_upload_status");
-      uploadStatusMap = status;
-
-      if (Object.keys(status).length === 0) {
-        clearInterval(intervalId);
-        intervalId = undefined;
-        uploadStatus = "success";
-        setAlert("上传成功");
-        // files = [];
-
-        //
-        //
-        //
-      }
-    } catch (error) {
-      console.error("获取上传状态失败：", error);
-    }
-  }
-
   async function uploadFile() {
     if (!bucketsState.selected) return;
     try {
       uploadStatus = "uploading";
+      isUploading = true;
 
       const filesToUpload = filesState.files.map((file) => ({
         id: file.id,
@@ -140,14 +138,11 @@
         secretKey: bucketsState.selected.value.secretKey,
         files: filesToUpload,
       });
-
-      if (!intervalId) {
-        intervalId = window.setInterval(checkUploadStatus, 500);
-      }
     } catch (error: unknown) {
       console.error(error);
       uploadStatus = "error";
       setAlert("上传失败，请重试");
+      isUploading = false;
     }
   }
 
@@ -200,29 +195,50 @@
     <div
       class="flex items-center gap-2 rounded-t-lg bg-slate-200 p-1 shadow backdrop-blur-sm dark:bg-slate-700/80"
     >
-      上传中
+      <div class="flex-1">上传进度</div>
     </div>
 
-    {#each filesState.files as file, index (file.id)}
-      <div class="flex items-center gap-2 p-2">
-        <div class="w-48 truncate">{file.remoteFilename}</div>
-        <div class="flex-1">
-          {#if uploadStatusMap[file.id] === "uploading"}
-            <div class="h-2 w-full rounded-full bg-slate-200">
-              <div
-                class="h-2 w-1/2 animate-pulse rounded-full bg-cyan-500"
-              ></div>
+    <!-- 进度列表 -->
+    <div class="min-h-0 flex-1 overflow-y-auto p-2">
+      {#each filesState.files as file, index (file.id)}
+        {@const progress = uploadStatusMap[file.id]}
+        <div
+          class="mb-2 flex items-center gap-2 rounded-lg bg-white p-2 shadow dark:bg-slate-700"
+        >
+          <div class="flex-1">
+            <div class="mb-1 text-sm text-slate-500 dark:text-slate-400">
+              {file.remoteFilename}
             </div>
-          {:else if uploadStatusMap[file.id] === "success"}
-            <div class="text-sm text-green-500">上传成功</div>
-          {:else if uploadStatusMap[file.id] === "error"}
-            <div class="text-sm text-red-500">上传失败</div>
-          {:else}
-            <div class="text-sm text-slate-400">等待上传</div>
-          {/if}
+            {#if progress?.status.type === "uploading"}
+              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                <div
+                  class="h-full bg-blue-500 transition-all"
+                  style="width: {progress.status.progress * 100}%"
+                />
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                {Math.floor(progress.status.progress * 100)}% - 
+                {(progress.status.bytesUploaded / 1024 / 1024).toFixed(2)}MB /
+                {(progress.status.totalBytes / 1024 / 1024).toFixed(2)}MB
+                {#if progress.status.speed > 0}
+                  - {(progress.status.speed / 1024 / 1024).toFixed(2)}MB/s
+                {/if}
+              </div>
+            {:else if progress?.status.type === "success"}
+              <div class="text-sm text-green-500">上传完成</div>
+            {:else if progress?.status.type === "error"}
+              <div class="text-sm text-red-500">
+                上传失败: {progress.status.message}
+              </div>
+            {:else if progress?.status.type === "cancelled"}
+              <div class="text-sm text-yellow-500">已取消</div>
+            {:else}
+              <div class="text-sm text-slate-500">等待上传...</div>
+            {/if}
+          </div>
         </div>
-      </div>
-    {/each}
+      {/each}
+    </div>
   </div>
 {/snippet}
 
