@@ -29,14 +29,15 @@ serde_json = "1"
 tauri-plugin-dialog = "2"
 mime_guess = "2.0.5"
 sysproxy = "0.3.0"
-reqwest = "0.12.12"
 tauri-plugin-clipboard = "2.1.11"
 tokio-util = "0.7.13"
 uuid = "1.11.0"
-base64 = "0.21.0"
+base64 = "0.22"
 aws-config = { version = "1.1.7", features = ["behavior-version-latest"] }
-aws-sdk-s3 = "1.68.0"
-aws-smithy-client = "0.60.3"
+aws-sdk-s3 = { version = "1", features = ["behavior-version-latest"] }
+aws-smithy-runtime = "1.7.6"
+hyper-proxy = "0.9.1"
+hyper = { version = "0.14", features = ["client"] }
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

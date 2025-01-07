@@ -1,10 +1,12 @@
-use base64::{engine::general_purpose, Engine};
-use dashmap::DashMap;
-use mime_guess::from_path;
-use once_cell::sync::Lazy;
 use aws_config::ConfigLoader;
 use aws_sdk_s3::config::{Builder, Credentials, Region};
 use aws_sdk_s3::Client;
+use base64::{engine::general_purpose, Engine};
+use dashmap::DashMap;
+use hyper::client::HttpConnector;
+use hyper_proxy::{Proxy, ProxyConnector};
+use mime_guess::from_path;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Semaphore;
@@ -28,11 +30,13 @@ pub struct File {
     pub remote_filename: String,
 }
 
-pub fn get_proxy() -> Result<reqwest::Proxy, String> {
+pub fn get_proxy() -> Result<Proxy, String> {
     let proxy = sysproxy::Sysproxy::get_system_proxy()
         .map_err(|e| format!("can not get system proxy: {}", e))?;
-    let proxy = reqwest::Proxy::https(format!("http://{}:{}", proxy.host, proxy.port).as_str())
-        .map_err(|e| format!("can not create proxy: {}", e))?;
+    let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
+        .parse()
+        .map_err(|e| format!("can not parse proxy uri: {}", e))?;
+    let mut proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
     Ok(proxy)
 }
 
@@ -134,24 +138,12 @@ pub async fn ping_bucket(
     access_key: &str,
     secret_key: &str,
 ) -> Result<(), String> {
-    let credentials = Credentials::new(
-        access_key,
-        secret_key,
-        None,
-        None,
-        "r2-uploader",
-    );
+    let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
 
-    let proxy = get_proxy()?;
     let config = ConfigLoader::default()
         .region(Region::new("auto"))
         .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
         .credentials_provider(credentials)
-        .http_client(
-            aws_smithy_client::hyper_ext::Adapter::builder()
-                .proxy(proxy)
-                .build()
-        )
         .load()
         .await;
 
@@ -177,18 +169,24 @@ pub async fn r2_upload(
     secret_key: &str,
     files: Vec<File>,
 ) -> Result<(), String> {
-    let credentials = Credentials::new(
-        access_key,
-        secret_key,
-        None,
-        None,
-        "r2-uploader",
-    );
+    let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
+
+    let proxy = sysproxy::Sysproxy::get_system_proxy()
+        .map_err(|e| format!("can not get system proxy: {}", e))?;
+    let proxy_uri = format!("http://{}:{}", proxy.host, proxy.port)
+        .parse()
+        .map_err(|e| format!("can not parse proxy uri: {}", e))?;
+    let proxy = hyper_proxy::Proxy::new(hyper_proxy::Intercept::All, proxy_uri);
+    let connector = HttpConnector::new();
+    let a_proxy = ProxyConnector::from_proxy(connector, proxy).unwrap();
+    let client =
+        aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder::new().build(a_proxy);
 
     let config = ConfigLoader::default()
         .region(Region::new("auto"))
         .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
         .credentials_provider(credentials)
+        .http_client(client)
         .load()
         .await;
 
@@ -244,7 +242,8 @@ pub async fn r2_upload(
                             "Uploading content to bucket: {}, account_id: {}",
                             bucket_name, account_id
                         );
-                        let body = aws_sdk_s3::primitives::ByteStream::from(content.as_bytes().to_vec());
+                        let body =
+                            aws_sdk_s3::primitives::ByteStream::from(content.as_bytes().to_vec());
 
                         client
                             .put_object()
