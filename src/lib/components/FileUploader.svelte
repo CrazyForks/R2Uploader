@@ -11,18 +11,9 @@
   import FileUploaderReady from "./FileUploaderReady.svelte";
   import FileUploaderPreview from "./FileUploaderPreview.svelte";
 
-  let {
-    uploadStatus = $bindable("idle"),
-    uploadStatusMap = $bindable<Record<string, UploadProgress>>({}),
-  }: {
-    uploadStatus?: "idle" | "uploading" | "success" | "error";
-    uploadStatusMap?: Record<string, UploadProgress>;
-  } = $props();
-
   let oldPrefix = $state("");
   let prefix = $state("");
   const flipDurationMs = 200;
-  let isUploading = $state(false);
 
   function handleSort(e: CustomEvent) {
     globalState.files = e.detail.items;
@@ -41,8 +32,7 @@
   async function uploadFile() {
     if (!globalState.selectedBucket) return;
     try {
-      uploadStatus = "uploading";
-      isUploading = true;
+      globalState.isUploading = true;
 
       const filesToUpload = globalState.files.map((file) => ({
         id: file.id,
@@ -62,9 +52,8 @@
       });
     } catch (error: unknown) {
       console.error(error);
-      uploadStatus = "error";
       setAlert("上传失败，请重试");
-      isUploading = false;
+      globalState.isUploading = false;
     }
   }
 

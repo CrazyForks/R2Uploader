@@ -29,23 +29,29 @@ export interface FileDetail {
 }
 
 export interface UploadProgress {
-  taskId: string;
+  fileId: string;
   filename: string;
   status: UploadStatus;
   timestamp: number;
 }
 
 export type UploadStatus =
+  | "success"
+  | "cancelled"
   | {
-      type: "uploading";
-      progress: number;
-      bytesUploaded: number;
-      totalBytes: number;
-      speed: number;
+      uploading: {
+        progress: number;
+        bytes_uploaded: number;
+        total_bytes: number;
+        speed: number;
+      };
     }
-  | { type: "success" }
-  | { type: "error"; message: string; code: string }
-  | { type: "cancelled" };
+  | {
+      error: {
+        message: string;
+        code: string;
+      };
+    };
 
 export interface GlobalState {
   alertMessage: string;
@@ -56,6 +62,8 @@ export interface GlobalState {
   modal: ModalState;
   files: Array<File>;
   selectedBucket: Selected<Bucket> | undefined;
+  isUploading: boolean;
+  progress: Record<string, UploadProgress>;
   appSetting: AppSettings;
 }
 

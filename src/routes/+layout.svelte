@@ -35,24 +35,8 @@
       "upload-progress",
       (event) => {
         console.log("event: ", event);
-        //   const progress = event.payload;
-        //   uploadStatusMap[progress.taskId] = progress;
-
-        //   // 检查是否所有文件都已完成上传
-        //   const allCompleted = Object.values(uploadStatusMap).every(
-        //     (p) =>
-        //       p.status.type === "success" ||
-        //       p.status.type === "error" ||
-        //       p.status.type === "cancelled",
-        //   );
-
-        //   if (allCompleted) {
-        //     const hasError = Object.values(uploadStatusMap).some(
-        //       (p) => p.status.type === "error",
-        //     );
-        //     uploadStatus = hasError ? "error" : "success";
-        //     setAlert(hasError ? "部分文件上传失败" : "上传成功");
-        //   }
+        const progress = event.payload;
+        globalState.progress[progress.fileId] = progress;
       },
     );
   });

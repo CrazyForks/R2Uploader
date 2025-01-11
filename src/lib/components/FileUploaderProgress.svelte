@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { globalState } from "$lib/store.svelte";
 </script>
 
 <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
@@ -11,8 +12,8 @@
 
   <!-- 进度列表 -->
   <div class="min-h-0 flex-1 overflow-y-auto p-2">
-    <!-- {#each filesState.files as file, index (file.id)}
-      {@const progress = uploadStatusMap[file.id]}
+    {#each globalState.files as file, index (file.id)}
+      {@const progress = globalState.progress[file.id]}
       <div
         class="mb-2 flex items-center gap-2 rounded-lg bg-white p-2 shadow dark:bg-slate-700"
       >
@@ -20,34 +21,40 @@
           <div class="mb-1 text-sm text-slate-500 dark:text-slate-400">
             {file.remoteFilename}
           </div>
-          {#if progress?.status.type === "uploading"}
+          {#if typeof progress?.status === "object" && "uploading" in progress.status}
             <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
               <div
                 class="h-full bg-blue-500 transition-all"
-                style="width: {progress.status.progress * 100}%"
+                style="width: {progress.status.uploading.progress * 100}%"
               ></div>
             </div>
             <div class="mt-1 text-xs text-slate-500">
-              {Math.floor(progress.status.progress * 100)}% -
-              {(progress.status.bytesUploaded / 1024 / 1024).toFixed(2)}MB /
-              {(progress.status.totalBytes / 1024 / 1024).toFixed(2)}MB
-              {#if progress.status.speed > 0}
-                - {(progress.status.speed / 1024 / 1024).toFixed(2)}MB/s
+              {Math.floor(progress.status.uploading.progress * 100)}% -
+              {(progress.status.uploading.bytes_uploaded / 1024 / 1024).toFixed(
+                2,
+              )}MB /
+              {(progress.status.uploading.total_bytes / 1024 / 1024).toFixed(
+                2,
+              )}MB
+              {#if progress.status.uploading.speed > 0}
+                - {(progress.status.uploading.speed / 1024 / 1024).toFixed(
+                  2,
+                )}MB/s
               {/if}
             </div>
-          {:else if progress?.status.type === "success"}
+          {:else if progress?.status === "success"}
             <div class="text-sm text-green-500">上传完成</div>
-          {:else if progress?.status.type === "error"}
+          {:else if typeof progress?.status === "object" && "error" in progress.status}
             <div class="text-sm text-red-500">
-              上传失败: {progress.status.message}
+              上传失败: {progress.status.error.message}
             </div>
-          {:else if progress?.status.type === "cancelled"}
+          {:else if progress?.status === "cancelled"}
             <div class="text-sm text-yellow-500">已取消</div>
           {:else}
             <div class="text-sm text-slate-500">等待上传...</div>
           {/if}
         </div>
       </div>
-    {/each} -->
+    {/each}
   </div>
 </div>

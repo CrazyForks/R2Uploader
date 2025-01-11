@@ -9,16 +9,6 @@
   import FileUploaderProgress from "./FileUploaderProgress.svelte";
   import { globalState } from "$lib/store.svelte";
 
-  let {
-    uploadStatus = $bindable("idle"),
-    uploadStatusMap = $bindable<Record<string, UploadProgress>>({}),
-  }: {
-    uploadStatus?: "idle" | "uploading" | "success" | "error";
-    uploadStatusMap?: Record<string, UploadProgress>;
-  } = $props();
-
-  let isUploading = $state(false);
-
   onMount(async () => {
     window.addEventListener("keydown", handleKeyDown);
   });
@@ -53,7 +43,7 @@
     <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
   {:else if !globalState.files.length}
     <FileUploaderReady />
-  {:else if !isUploading}
+  {:else if !globalState.isUploading}
     <FileUploader />
   {:else}
     <FileUploaderProgress />

@@ -166,7 +166,7 @@ impl R2Client {
     }
 
     // 创建多部分上传
-    pub async fn create_multipart_upload(&self, remote_filename: &str) -> Result<String, String> {
+    async fn create_multipart_upload(&self, remote_filename: &str) -> Result<String, String> {
         self.client
             .create_multipart_upload()
             .bucket(&self.bucket_name)
@@ -180,23 +180,7 @@ impl R2Client {
             .map(|id| id.to_string())
     }
 
-    pub async fn abort_multipart_upload(
-        &self,
-        remote_filename: &str,
-        upload_id: &str,
-    ) -> Result<(), String> {
-        self.client
-            .abort_multipart_upload()
-            .bucket(&self.bucket_name)
-            .key(remote_filename)
-            .upload_id(upload_id)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
-    pub async fn complete_multipart_upload(
+    async fn complete_multipart_upload(
         &self,
         remote_filename: &str,
         upload_id: &str,
@@ -237,7 +221,7 @@ impl R2Client {
         Ok(())
     }
 
-    pub async fn upload_part(
+    async fn upload_part(
         &self,
         remote_filename: &str,
         upload_id: &str,
@@ -263,7 +247,8 @@ impl R2Client {
                     .build()
             })
     }
-    pub async fn stream_upload_file(
+    
+    async fn stream_upload_file(
         &self,
         app: &tauri::AppHandle,
         path: &str,
