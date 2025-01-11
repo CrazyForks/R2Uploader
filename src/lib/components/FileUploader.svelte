@@ -1,22 +1,16 @@
 <script lang="ts">
   import { bucketsState, filesState } from "$lib/files.svelte";
-  import {
-    dragState,
-    setAlert,
-    setDragPaths,
-    showModal,
-  } from "$lib/store.svelte";
-  import { checkClipboardContent, parsePaths } from "$lib/tools";
-  import type { File, UploadProgress } from "$lib/type";
+  import { setAlert } from "$lib/store.svelte";
+  import type { UploadProgress } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
-  import { open } from "@tauri-apps/plugin-dialog";
   import { LinkPreview } from "bits-ui";
   import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
-  import { onDestroy, onMount, tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
-  import AddTextContent from "./AddTextContent.svelte";
+  import FileUploaderReady from "./FileUploaderReady.svelte";
+  import FileUploaderPreview from "./FileUploaderPreview.svelte";
 
   let {
     uploadStatus = $bindable("idle"),
@@ -31,14 +25,7 @@
   const flipDurationMs = 200;
   let isUploading = $state(false);
 
-  // 预览相关状态
-  let previewContent = $state<string | null>(null);
-  let previewLoading = $state(false);
-  let previewError = $state<string | null>(null);
-
   onMount(async () => {
-    window.addEventListener("keydown", handleKeyDown);
-
     // 监听上传进度事件
     await listen<UploadProgress>("upload-progress", (event) => {
       console.log("event: ", event);
@@ -62,52 +49,6 @@
       }
     });
   });
-
-  onDestroy(() => {
-    window.removeEventListener("keydown", handleKeyDown);
-  });
-
-  $effect(() => {
-    if (dragState.paths.length > 0) {
-      parsePaths(dragState.paths);
-      setDragPaths([]);
-    }
-  });
-
-  function handleKeyDown(e: KeyboardEvent) {
-    // 如果当前焦点是输入框，则不处理
-    if (
-      e.target instanceof HTMLInputElement ||
-      e.target instanceof HTMLTextAreaElement
-    ) {
-      return;
-    }
-
-    // 处理 ctrl+v
-    if ((e.ctrlKey || e.metaKey) && e.key === "v") {
-      e.preventDefault();
-      checkClipboardContent();
-    }
-  }
-
-  // 预览文件
-  async function previewFile(file: File) {
-    previewLoading = true;
-    previewError = null;
-    try {
-      if ("filePath" in file.source) {
-        const path = file.source.filePath;
-        previewContent = await invoke<string>("preview_file", { path });
-      } else {
-        previewContent = file.source.fileContent || "";
-      }
-    } catch (error) {
-      previewError = error instanceof Error ? error.message : "预览失败";
-      setAlert(previewError);
-    } finally {
-      previewLoading = false;
-    }
-  }
 
   function handleSort(e: CustomEvent) {
     filesState.files = e.detail.items;
@@ -153,260 +94,76 @@
     }
   }
 
-  async function openDialogForFiles() {
-    const dialogFiles = await open({
-      multiple: true,
-      directory: false,
-    });
-    if (dialogFiles) {
-      await parsePaths(dialogFiles);
-    }
-  }
-
-  async function openDialogForDir() {
-    const dialogFiles = await open({
-      multiple: true,
-      directory: true,
-    });
-    if (dialogFiles) {
-      await parsePaths(dialogFiles);
-    }
-  }
-
   function removeFile(index: number) {
     filesState.files.splice(index, 1);
   }
 </script>
 
-<div
-  class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
->
-  {#if !bucketsState.selected}
-    <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
-  {:else if !filesState.files.length}
-    {@render ready()}
-  {:else if !isUploading}
-    {@render uploader()}
-  {:else}
-    {@render uploadStatusDisplay()}
-  {/if}
-</div>
-
-{#snippet text()}
-  <AddTextContent />
-{/snippet}
-
-{#snippet uploadStatusDisplay()}
-  <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
-    <!-- 功能条 -->
-    <div
-      class="flex items-center gap-2 rounded-t-lg bg-slate-200 p-1 shadow backdrop-blur-sm dark:bg-slate-700/80"
-    >
-      <div class="flex-1">上传进度</div>
-    </div>
-
-    <!-- 进度列表 -->
-    <div class="min-h-0 flex-1 overflow-y-auto p-2">
-      {#each filesState.files as file, index (file.id)}
-        {@const progress = uploadStatusMap[file.id]}
-        <div
-          class="mb-2 flex items-center gap-2 rounded-lg bg-white p-2 shadow dark:bg-slate-700"
-        >
-          <div class="flex-1">
-            <div class="mb-1 text-sm text-slate-500 dark:text-slate-400">
-              {file.remoteFilename}
-            </div>
-            {#if progress?.status.type === "uploading"}
-              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  class="h-full bg-blue-500 transition-all"
-                  style="width: {progress.status.progress * 100}%"
-                ></div>
-              </div>
-              <div class="mt-1 text-xs text-slate-500">
-                {Math.floor(progress.status.progress * 100)}% -
-                {(progress.status.bytesUploaded / 1024 / 1024).toFixed(2)}MB /
-                {(progress.status.totalBytes / 1024 / 1024).toFixed(2)}MB
-                {#if progress.status.speed > 0}
-                  - {(progress.status.speed / 1024 / 1024).toFixed(2)}MB/s
-                {/if}
-              </div>
-            {:else if progress?.status.type === "success"}
-              <div class="text-sm text-green-500">上传完成</div>
-            {:else if progress?.status.type === "error"}
-              <div class="text-sm text-red-500">
-                上传失败: {progress.status.message}
-              </div>
-            {:else if progress?.status.type === "cancelled"}
-              <div class="text-sm text-yellow-500">已取消</div>
-            {:else}
-              <div class="text-sm text-slate-500">等待上传...</div>
-            {/if}
-          </div>
-        </div>
-      {/each}
-    </div>
-  </div>
-{/snippet}
-
-{#snippet preview(file: File)}
-  <LinkPreview.Root
-    openDelay={100}
-    closeDelay={100}
-    onOpenChange={(isOpen) => {
-      if (isOpen) {
-        previewFile(file);
-      } else {
-        previewContent = null;
-      }
-    }}
+<div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
+  <!-- 功能条 -->
+  <div
+    class="flex items-center gap-2 rounded-t-lg bg-slate-200 p-1 shadow backdrop-blur-sm dark:bg-slate-700/80"
   >
-    <LinkPreview.Trigger>
-      <button class="action-button">
-        <Eye class="size-4" />
-      </button>
-    </LinkPreview.Trigger>
-    <LinkPreview.Content side="top">
+    <input
+      bind:value={prefix}
+      oninput={onChangePrefix}
+      class="input w-36"
+      placeholder="全局路径"
+    />
+    <div class="flex-1"></div>
+    <button
+      onclick={() => (filesState.files = [])}
+      class="cursor-pointer rounded-md border px-2 text-sm text-cyan-500"
+      >清空</button
+    >
+    <button
+      onclick={uploadFile}
+      class="cursor-pointer rounded-md bg-cyan-500 px-6 text-white hover:bg-cyan-400"
+      >上传</button
+    >
+  </div>
+  <section
+    use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
+    onconsider={handleSort}
+    onfinalize={handleSort}
+    class="flex-1 space-y-2 overflow-y-auto p-2 dark:text-slate-100"
+  >
+    {#each filesState.files as file, index (file.id)}
       <div
-        class="w-80 space-y-2 rounded-lg bg-slate-50/90 p-2 shadow-md backdrop-blur-sm dark:bg-slate-900/80"
+        class="flex items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
+        animate:flip={{ duration: flipDurationMs }}
       >
-        <div class="flex items-center justify-center">
-          {#if previewLoading}
-            <div class="flex items-center justify-center p-2">
-              <div
-                class="size-8 animate-spin rounded-full border-b-2 border-slate-900"
-              ></div>
-            </div>
-          {:else if previewError}
-            <div class="text-sm text-red-500">{previewError}</div>
-          {:else if previewContent}
-            {#if file.type === "image"}
-              <img
-                src={previewContent}
-                alt="文件预览"
-                class="max-h-48 max-w-48 rounded-md object-contain"
-              />
-            {:else if file.type === "text"}
-              <div
-                class="max-h-48 overflow-auto rounded-md bg-slate-100/50 p-2 text-sm dark:bg-slate-700/50"
-              >
-                <p>{previewContent}</p>
-              </div>
-            {/if}
-          {/if}
-        </div>
-
-        <div class="space-y-2 text-xs">
-          <div class="flex items-center justify-between">
-            <span class="text-slate-500 dark:text-slate-400">文件名：</span>
-            <span class="font-medium">{file.remoteFilename}</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-slate-500 dark:text-slate-400">远程路径：</span>
-            <span
-              class="rounded bg-slate-100/50 px-2 py-1 font-mono text-slate-700 dark:bg-slate-700/50 dark:text-slate-300"
-            >
-              {file.remoteFilenamePrefix}/{file.remoteFilename}
-            </span>
-          </div>
-        </div>
-      </div>
-    </LinkPreview.Content>
-  </LinkPreview.Root>
-{/snippet}
-
-{#snippet ready()}
-  <div class="flex items-center justify-center gap-12">
-    <UploadCloud class="hidden size-32 text-slate-400 sm:block" />
-    <div class="flex flex-1 flex-col items-start gap-3">
-      <p class="text-slate-500 dark:text-slate-300">
-        您的存储桶已就绪，拖放文件到此，或：
-      </p>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick={openDialogForFiles} class="button button-primary"
-          >选择文件</button
-        >
-        <button onclick={openDialogForDir} class="button button-primary"
-          >选择文件夹</button
-        >
-        <button onclick={checkClipboardContent} class="button button-primary"
-          >选择剪贴板</button
-        >
-        <button onclick={() => showModal(text)} class="button button-primary"
-          >选择新建文本</button
-        >
-      </div>
-    </div>
-  </div>
-{/snippet}
-
-{#snippet uploader()}
-  <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
-    <!-- 功能条 -->
-    <div
-      class="flex items-center gap-2 rounded-t-lg bg-slate-200 p-1 shadow backdrop-blur-sm dark:bg-slate-700/80"
-    >
-      <input
-        bind:value={prefix}
-        oninput={onChangePrefix}
-        class="input w-36"
-        placeholder="全局路径"
-      />
-      <div class="flex-1"></div>
-      <button
-        onclick={() => (filesState.files = [])}
-        class="cursor-pointer rounded-md border px-2 text-sm text-cyan-500"
-        >清空</button
-      >
-      <button
-        onclick={uploadFile}
-        class="cursor-pointer rounded-md bg-cyan-500 px-6 text-white hover:bg-cyan-400"
-        >上传</button
-      >
-    </div>
-    <section
-      use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
-      onconsider={handleSort}
-      onfinalize={handleSort}
-      class="flex-1 space-y-2 overflow-y-auto p-2 dark:text-slate-100"
-    >
-      {#each filesState.files as file, index (file.id)}
         <div
-          class="flex items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
-          animate:flip={{ duration: flipDurationMs }}
+          use:dragHandle
+          class=" text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
         >
-          <div
-            use:dragHandle
-            class=" text-slate-400 hover:text-slate-500 dark:hover:text-slate-300"
-          >
-            <GripVertical class="size-4" />
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center gap-2">
-              <input
-                bind:value={file.remoteFilenamePrefix}
-                class="input w-24"
-                placeholder="远程路径"
-              />
-              <span class="text-slate-400">/</span>
-              <input
-                bind:value={file.remoteFilename}
-                class="input flex-1"
-                placeholder="远程文件名"
-              />
-            </div>
-          </div>
-          <div>
-            {@render preview(file)}
-            <button onclick={() => removeFile(index)} class="action-button">
-              <X class="size-4" />
-            </button>
+          <GripVertical class="size-4" />
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <input
+              bind:value={file.remoteFilenamePrefix}
+              class="input w-24"
+              placeholder="远程路径"
+            />
+            <span class="text-slate-400">/</span>
+            <input
+              bind:value={file.remoteFilename}
+              class="input flex-1"
+              placeholder="远程文件名"
+            />
           </div>
         </div>
-      {/each}
-    </section>
-  </div>
-{/snippet}
+        <div>
+          <FileUploaderPreview {file} />
+          <button onclick={() => removeFile(index)} class="action-button">
+            <X class="size-4" />
+          </button>
+        </div>
+      </div>
+    {/each}
+  </section>
+</div>
 
 <style lang="postcss">
   .input {

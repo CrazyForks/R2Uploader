@@ -1,7 +1,12 @@
 <script lang="ts">
   import db from "$lib/db";
   import { t } from "$lib/i18n.svelte";
-  import { closeModal, modalState, showModal } from "$lib/store.svelte";
+  import {
+    closeModal,
+    globalState,
+    setAlert,
+    showModal,
+  } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
@@ -18,7 +23,7 @@
   } = $props();
 
   let checkResult = $state(false);
-  
+
   let bucket: Bucket = $state({
     type: "r2",
     bucketName: "",
@@ -32,7 +37,7 @@
   $effect(() => {
     if (show) {
       showModal(content);
-      modalState.onClose = onClose;
+      globalState.modal.onClose = onClose;
     }
     if (editBucketId) {
       db.buckets.get(editBucketId).then((b) => {
@@ -123,6 +128,7 @@
     try {
       await invoke("ping_bucket", bucket);
       checkResult = true;
+      setAlert("成功");
     } catch (e) {
       checkResult = false;
       console.error(e);

@@ -2,7 +2,7 @@
   import AddBucket from "$lib/components/AddBucket.svelte";
   import db from "$lib/db";
   import { t } from "$lib/i18n.svelte";
-  import { appSettings } from "$lib/store.svelte";
+  import { globalState } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { Select } from "bits-ui";
   import { ChevronsUpDown } from "lucide-svelte";
@@ -23,7 +23,7 @@
   });
 
   async function setDefaultBucket(id: number) {
-    appSettings.defaultBucketId = id;
+    globalState.appSetting.defaultBucketId = id;
   }
 
   async function deleteBucket(id: number) {
@@ -35,20 +35,20 @@
   async function onAddBucketClose() {
     buckets = await db.buckets.toArray();
     // 如果只有一个存储桶且没有默认存储桶，自动设置为默认
-    if (buckets.length === 1 && !appSettings.defaultBucketId) {
+    if (buckets.length === 1 && !globalState.appSetting.defaultBucketId) {
       await setDefaultBucket(buckets[0].id!);
     }
   }
 
   function checkDefaultBucket() {
     // 如果 buckets 中已经没有 defaultBucketId 对应的存储桶，检查 buckets 的数量，如果大于 0，使用第一个存储桶作为默认存储桶
-    if (appSettings.defaultBucketId) {
+    if (globalState.appSetting.defaultBucketId) {
       const defaultBucket = buckets.find(
-        (bucket) => bucket.id === appSettings.defaultBucketId,
+        (bucket) => bucket.id === globalState.appSetting.defaultBucketId,
       );
       if (!defaultBucket) {
         // 如果 defaultBucketId 对应的存储桶被删除，清空 defaultBucketId
-        appSettings.defaultBucketId = undefined;
+        globalState.appSetting.defaultBucketId = undefined;
       }
     }
   }
@@ -60,7 +60,7 @@
   bind:editBucketId
 />
 
-<div class="mx-auto flex h-full max-w-4xl flex-col gap-2 p-2">
+<div class="mx-auto flex h-full flex-col gap-2 p-2">
   <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200">
     {t().common.setting}
   </h1>
@@ -72,7 +72,7 @@
         items={languages}
         onSelectedChange={(selected) => {
           if (selected) {
-            appSettings.locale = selected.value;
+            globalState.appSetting.locale = selected.value;
           }
         }}
       >
@@ -100,7 +100,7 @@
       <input
         type="checkbox"
         class="toggle border-slate-600 checked:border-cyan-600 checked:bg-cyan-500 checked:text-white"
-        bind:checked={appSettings.useSystemProxy}
+        bind:checked={globalState.appSetting.useSystemProxy}
       />
     </div>
   </div>
@@ -127,7 +127,7 @@
               <p>{t().settings.bucketDetails.accountId}: {bucket.accountId}</p>
             </div>
           </div>
-          {#if appSettings.defaultBucketId === bucket.id}
+          {#if globalState.appSetting.defaultBucketId === bucket.id}
             <span class="target-details">
               {t().settings.defaultBucket}
             </span>

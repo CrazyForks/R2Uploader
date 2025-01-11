@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { UploadCloud } from "lucide-svelte";
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-  import { dragState, setDragPaths, setIsDragging } from "$lib/store.svelte";
+  import { globalState, setDragPaths, setIsDragging } from "$lib/store.svelte";
 
   let unlistenDrop: UnlistenFn;
   let unlistenLeave: UnlistenFn;
@@ -36,7 +36,7 @@
   });
 </script>
 
-<div class="overlay" class:active={dragState.isDragging}>
+<div class="overlay" class:active={globalState.drag.isDragging}>
   <div class="flex flex-col items-center gap-4 rounded-xl p-8 text-center">
     <UploadCloud class="size-16 text-slate-300" />
     <p class="text-2xl font-medium text-slate-300">拖动文件到此</p>

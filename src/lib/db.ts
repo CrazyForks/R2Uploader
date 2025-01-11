@@ -27,7 +27,8 @@ class AppDatabase extends Dexie {
     this.version(5).stores({
       buckets: "++id, bucketName",
       uploadHistory: "++id, fileName, remoteFileName, target, timestamp",
-      appSettings: "++id, sidebarCollapsed, useSystemProxy, locale, defaultBucketId"
+      appSettings:
+        "++id, sidebarCollapsed, useSystemProxy, locale, defaultBucketId",
     });
   }
 }

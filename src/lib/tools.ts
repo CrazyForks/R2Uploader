@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { sep } from "@tauri-apps/api/path";
 import clipboard from "tauri-plugin-clipboard-api";
 import { filesState } from "./files.svelte";
@@ -121,4 +122,24 @@ export function copyNotExistsFields<T extends object>(source: T, target: T): T {
     }
   }
   return target;
+}
+
+export async function openDialogForFiles() {
+  const dialogFiles = await open({
+    multiple: true,
+    directory: false,
+  });
+  if (dialogFiles) {
+    await parsePaths(dialogFiles);
+  }
+}
+
+export async function openDialogForDir() {
+  const dialogFiles = await open({
+    multiple: true,
+    directory: true,
+  });
+  if (dialogFiles) {
+    await parsePaths(dialogFiles);
+  }
 }

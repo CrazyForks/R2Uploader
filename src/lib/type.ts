@@ -1,3 +1,5 @@
+import type { Snippet } from "svelte";
+
 export interface Bucket {
   id?: number;
   type: "r2" | "s3";
@@ -43,3 +45,26 @@ export type UploadStatus =
   | { type: "success" }
   | { type: "error"; message: string; code: string }
   | { type: "cancelled" };
+
+export interface GlobalState {
+  alertMessage: string;
+  drag: {
+    isDragging: boolean;
+    paths: string[];
+  };
+  appSetting: AppSettings;
+  modal: ModalState;
+}
+
+export interface AppSettings {
+  sidebarCollapsed: boolean;
+  useSystemProxy: boolean;
+  locale: string;
+  defaultBucketId: number | undefined;
+}
+
+export interface ModalState {
+  isShow: boolean;
+  children: Snippet | undefined;
+  onClose?: () => void;
+}
