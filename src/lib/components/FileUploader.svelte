@@ -221,7 +221,7 @@
                 <div
                   class="h-full bg-blue-500 transition-all"
                   style="width: {progress.status.progress * 100}%"
-                />
+                ></div>
               </div>
               <div class="mt-1 text-xs text-slate-500">
                 {Math.floor(progress.status.progress * 100)}% -

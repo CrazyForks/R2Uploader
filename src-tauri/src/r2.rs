@@ -4,28 +4,19 @@ use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{CompletedMultipartUpload, CompletedPart};
 use aws_sdk_s3::Client;
 use aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder;
-use base64::engine::general_purpose;
-use base64::Engine;
-use dashmap::DashMap;
 use hyper::client::HttpConnector;
-use hyper_proxy::{Proxy, ProxyConnector};
+use hyper_proxy::ProxyConnector;
 use mime_guess::from_path;
-use once_cell::sync::Lazy;
 use std::{
-    collections::HashMap,
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
-use sysproxy::Sysproxy;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
 use tokio::sync::Semaphore;
-use uuid::Uuid;
-
-static UPLOAD_STATUS: Lazy<DashMap<String, String>> = Lazy::new(DashMap::new);
 
 #[tauri::command]
-pub async fn ping_bucket(
+pub async fn r2_ping(
     bucket_name: &str,
     account_id: &str,
     access_key: &str,
@@ -45,6 +36,7 @@ pub async fn r2_upload(
     files: Vec<File>,
 ) -> Result<(), String> {
     let client = Arc::new(R2Client::new(bucket_name, account_id, access_key, secret_key).await?);
+    // 最多允许 5 个文件同时上传
     let semaphore = Arc::new(Semaphore::new(5));
 
     let mut handles = vec![];
@@ -83,13 +75,7 @@ pub async fn r2_upload(
                         .await
                 }
                 UploadSource::FileContent(content) => {
-                    let decoded = general_purpose::STANDARD
-                        .decode(content)
-                        .map_err(|e| e.to_string())?;
-                    let content = String::from_utf8(decoded).map_err(|e| e.to_string())?;
-                    client
-                        .upload_content(&app_handle, &content, &filename, &file_id)
-                        .await
+                    client.upload_content(content, &filename).await
                 }
             };
 
@@ -127,61 +113,9 @@ pub async fn r2_upload(
     Ok(())
 }
 
-#[tauri::command]
-pub async fn cancel_upload(
-    app_handle: tauri::AppHandle,
-    file_id: String,
-    filename: String,
-) -> Result<(), String> {
-    if let Some(mut status) = UPLOAD_STATUS.get_mut(&file_id) {
-        *status = "cancelled".to_string();
-
-        // 发送取消状态
-        let _ = app_handle.emit(
-            "upload-progress",
-            UploadProgress {
-                file_id,
-                filename,
-                status: UploadStatus::Cancelled,
-                timestamp: SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-            },
-        );
-
-        Ok(())
-    } else {
-        Err("Upload task not found".to_string())
-    }
-}
-
-#[tauri::command]
-pub async fn get_upload_status() -> Result<HashMap<String, String>, String> {
-    let mut status_map = HashMap::new();
-    let mut to_remove = Vec::new();
-
-    for entry in UPLOAD_STATUS.iter() {
-        let file_id = entry.key().clone();
-        let status = entry.value().clone();
-
-        if status == "success" || status.starts_with("error:") || status == "completed" {
-            to_remove.push(file_id.clone());
-        }
-        status_map.insert(file_id, status);
-    }
-
-    for file_id in to_remove {
-        UPLOAD_STATUS.remove(&file_id);
-    }
-
-    Ok(status_map)
-}
-
 pub struct R2Client {
     client: Client,
     bucket_name: String,
-    account_id: String,
 }
 
 impl R2Client {
@@ -191,7 +125,7 @@ impl R2Client {
         access_key: &str,
         secret_key: &str,
     ) -> Result<Self, String> {
-        let credentials = Credentials::new(access_key, secret_key, None, None, "r2-uploader");
+        let credentials = Credentials::new(access_key, secret_key, None, None, "R2Uploader");
 
         // Create HTTP client with or without proxy
         let http_client = match create_proxy_connector() {
@@ -210,17 +144,11 @@ impl R2Client {
         Ok(Self {
             client: Client::new(&config),
             bucket_name: bucket_name.to_string(),
-            account_id: account_id.to_string(),
         })
     }
 
-    pub async fn upload_content(
-        &self,
-        app_handle: &tauri::AppHandle,
-        content: &str,
-        remote_filename: &str,
-        file_id: &str,
-    ) -> Result<(), String> {
+    // 上传文件内容，一般是文字或图片，内容不会太大，直接上传，且不需要进度
+    pub async fn upload_content(&self, content: &str, remote_filename: &str) -> Result<(), String> {
         self.client
             .put_object()
             .bucket(&self.bucket_name)
@@ -237,6 +165,7 @@ impl R2Client {
         Ok(())
     }
 
+    // 创建多部分上传
     pub async fn create_multipart_upload(&self, remote_filename: &str) -> Result<String, String> {
         self.client
             .create_multipart_upload()
@@ -328,12 +257,9 @@ impl R2Client {
         let mut file = tokio::fs::File::open(path)
             .await
             .map_err(|e| e.to_string())?;
-        let file_size = file
-            .metadata()
-            .await
-            .map_err(|e| e.to_string())?
-            .len() as usize;
+        let file_size = file.metadata().await.map_err(|e| e.to_string())?.len() as usize;
 
+        // 如果文件小于 CHUNK_SIZE，直接上传
         if file_size < CHUNK_SIZE {
             let mut buffer = Vec::new();
             file.read_to_end(&mut buffer)
@@ -355,6 +281,7 @@ impl R2Client {
             return Ok(());
         }
 
+        // 大文件，分块上传
         let upload_id = self.create_multipart_upload(remote_filename).await?;
         let mut part_number = 1;
         let mut completed_parts = Vec::new();
@@ -363,10 +290,7 @@ impl R2Client {
         let start_time = SystemTime::now();
 
         loop {
-            let n = file
-                .read(&mut buffer)
-                .await
-                .map_err(|e| e.to_string())?;
+            let n = file.read(&mut buffer).await.map_err(|e| e.to_string())?;
             if n == 0 {
                 break;
             }
