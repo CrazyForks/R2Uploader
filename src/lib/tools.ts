@@ -2,8 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { sep } from "@tauri-apps/api/path";
 import clipboard from "tauri-plugin-clipboard-api";
-import { filesState } from "./files.svelte";
-import { setAlert } from "./store.svelte";
+import { globalState, setAlert } from "./store.svelte";
 import type { FileDetail } from "./type";
 
 export function generateTimestamp() {
@@ -40,7 +39,7 @@ export async function parsePaths(paths: string[]) {
     const details = await getFileDetails(file);
     if (details && details.length > 0) {
       details.forEach((detail) => {
-        filesState.files.push({
+        globalState.files.push({
           type: "file",
           id: detail.id,
           source: {
@@ -55,7 +54,7 @@ export async function parsePaths(paths: string[]) {
 }
 
 export function addText(textContent: string, remoteFilename: string) {
-  filesState.files.push({
+  globalState.files.push({
     type: "text",
     id: Date.now().toString(),
     source: { fileContent: textContent },
@@ -81,7 +80,7 @@ export function addImage(imageContent: string) {
   } else {
     remoteFilename += ".png";
   }
-  filesState.files.push({
+  globalState.files.push({
     type: "image",
     id: Date.now().toString(),
     source: { fileContent: imageContent },
@@ -94,6 +93,7 @@ export async function checkClipboardContent() {
   try {
     if (await clipboard.hasText()) {
       const text = await clipboard.readText();
+      console.log("clipboard text:", text);
       addText(text, generateTimestampTextFileName());
     }
     if (await clipboard.hasImage()) {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { modalState } from "$lib/store.svelte";
+  import { globalState } from "$lib/store.svelte";
   import { onMount } from "svelte";
 
   let modal: HTMLDialogElement;
@@ -12,16 +12,16 @@
   });
 
   function onclose() {
-    modalState.isShow = false;
-    if (modalState.onClose) {
-      modalState.onClose();
-      modalState.onClose = undefined;
+    globalState.modal.isShow = false;
+    if (globalState.modal.onClose) {
+      globalState.modal.onClose();
+      globalState.modal.onClose = undefined;
     }
-    modalState.children = undefined;
+    globalState.modal.children = undefined;
   }
 
   $effect(() => {
-    if (modalState.isShow) {
+    if (globalState.modal.isShow) {
       modal.showModal();
     } else {
       modal.close();
@@ -39,7 +39,7 @@
     {#if isLoading}
       <div class="flex h-full items-center justify-center p-2">loading...</div>
     {:else}
-      {@render modalState.children?.()}
+      {@render globalState.modal.children?.()}
     {/if}
   </div>
   <form method="dialog" class="modal-backdrop">

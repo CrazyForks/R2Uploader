@@ -1,14 +1,13 @@
 <script lang="ts">
-  import { filesState } from "$lib/files.svelte";
   import { t } from "$lib/i18n.svelte";
-  import { closeModal } from "$lib/store.svelte";
+  import { closeModal, globalState } from "$lib/store.svelte";
   import { generateTimestampTextFileName } from "$lib/tools";
 
   let textContent = $state("");
   let remoteFilename = $state(generateTimestampTextFileName());
 
   function confirm() {
-    filesState.files.push({
+    globalState.files.push({
       type: "text",
       id: Date.now().toString(),
       source: { fileContent: textContent },

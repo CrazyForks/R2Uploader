@@ -1,4 +1,4 @@
-import { appSettings } from "./store.svelte";
+import { globalState } from "./store.svelte";
 
 export let selectedLocale = $state("en");
 
@@ -199,5 +199,5 @@ export let zh = $state({
 });
 
 export function t() {
-  return appSettings.locale === "en" ? en : zh;
+  return globalState.appSetting.locale === "en" ? en : zh;
 }

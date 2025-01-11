@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { filesState } from "$lib/files.svelte";
 </script>
 
 <div class="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">

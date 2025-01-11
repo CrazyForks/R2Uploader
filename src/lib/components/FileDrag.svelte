@@ -36,7 +36,7 @@
   });
 </script>
 
-<div class="overlay" class:active={globalState.drag.isDragging}>
+<div class="overlay inset-0" class:active={globalState.drag.isDragging}>
   <div class="flex flex-col items-center gap-4 rounded-xl p-8 text-center">
     <UploadCloud class="size-16 text-slate-300" />
     <p class="text-2xl font-medium text-slate-300">拖动文件到此</p>
@@ -46,7 +46,7 @@
 
 <style lang="postcss">
   .overlay {
-    @apply invisible fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-black/50 opacity-0 backdrop-blur-sm transition;
+    @apply invisible fixed z-[9999] flex h-screen w-screen items-center justify-center bg-black/50 opacity-0 backdrop-blur-sm transition;
   }
 
   .overlay.active {

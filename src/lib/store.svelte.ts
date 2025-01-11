@@ -14,6 +14,8 @@ export let globalState: GlobalState = $state({
     children: undefined,
     onClose: undefined,
   },
+  files: [],
+  selectedBucket: undefined,
   appSetting: {
     sidebarCollapsed: false,
     useSystemProxy: true,

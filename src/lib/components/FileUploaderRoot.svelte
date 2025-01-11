@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { bucketsState, filesState } from "$lib/files.svelte";
   import { checkClipboardContent } from "$lib/tools";
   import type { File, UploadProgress } from "$lib/type";
   import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
@@ -8,6 +7,7 @@
   import FileUploaderPreview from "./FileUploaderPreview.svelte";
   import FileUploader from "./FileUploader.svelte";
   import FileUploaderProgress from "./FileUploaderProgress.svelte";
+  import { globalState } from "$lib/store.svelte";
 
   let {
     uploadStatus = $bindable("idle"),
@@ -39,6 +39,7 @@
 
     // 处理 ctrl+v
     if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+      console.log("ctrl+v");
       e.preventDefault();
       checkClipboardContent();
     }
@@ -48,9 +49,9 @@
 <div
   class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
 >
-  {#if !bucketsState.selected}
+  {#if !globalState.selectedBucket}
     <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
-  {:else if !filesState.files.length}
+  {:else if !globalState.files.length}
     <FileUploaderReady />
   {:else if !isUploading}
     <FileUploader />

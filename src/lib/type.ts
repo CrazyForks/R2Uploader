@@ -1,3 +1,4 @@
+import type { Selected } from "bits-ui";
 import type { Snippet } from "svelte";
 
 export interface Bucket {
@@ -52,8 +53,10 @@ export interface GlobalState {
     isDragging: boolean;
     paths: string[];
   };
-  appSetting: AppSettings;
   modal: ModalState;
+  files: Array<File>;
+  selectedBucket: Selected<Bucket> | undefined;
+  appSetting: AppSettings;
 }
 
 export interface AppSettings {

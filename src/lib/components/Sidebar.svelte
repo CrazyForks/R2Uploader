@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { t } from "$lib/i18n.svelte";
-  import { appSettings } from "$lib/store.svelte";
+  import { globalState } from "$lib/store.svelte";
   import {
     CloudUpload,
     PanelRightClose,
@@ -21,20 +21,20 @@
 {#snippet Desktop()}
   <nav
     class="hidden min-h-dvh border-r border-slate-200 bg-white transition-all md:block dark:border-slate-700 dark:bg-slate-800"
-    style="width: {appSettings.sidebarCollapsed ? '3rem' : '9rem'}"
+    style="width: {globalState.appSetting.sidebarCollapsed ? '3rem' : '9rem'}"
   >
     <ul class="flex flex-col items-center space-y-2 overflow-hidden">
       <li
-        class="flex w-full {appSettings.sidebarCollapsed
+        class="flex w-full {globalState.appSetting.sidebarCollapsed
           ? 'justify-center'
           : 'justify-end'}"
       >
         <button
           onclick={() =>
-            (appSettings.sidebarCollapsed = !appSettings.sidebarCollapsed)}
+            (globalState.appSetting.sidebarCollapsed = !globalState.appSetting.sidebarCollapsed)}
           class="sidebar-link gapped"
         >
-          {#if appSettings.sidebarCollapsed}
+          {#if globalState.appSetting.sidebarCollapsed}
             <PanelRightClose class="size-5" />
           {:else}
             <PanelRightOpen class="size-5" />
@@ -45,14 +45,14 @@
         <li>
           <a
             {href}
-            class="sidebar-link gapped bg {appSettings.sidebarCollapsed
+            class="sidebar-link gapped bg {globalState.appSetting.sidebarCollapsed
               ? 'rounded-none'
               : 'rounded-lg'}"
-            class:min-w-28={!appSettings.sidebarCollapsed}
+            class:min-w-28={!globalState.appSetting.sidebarCollapsed}
             aria-current={page.route.id === href ? "page" : null}
           >
             <Icon class="size-5" />
-            {#if !appSettings.sidebarCollapsed}
+            {#if !globalState.appSetting.sidebarCollapsed}
               <span class="text-nowrap">{label}</span>
             {/if}
           </a>

@@ -43,12 +43,12 @@ pub async fn r2_upload(
     for file in files {
         let client = client.clone();
         let semaphore = semaphore.clone();
-        let app_handle = app.clone();
+        let app = app.clone();
         let filename = file.remote_filename.clone();
         let file_id = file.id.clone();
 
         // 发送初始状态
-        let _ = app_handle.emit(
+        let _ = app.emit(
             "upload-progress",
             UploadProgress {
                 file_id: file_id.clone(),
@@ -71,7 +71,7 @@ pub async fn r2_upload(
             let result = match &file.source {
                 UploadSource::FilePath(path) => {
                     client
-                        .stream_upload_file(&app_handle, &path, &filename, &file_id)
+                        .stream_upload_file(&app, &path, &filename, &file_id)
                         .await
                 }
                 UploadSource::FileContent(content) => {
@@ -88,7 +88,7 @@ pub async fn r2_upload(
                 },
             };
 
-            let _ = app_handle.emit(
+            let _ = app.emit(
                 "upload-progress",
                 UploadProgress {
                     file_id: file_id.clone(),
@@ -202,6 +202,22 @@ impl R2Client {
         upload_id: &str,
         parts: Vec<CompletedPart>,
     ) -> Result<(), String> {
+        println!(
+            "完成多部分上传：remote filename: {}, upload id: {}, parts length: {}",
+            remote_filename,
+            upload_id,
+            parts.len()
+        );
+
+        // 打印每个部分的详细信息
+        for part in &parts {
+            println!(
+                "Part {}: ETag: {}",
+                part.part_number().unwrap_or(-1),
+                part.e_tag().unwrap_or("None")
+            );
+        }
+
         self.client
             .complete_multipart_upload()
             .bucket(&self.bucket_name)
@@ -214,7 +230,10 @@ impl R2Client {
             )
             .send()
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                println!("完成多部分上传时遇到错误：{}", e.to_string());
+                e.to_string()
+            })?;
         Ok(())
     }
 
@@ -244,10 +263,9 @@ impl R2Client {
                     .build()
             })
     }
-
     pub async fn stream_upload_file(
         &self,
-        app_handle: &tauri::AppHandle,
+        app: &tauri::AppHandle,
         path: &str,
         remote_filename: &str,
         file_id: &str,
@@ -285,34 +303,42 @@ impl R2Client {
         let upload_id = self.create_multipart_upload(remote_filename).await?;
         let mut part_number = 1;
         let mut completed_parts = Vec::new();
-        let mut buffer = vec![0; CHUNK_SIZE];
         let mut bytes_uploaded = 0;
         let start_time = SystemTime::now();
 
         loop {
-            let n = file.read(&mut buffer).await.map_err(|e| e.to_string())?;
-            if n == 0 {
-                break;
+            let remaining_bytes = file_size - bytes_uploaded;
+            let buffer_size = if remaining_bytes > CHUNK_SIZE {
+                CHUNK_SIZE
+            } else {
+                remaining_bytes
+            };
+
+            if buffer_size == 0 {
+                break; // 文件已读取完毕
             }
 
+            let mut buffer = vec![0; buffer_size];
+            file.read_exact(&mut buffer)
+                .await
+                .map_err(|e| e.to_string())?;
+
             let part = self
-                .upload_part(
-                    remote_filename,
-                    &upload_id,
-                    part_number,
-                    buffer[..n].to_vec(),
-                )
+                .upload_part(remote_filename, &upload_id, part_number, buffer.to_vec())
                 .await?;
 
             completed_parts.push(part);
-            bytes_uploaded += n;
+            bytes_uploaded += buffer_size;
+            part_number += 1;
+
+            // 更新上传进度
             let elapsed = SystemTime::now()
                 .duration_since(start_time)
                 .unwrap_or_default()
                 .as_secs_f64();
             let speed = bytes_uploaded as f64 / elapsed;
 
-            let _ = app_handle.emit(
+            let _ = app.emit(
                 "upload-progress",
                 UploadProgress {
                     file_id: file_id.to_string(),
@@ -329,9 +355,9 @@ impl R2Client {
                         .as_secs(),
                 },
             );
-
-            part_number += 1;
         }
+
+        println!("全部已上传完成，准备完成多部分上传");
 
         self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
             .await

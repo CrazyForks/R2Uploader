@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { bucketsState, filesState } from "$lib/files.svelte";
-  import { setAlert } from "$lib/store.svelte";
+  import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadProgress } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
@@ -25,38 +24,13 @@
   const flipDurationMs = 200;
   let isUploading = $state(false);
 
-  onMount(async () => {
-    // 监听上传进度事件
-    await listen<UploadProgress>("upload-progress", (event) => {
-      console.log("event: ", event);
-      const progress = event.payload;
-      uploadStatusMap[progress.taskId] = progress;
-
-      // 检查是否所有文件都已完成上传
-      const allCompleted = Object.values(uploadStatusMap).every(
-        (p) =>
-          p.status.type === "success" ||
-          p.status.type === "error" ||
-          p.status.type === "cancelled",
-      );
-
-      if (allCompleted) {
-        const hasError = Object.values(uploadStatusMap).some(
-          (p) => p.status.type === "error",
-        );
-        uploadStatus = hasError ? "error" : "success";
-        setAlert(hasError ? "部分文件上传失败" : "上传成功");
-      }
-    });
-  });
-
   function handleSort(e: CustomEvent) {
-    filesState.files = e.detail.items;
+    globalState.files = e.detail.items;
   }
 
   async function onChangePrefix() {
     await tick();
-    filesState.files.forEach((file) => {
+    globalState.files.forEach((file) => {
       if (file.remoteFilenamePrefix === oldPrefix) {
         file.remoteFilenamePrefix = prefix;
       }
@@ -65,12 +39,12 @@
   }
 
   async function uploadFile() {
-    if (!bucketsState.selected) return;
+    if (!globalState.selectedBucket) return;
     try {
       uploadStatus = "uploading";
       isUploading = true;
 
-      const filesToUpload = filesState.files.map((file) => ({
+      const filesToUpload = globalState.files.map((file) => ({
         id: file.id,
         source: file.source,
         remoteFilename:
@@ -80,10 +54,10 @@
       }));
 
       await invoke("r2_upload", {
-        bucketName: bucketsState.selected.value.bucketName,
-        accountId: bucketsState.selected.value.accountId,
-        accessKey: bucketsState.selected.value.accessKey,
-        secretKey: bucketsState.selected.value.secretKey,
+        bucketName: globalState.selectedBucket.value.bucketName,
+        accountId: globalState.selectedBucket.value.accountId,
+        accessKey: globalState.selectedBucket.value.accessKey,
+        secretKey: globalState.selectedBucket.value.secretKey,
         files: filesToUpload,
       });
     } catch (error: unknown) {
@@ -95,7 +69,7 @@
   }
 
   function removeFile(index: number) {
-    filesState.files.splice(index, 1);
+    globalState.files.splice(index, 1);
   }
 </script>
 
@@ -112,7 +86,7 @@
     />
     <div class="flex-1"></div>
     <button
-      onclick={() => (filesState.files = [])}
+      onclick={() => (globalState.files = [])}
       class="cursor-pointer rounded-md border px-2 text-sm text-cyan-500"
       >清空</button
     >
@@ -123,12 +97,12 @@
     >
   </div>
   <section
-    use:dragHandleZone={{ items: filesState.files, flipDurationMs }}
+    use:dragHandleZone={{ items: globalState.files, flipDurationMs }}
     onconsider={handleSort}
     onfinalize={handleSort}
     class="flex-1 space-y-2 overflow-y-auto p-2 dark:text-slate-100"
   >
-    {#each filesState.files as file, index (file.id)}
+    {#each globalState.files as file, index (file.id)}
       <div
         class="flex items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
         animate:flip={{ duration: flipDurationMs }}

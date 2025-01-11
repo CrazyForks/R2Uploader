@@ -1,8 +1,7 @@
 <script lang="ts">
   import db from "$lib/db";
-  import { bucketsState } from "$lib/files.svelte";
   import { t } from "$lib/i18n.svelte";
-  import { appSettings } from "$lib/store.svelte";
+  import { globalState } from "$lib/store.svelte";
   import type { Bucket } from "$lib/type";
   import { Select, type Selected } from "bits-ui";
   import { ChevronsUpDown } from "lucide-svelte";
@@ -23,11 +22,11 @@
     });
     if (buckets.length > 0) {
       const defaultBucket = buckets.find(
-        (bucket) => bucket.value.id === appSettings.defaultBucketId,
+        (bucket) => bucket.value.id === globalState.appSetting.defaultBucketId,
       );
-      bucketsState.selected = defaultBucket || buckets[0];
+      globalState.selectedBucket = defaultBucket || buckets[0];
     } else {
-      bucketsState.selected = undefined;
+      globalState.selectedBucket = undefined;
     }
   }
 </script>
@@ -51,10 +50,10 @@
     </p>
     <Select.Root
       items={buckets}
-      selected={bucketsState.selected}
+      selected={globalState.selectedBucket}
       onSelectedChange={(e) => {
         if (e) {
-          bucketsState.selected = {
+          globalState.selectedBucket = {
             value: e.value,
             label: e.value.bucketName,
           };
