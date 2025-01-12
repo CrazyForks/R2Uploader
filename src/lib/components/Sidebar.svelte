@@ -11,6 +11,7 @@
 
   const links = $derived([
     { href: "/", icon: CloudUpload, label: t().common.upload },
+    { href: "/transfer", icon: CloudUpload, label: "传输" },
     { href: "/setting", icon: Settings, label: t().common.setting },
   ]);
 </script>
