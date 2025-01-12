@@ -26,8 +26,10 @@
     {/each}
   </div>
   <div
-    class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
-  ></div>
+    class="flex min-h-0 flex-1 flex-col items-center rounded-lg border border-slate-200 bg-slate-100/80 p-2 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+  >
+    <FileUploaderProgress />
+  </div>
 </div>
 
 <style lang="postcss">
