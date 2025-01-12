@@ -1,6 +1,6 @@
 <script lang="ts">
   import db from "$lib/db";
-  import { setAlert } from "$lib/store.svelte";
+  import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadHistory } from "$lib/type";
   import { Copy } from "lucide-svelte";
 
@@ -11,6 +11,8 @@
   let files = $state<UploadHistory[]>([]);
 
   $effect(() => {
+    // 只要 globalState.statusChange 发生变化，就重新获取数据
+    globalState.statusChange;
     switch (activeTab) {
       case "all":
         getAllFiles().then((f) => {
@@ -70,51 +72,54 @@
   }
 </script>
 
-{#each files as file, index}
-  <div
-    class="flex w-full items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
-  >
-    <div class="flex flex-1 items-center justify-between">
-      <div>
-        <div class="text-sm text-slate-500 dark:text-slate-400">
-          {file.filename}
+<div class="w-full space-y-2 overflow-y-auto p-2">
+  {#each files as file, index}
+    <div
+      class="flex w-full items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
+    >
+      <div class="flex flex-1 items-center justify-between">
+        <div>
+          <div class="text-sm text-slate-500 dark:text-slate-400">
+            {file.filename}
+          </div>
+          {#if typeof file.status === "object" && "uploading" in file.status}
+            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div
+                class="h-full bg-blue-500 transition-all"
+                style="width: {file.status.uploading.progress * 100}%"
+              ></div>
+            </div>
+            <div class="mt-1 text-xs text-slate-500">
+              {Math.floor(file.status.uploading.progress * 100)}% -
+              {(file.status.uploading.bytes_uploaded / 1024 / 1024).toFixed(
+                2,
+              )}MB /
+              {(file.status.uploading.total_bytes / 1024 / 1024).toFixed(2)}MB
+              {#if file.status.uploading.speed > 0}
+                - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}MB/s
+              {/if}
+            </div>
+          {:else if file.status === "success"}
+            <div class="text-sm text-green-500">上传完成</div>
+          {:else if typeof file.status === "object" && "error" in file.status}
+            <div class="text-sm text-red-500">
+              上传失败：{file.status.error.message}
+            </div>
+          {:else if file.status === "cancelled"}
+            <div class="text-sm text-yellow-500">已取消</div>
+          {:else}
+            <div class="text-sm text-slate-500">等待上传...</div>
+          {/if}
         </div>
-        {#if typeof file.status === "object" && "uploading" in file.status}
-          <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-            <div
-              class="h-full bg-blue-500 transition-all"
-              style="width: {file.status.uploading.progress * 100}%"
-            ></div>
-          </div>
-          <div class="mt-1 text-xs text-slate-500">
-            {Math.floor(file.status.uploading.progress * 100)}% -
-            {(file.status.uploading.bytes_uploaded / 1024 / 1024).toFixed(2)}MB
-            /
-            {(file.status.uploading.total_bytes / 1024 / 1024).toFixed(2)}MB
-            {#if file.status.uploading.speed > 0}
-              - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}MB/s
-            {/if}
-          </div>
-        {:else if file.status === "success"}
-          <div class="text-sm text-green-500">上传完成</div>
-        {:else if typeof file.status === "object" && "error" in file.status}
-          <div class="text-sm text-red-500">
-            上传失败：{file.status.error.message}
-          </div>
-        {:else if file.status === "cancelled"}
-          <div class="text-sm text-yellow-500">已取消</div>
-        {:else}
-          <div class="text-sm text-slate-500">等待上传...</div>
-        {/if}
-      </div>
-      <div class="px-2">
-        <button class="action-button" onclick={() => copyLink(file.url)}>
-          <Copy class="size-4" />
-        </button>
+        <div class="px-2">
+          <button class="action-button" onclick={() => copyLink(file.url)}>
+            <Copy class="size-4" />
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-{/each}
+  {/each}
+</div>
 
 <style lang="postcss">
   .action-button {

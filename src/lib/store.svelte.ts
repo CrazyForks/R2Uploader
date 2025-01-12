@@ -16,14 +16,13 @@ export let globalState: GlobalState = $state({
   },
   files: [],
   selectedBucket: undefined,
-  progress: {},
-  isUploading: false,
   appSetting: {
     sidebarCollapsed: false,
     useSystemProxy: true,
     locale: "en",
     defaultBucketId: undefined,
   },
+  statusChange: 0,
 });
 
 export function setAlert(message: string) {

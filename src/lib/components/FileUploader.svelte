@@ -11,6 +11,7 @@
   let oldPrefix = $state("");
   let prefix = $state("");
   const flipDurationMs = 200;
+  let isUploading = $state(false);
 
   function handleSort(e: CustomEvent) {
     globalState.files = e.detail.items;
@@ -28,6 +29,7 @@
 
   async function uploadFile() {
     if (!globalState.selectedBucket) return;
+    isUploading = true;
     try {
       const filesToUpload = globalState.files.map((file) => ({
         id: file.id,
@@ -58,6 +60,8 @@
     } catch (error: unknown) {
       console.error(error);
       setAlert("上传失败，请重试");
+    } finally {
+      isUploading = false;
     }
   }
 
@@ -85,8 +89,9 @@
     >
     <button
       onclick={uploadFile}
+      disabled={isUploading}
       class="cursor-pointer rounded-md bg-cyan-500 px-6 text-white hover:bg-cyan-400"
-      >上传</button
+      >{isUploading ? "上传中..." : "上传"}</button
     >
   </div>
   <section

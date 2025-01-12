@@ -55,9 +55,8 @@ export interface GlobalState {
   modal: ModalState;
   files: Array<File>;
   selectedBucket: Selected<Bucket> | undefined;
-  isUploading: boolean;
   appSetting: AppSettings;
-  uploadHistory: Array<File>;
+  statusChange: number;
 }
 
 export interface AppSettings {

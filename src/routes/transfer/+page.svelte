@@ -26,7 +26,7 @@
     {/each}
   </div>
   <div
-    class="flex min-h-0 flex-1 flex-col items-center gap-2 rounded-lg border border-slate-200 bg-slate-100/80 p-2 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+    class="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
   >
     <FileUploaderProgress {activeTab} />
   </div>

@@ -35,6 +35,7 @@
       (event) => {
         console.log("event: ", event.payload);
         db.history.put(event.payload);
+        globalState.statusChange += 1;
       },
     );
   });
