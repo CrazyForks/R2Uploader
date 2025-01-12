@@ -25,7 +25,6 @@
 
     // 处理 ctrl+v
     if ((e.ctrlKey || e.metaKey) && e.key === "v") {
-      console.log("ctrl+v");
       e.preventDefault();
       checkClipboardContent();
     }

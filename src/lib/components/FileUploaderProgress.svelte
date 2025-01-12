@@ -73,12 +73,12 @@
 </script>
 
 <div class="w-full space-y-2 overflow-y-auto p-2">
-  {#each files as file, index}
+  {#each files as file (file.fileId)}
     <div
       class="flex w-full items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
     >
       <div class="flex flex-1 items-center justify-between">
-        <div>
+        <div class="flex-1">
           <div class="text-sm text-slate-500 dark:text-slate-400">
             {file.filename}
           </div>
@@ -91,10 +91,9 @@
             </div>
             <div class="mt-1 text-xs text-slate-500">
               {Math.floor(file.status.uploading.progress * 100)}% -
-              {(file.status.uploading.bytes_uploaded / 1024 / 1024).toFixed(
-                2,
-              )}MB /
-              {(file.status.uploading.total_bytes / 1024 / 1024).toFixed(2)}MB
+              {(file.status.uploading.bytesUploaded / 1024 / 1024).toFixed(2)}MB
+              /
+              {(file.status.uploading.totalBytes / 1024 / 1024).toFixed(2)}MB
               {#if file.status.uploading.speed > 0}
                 - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}MB/s
               {/if}

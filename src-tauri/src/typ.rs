@@ -31,7 +31,9 @@ pub enum UploadStatus {
     Cancelled,
     Uploading {
         progress: f64,
+        #[serde(rename = "bytesUploaded")]
         bytes_uploaded: u64,
+        #[serde(rename = "totalBytes")]
         total_bytes: u64,
         speed: f64,
     },

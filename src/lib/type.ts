@@ -34,8 +34,8 @@ export type UploadStatus =
   | {
       uploading: {
         progress: number;
-        bytes_uploaded: number;
-        total_bytes: number;
+        bytesUploaded: number;
+        totalBytes: number;
         speed: number;
       };
     }

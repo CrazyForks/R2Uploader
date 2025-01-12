@@ -93,7 +93,6 @@ export async function checkClipboardContent() {
   try {
     if (await clipboard.hasText()) {
       const text = await clipboard.readText();
-      console.log("clipboard text:", text);
       addText(text, generateTimestampTextFileName());
     }
     if (await clipboard.hasImage()) {
