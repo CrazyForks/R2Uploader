@@ -26,6 +26,12 @@ pub async fn r2_ping(
     client.ping().await
 }
 
+use dashmap::DashMap;
+use once_cell::sync::Lazy;
+
+static UPLOAD_TASKS: Lazy<DashMap<String, tokio::task::JoinHandle<Result<(), String>>>> =
+    Lazy::new(DashMap::new);
+
 #[tauri::command]
 pub async fn r2_upload(
     app: AppHandle,
@@ -38,22 +44,23 @@ pub async fn r2_upload(
 ) -> Result<(), String> {
     let client =
         Arc::new(R2Client::new(bucket_name, account_id, access_key, secret_key, domain).await?);
-    // 最多允许 5 个文件同时上传
     let semaphore = Arc::new(Semaphore::new(5));
 
-    let mut handles = vec![];
     for file in files {
         let client = client.clone();
         let semaphore = semaphore.clone();
         let app = app.clone();
         let filename = file.remote_filename.clone();
         let file_id = file.id.clone();
+        let file_id_for_emit = file_id.clone();
+        let file_id_for_tasks = file_id.clone();
+        let file_id_for_spawn = file_id.clone();
 
         // 发送初始状态
         let _ = app.emit(
             "upload-progress",
             UploadHistory {
-                file_id: file_id.clone(),
+                file_id: file_id_for_emit,
                 filename: filename.clone(),
                 status: UploadStatus::Uploading {
                     progress: 0.0,
@@ -74,7 +81,7 @@ pub async fn r2_upload(
             let result = match &file.source {
                 UploadSource::FilePath(path) => {
                     client
-                        .stream_upload_file(&app, &path, &filename, &file_id)
+                        .stream_upload_file(&app, &path, &filename, &file_id_for_spawn)
                         .await
                 }
                 UploadSource::FileContent(content) => {
@@ -95,7 +102,7 @@ pub async fn r2_upload(
                 "upload-progress",
                 UploadHistory {
                     url: format!("{}/{}", client.domain, filename),
-                    file_id: file_id.clone(),
+                    file_id: file_id_for_spawn,
                     filename,
                     status: final_status,
                     timestamp: SystemTime::now()
@@ -107,11 +114,8 @@ pub async fn r2_upload(
 
             result
         });
-        handles.push(handle);
-    }
 
-    for handle in handles {
-        handle.await.map_err(|e| e.to_string())??;
+        UPLOAD_TASKS.insert(file_id_for_tasks, handle);
     }
 
     Ok(())
