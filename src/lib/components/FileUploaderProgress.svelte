@@ -99,15 +99,31 @@
               {/if}
             </div>
           {:else if file.status === "success"}
-            <div class="text-sm text-green-500">上传完成</div>
+            <div class="text-sm">
+              <span class="text-green-500">上传完成</span>
+              <span class="text-xs"
+                >{new Date(file.timestamp * 1000).toLocaleString()}</span
+              >
+            </div>
           {:else if typeof file.status === "object" && "error" in file.status}
             <div class="text-sm text-red-500">
-              上传失败：{file.status.error.message}
+              上传失败：{file.status.error.message} ·
+              <span class="text-xs"
+                >{new Date(file.timestamp * 1000).toLocaleString()}</span
+              >
             </div>
           {:else if file.status === "cancelled"}
-            <div class="text-sm text-yellow-500">已取消</div>
+            <div class="text-sm text-yellow-500">
+              已取消 · <span class="text-xs"
+                >{new Date(file.timestamp * 1000).toLocaleString()}</span
+              >
+            </div>
           {:else}
-            <div class="text-sm text-slate-500">等待上传...</div>
+            <div class="text-sm text-slate-500">
+              等待上传... · <span class="text-xs"
+                >{new Date(file.timestamp * 1000).toLocaleString()}</span
+              >
+            </div>
           {/if}
         </div>
         <div class="px-2">
