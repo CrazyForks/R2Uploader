@@ -1,12 +1,8 @@
 <script lang="ts">
   import { checkClipboardContent } from "$lib/tools";
-  import type { File, UploadProgress } from "$lib/type";
-  import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
   import { onDestroy, onMount } from "svelte";
   import FileUploaderReady from "./FileUploaderReady.svelte";
-  import FileUploaderPreview from "./FileUploaderPreview.svelte";
   import FileUploader from "./FileUploader.svelte";
-  import FileUploaderProgress from "./FileUploaderProgress.svelte";
   import { globalState } from "$lib/store.svelte";
 
   onMount(async () => {
@@ -43,9 +39,7 @@
     <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
   {:else if !globalState.files.length}
     <FileUploaderReady />
-  {:else if !globalState.isUploading}
-    <FileUploader />
   {:else}
-    <FileUploaderProgress />
+    <FileUploader />
   {/if}
 </div>

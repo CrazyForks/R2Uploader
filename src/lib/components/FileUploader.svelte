@@ -1,14 +1,10 @@
 <script lang="ts">
   import { globalState, setAlert } from "$lib/store.svelte";
-  import type { UploadProgress } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
-  import { LinkPreview } from "bits-ui";
-  import { Eye, GripVertical, UploadCloud, X } from "lucide-svelte";
-  import { onMount, tick } from "svelte";
+  import { GripVertical, X } from "lucide-svelte";
+  import { tick } from "svelte";
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
-  import FileUploaderReady from "./FileUploaderReady.svelte";
   import FileUploaderPreview from "./FileUploaderPreview.svelte";
 
   let oldPrefix = $state("");
@@ -32,8 +28,6 @@
   async function uploadFile() {
     if (!globalState.selectedBucket) return;
     try {
-      globalState.isUploading = true;
-
       const filesToUpload = globalState.files.map((file) => ({
         id: file.id,
         source: file.source,
@@ -53,7 +47,6 @@
     } catch (error: unknown) {
       console.error(error);
       setAlert("上传失败，请重试");
-      globalState.isUploading = false;
     }
   }
 

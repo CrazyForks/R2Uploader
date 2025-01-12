@@ -3,6 +3,7 @@
   import { t } from "$lib/i18n.svelte";
   import { globalState } from "$lib/store.svelte";
   import {
+    ArrowsUpFromLine,
     CloudUpload,
     PanelRightClose,
     PanelRightOpen,
@@ -11,7 +12,7 @@
 
   const links = $derived([
     { href: "/", icon: CloudUpload, label: t().common.upload },
-    { href: "/transfer", icon: CloudUpload, label: "传输" },
+    { href: "/transfer", icon: ArrowsUpFromLine, label: "传输" },
     { href: "/setting", icon: Settings, label: t().common.setting },
   ]);
 </script>
@@ -32,8 +33,9 @@
       >
         <button
           onclick={() =>
-            (globalState.appSetting.sidebarCollapsed = !globalState.appSetting.sidebarCollapsed)}
-          class="sidebar-link gapped"
+            (globalState.appSetting.sidebarCollapsed =
+              !globalState.appSetting.sidebarCollapsed)}
+          class="nav-link gapped"
         >
           {#if globalState.appSetting.sidebarCollapsed}
             <PanelRightClose class="size-5" />
@@ -46,7 +48,8 @@
         <li>
           <a
             {href}
-            class="sidebar-link gapped bg {globalState.appSetting.sidebarCollapsed
+            class="nav-link gapped bg {globalState.appSetting
+              .sidebarCollapsed
               ? 'rounded-none'
               : 'rounded-lg'}"
             class:min-w-28={!globalState.appSetting.sidebarCollapsed}
@@ -71,7 +74,7 @@
       {#each links as { href, icon: Icon, label }}
         <a
           {href}
-          class="sidebar-link flex-col gap-1"
+          class="nav-link flex-col gap-1"
           aria-current={page.route.id === href ? "page" : null}
         >
           <Icon class="size-5" />
@@ -83,7 +86,7 @@
 {/snippet}
 
 <style lang="postcss">
-  .sidebar-link {
+  .nav-link {
     @apply flex cursor-pointer items-center text-slate-700 transition-colors dark:text-slate-200;
   }
 
@@ -91,11 +94,11 @@
     @apply gap-3 px-4 py-3;
   }
 
-  .sidebar-link[aria-current] {
+  .nav-link[aria-current] {
     @apply text-cyan-600 dark:text-cyan-400;
   }
 
-  .sidebar-link[aria-current].bg {
+  .nav-link[aria-current].bg {
     @apply bg-cyan-50 dark:bg-cyan-900/30;
   }
 </style>
