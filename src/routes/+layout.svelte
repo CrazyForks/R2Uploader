@@ -9,14 +9,13 @@
   import {
     globalState,
     initAppSettings,
-    setAlert,
     setDragPaths,
     setIsDragging,
   } from "$lib/store.svelte";
   import Modal from "$lib/components/Modal.svelte";
   import db from "$lib/db";
   import { parsePaths } from "$lib/tools";
-  import type { UploadProgress } from "$lib/type";
+  import type { UploadHistory } from "$lib/type";
 
   let unlistenDrag: UnlistenFn;
   let unlistenProgress: UnlistenFn;
@@ -31,12 +30,11 @@
     });
 
     // 监听上传进度事件
-    unlistenProgress = await listen<UploadProgress>(
+    unlistenProgress = await listen<UploadHistory>(
       "upload-progress",
       (event) => {
-        console.log("event: ", event);
-        const progress = event.payload;
-        globalState.progress[progress.fileId] = progress;
+        console.log("event: ", event.payload);
+        db.history.put(event.payload);
       },
     );
   });

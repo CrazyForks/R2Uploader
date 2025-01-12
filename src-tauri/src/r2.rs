@@ -1,4 +1,4 @@
-use crate::typ::{File, UploadProgress, UploadSource, UploadStatus};
+use crate::typ::{File, UploadHistory, UploadSource, UploadStatus};
 use aws_config::ConfigLoader;
 use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{CompletedMultipartUpload, CompletedPart};
@@ -22,7 +22,7 @@ pub async fn r2_ping(
     access_key: &str,
     secret_key: &str,
 ) -> Result<(), String> {
-    let client = R2Client::new(bucket_name, account_id, access_key, secret_key).await?;
+    let client = R2Client::new(bucket_name, account_id, access_key, secret_key, None).await?;
     client.ping().await
 }
 
@@ -33,9 +33,11 @@ pub async fn r2_upload(
     account_id: &str,
     access_key: &str,
     secret_key: &str,
+    domain: Option<&str>,
     files: Vec<File>,
 ) -> Result<(), String> {
-    let client = Arc::new(R2Client::new(bucket_name, account_id, access_key, secret_key).await?);
+    let client =
+        Arc::new(R2Client::new(bucket_name, account_id, access_key, secret_key, domain).await?);
     // 最多允许 5 个文件同时上传
     let semaphore = Arc::new(Semaphore::new(5));
 
@@ -50,7 +52,7 @@ pub async fn r2_upload(
         // 发送初始状态
         let _ = app.emit(
             "upload-progress",
-            UploadProgress {
+            UploadHistory {
                 file_id: file_id.clone(),
                 filename: filename.clone(),
                 status: UploadStatus::Uploading {
@@ -63,6 +65,7 @@ pub async fn r2_upload(
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_secs(),
+                url: format!("{}/{}", client.domain, filename),
             },
         );
 
@@ -90,7 +93,8 @@ pub async fn r2_upload(
 
             let _ = app.emit(
                 "upload-progress",
-                UploadProgress {
+                UploadHistory {
+                    url: format!("{}/{}", client.domain, filename),
                     file_id: file_id.clone(),
                     filename,
                     status: final_status,
@@ -116,6 +120,7 @@ pub async fn r2_upload(
 pub struct R2Client {
     client: Client,
     bucket_name: String,
+    domain: String,
 }
 
 impl R2Client {
@@ -124,6 +129,7 @@ impl R2Client {
         account_id: &str,
         access_key: &str,
         secret_key: &str,
+        domain: Option<&str>,
     ) -> Result<Self, String> {
         let credentials = Credentials::new(access_key, secret_key, None, None, "R2Uploader");
 
@@ -144,6 +150,9 @@ impl R2Client {
         Ok(Self {
             client: Client::new(&config),
             bucket_name: bucket_name.to_string(),
+            domain: domain
+                .unwrap_or(format!("https://{}.r2.cloudflarestorage.com", account_id).as_str())
+                .to_string(),
         })
     }
 
@@ -247,7 +256,7 @@ impl R2Client {
                     .build()
             })
     }
-    
+
     async fn stream_upload_file(
         &self,
         app: &tauri::AppHandle,
@@ -325,7 +334,8 @@ impl R2Client {
 
             let _ = app.emit(
                 "upload-progress",
-                UploadProgress {
+                UploadHistory {
+                    url: format!("{}/{}", self.domain, remote_filename),
                     file_id: file_id.to_string(),
                     filename: remote_filename.to_string(),
                     status: UploadStatus::Uploading {

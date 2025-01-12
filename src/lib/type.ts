@@ -28,13 +28,6 @@ export interface FileDetail {
   isDir: boolean;
 }
 
-export interface UploadProgress {
-  fileId: string;
-  filename: string;
-  status: UploadStatus;
-  timestamp: number;
-}
-
 export type UploadStatus =
   | "success"
   | "cancelled"
@@ -63,11 +56,12 @@ export interface GlobalState {
   files: Array<File>;
   selectedBucket: Selected<Bucket> | undefined;
   isUploading: boolean;
-  progress: Record<string, UploadProgress>;
   appSetting: AppSettings;
+  uploadHistory: Array<File>;
 }
 
 export interface AppSettings {
+  id?: number;
   sidebarCollapsed: boolean;
   useSystemProxy: boolean;
   locale: string;
@@ -78,4 +72,12 @@ export interface ModalState {
   isShow: boolean;
   children: Snippet | undefined;
   onClose?: () => void;
+}
+
+export interface UploadHistory {
+  fileId: string;
+  filename: string;
+  timestamp: number;
+  url: string;
+  status: UploadStatus;
 }

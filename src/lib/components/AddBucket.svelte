@@ -126,7 +126,7 @@
 
   async function checkButket() {
     try {
-      await invoke("ping_bucket", bucket);
+      await invoke("r2_ping", bucket);
       checkResult = true;
       setAlert("成功");
     } catch (e) {

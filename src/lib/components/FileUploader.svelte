@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { globalState, setAlert } from "$lib/store.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { GripVertical, X } from "lucide-svelte";
@@ -31,19 +32,29 @@
       const filesToUpload = globalState.files.map((file) => ({
         id: file.id,
         source: file.source,
+        type: file.type,
         remoteFilename:
           file.remoteFilenamePrefix === ""
             ? file.remoteFilename
             : `${file.remoteFilenamePrefix}/${file.remoteFilename}`,
+        remoteFilenamePrefix: file.remoteFilenamePrefix,
       }));
 
+      // 1. 上传
       await invoke("r2_upload", {
         bucketName: globalState.selectedBucket.value.bucketName,
         accountId: globalState.selectedBucket.value.accountId,
         accessKey: globalState.selectedBucket.value.accessKey,
         secretKey: globalState.selectedBucket.value.secretKey,
+        domain: globalState.selectedBucket.value.customDomain || undefined,
         files: filesToUpload,
       });
+
+      // 2. 清空 files
+      globalState.files = [];
+
+      // 3. 跳转到传输页面
+      await goto("/transfer");
     } catch (error: unknown) {
       console.error(error);
       setAlert("上传失败，请重试");
