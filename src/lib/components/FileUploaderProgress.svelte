@@ -9,7 +9,6 @@
   let currentPage = $state(1);
   const pageSize = 10;
   let files = $state<UploadHistory[]>([]);
-  $inspect(activeTab);
 
   $effect(() => {
     switch (activeTab) {

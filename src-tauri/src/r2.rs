@@ -231,22 +231,6 @@ impl R2Client {
         upload_id: &str,
         parts: Vec<CompletedPart>,
     ) -> Result<(), String> {
-        println!(
-            "完成多部分上传：remote filename: {}, upload id: {}, parts length: {}",
-            remote_filename,
-            upload_id,
-            parts.len()
-        );
-
-        // 打印每个部分的详细信息
-        for part in &parts {
-            println!(
-                "Part {}: ETag: {}",
-                part.part_number().unwrap_or(-1),
-                part.e_tag().unwrap_or("None")
-            );
-        }
-
         self.client
             .complete_multipart_upload()
             .bucket(&self.bucket_name)
@@ -424,8 +408,6 @@ impl R2Client {
         let _ = progress_tx.send((bytes_uploaded as u64, elapsed)).await;
         drop(progress_tx);
         let _ = progress_task.await;
-
-        println!("全部已上传完成，准备完成多部分上传");
 
         self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
             .await
