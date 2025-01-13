@@ -4,9 +4,11 @@ use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{CompletedMultipartUpload, CompletedPart};
 use aws_sdk_s3::Client;
 use aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder;
+use dashmap::DashMap;
 use hyper::client::HttpConnector;
 use hyper_proxy::ProxyConnector;
 use mime_guess::from_path;
+use once_cell::sync::Lazy;
 use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
@@ -14,6 +16,12 @@ use std::{
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
 use tokio::sync::Semaphore;
+
+static UPLOAD_TASKS: Lazy<
+    DashMap<String, (tokio::task::JoinHandle<Result<(), String>>, Option<String>)>,
+> = Lazy::new(DashMap::new);
+
+static UPLOAD_TASKS_INFO: Lazy<DashMap<String, (Arc<R2Client>, String)>> = Lazy::new(DashMap::new);
 
 #[tauri::command]
 pub async fn r2_ping(
@@ -25,12 +33,6 @@ pub async fn r2_ping(
     let client = R2Client::new(bucket_name, account_id, access_key, secret_key, None).await?;
     client.ping().await
 }
-
-use dashmap::DashMap;
-use once_cell::sync::Lazy;
-
-static UPLOAD_TASKS: Lazy<DashMap<String, tokio::task::JoinHandle<Result<(), String>>>> =
-    Lazy::new(DashMap::new);
 
 #[tauri::command]
 pub async fn r2_upload(
@@ -115,7 +117,36 @@ pub async fn r2_upload(
             result
         });
 
-        UPLOAD_TASKS.insert(file_id_for_tasks, handle);
+        UPLOAD_TASKS.insert(file_id_for_tasks, (handle, None));
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn cancel_upload(file_id: String) -> Result<(), String> {
+    // First get all the information we need
+    let task_info = UPLOAD_TASKS
+        .get(&file_id)
+        .map(|entry| (entry.0.abort(), entry.1.clone()));
+
+    let client_info = UPLOAD_TASKS_INFO
+        .get(&file_id)
+        .map(|entry| (entry.0.clone(), entry.1.clone()));
+
+    // Then handle the cancellation
+    if let Some((_, upload_id)) = task_info {
+        if let Some(upload_id) = upload_id {
+            if let Some((client, remote_filename)) = client_info {
+                let _ = client
+                    .abort_multipart_upload(&remote_filename, &upload_id)
+                    .await;
+            }
+        }
+
+        // Finally remove the entries
+        UPLOAD_TASKS.remove(&file_id);
+        UPLOAD_TASKS_INFO.remove(&file_id);
     }
 
     Ok(())
@@ -299,6 +330,18 @@ impl R2Client {
 
         // 大文件，分块上传
         let upload_id = self.create_multipart_upload(remote_filename).await?;
+
+        // Store upload_id in UPLOAD_TASKS
+        if let Some(mut entry) = UPLOAD_TASKS.get_mut(file_id) {
+            entry.1 = Some(upload_id.clone());
+        }
+
+        // Store client and remote_filename for potential abort
+        UPLOAD_TASKS_INFO.insert(
+            file_id.to_string(),
+            (Arc::new(self.clone()), remote_filename.to_string()),
+        );
+
         let mut part_number = 1;
         let mut completed_parts = Vec::new();
         let mut bytes_uploaded = 0;
@@ -360,6 +403,22 @@ impl R2Client {
 
         self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
             .await
+    }
+
+    async fn abort_multipart_upload(
+        &self,
+        remote_filename: &str,
+        upload_id: &str,
+    ) -> Result<(), String> {
+        self.client
+            .abort_multipart_upload()
+            .bucket(&self.bucket_name)
+            .key(remote_filename)
+            .upload_id(upload_id)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(())
     }
 
     pub async fn ping(&self) -> Result<(), String> {
