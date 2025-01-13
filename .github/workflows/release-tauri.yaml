@@ -42,9 +42,10 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
-        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf base-devel
+          # Install makepkg for Arch Linux package building
+          sudo apt-get install -y pacman
+          sudo ln -s /usr/bin/pacman /usr/bin/makepkg
 
       - name: install frontend dependencies
         run: bun install # change this to npm, pnpm or bun depending on which one you use.
@@ -59,3 +60,35 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Build Arch Linux package
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          # Create PKGBUILD
+          cat <<EOL > PKGBUILD
+          pkgname=r2uploader
+          pkgver=$(bun -p "require('./package.json').version")
+          pkgrel=1
+          pkgdesc="R2Uploader application"
+          arch=('x86_64')
+          license=('custom')
+          depends=('webkit2gtk' 'librsvg' 'libappindicator-gtk3')
+          source=("r2uploader-\${pkgver}.tar.gz")
+          sha256sums=('SKIP')
+
+          build() {
+            cd "\${srcdir}/r2uploader-\${pkgver}"
+            bun install
+            bun run build
+          }
+
+          package() {
+            cd "\${srcdir}/r2uploader-\${pkgver}"
+            mkdir -p "\${pkgdir}/usr/bin"
+            cp -r dist/* "\${pkgdir}/usr/bin/"
+          }
+          EOL
+
+          # Build package
+          makepkg -s --noconfirm
+          mv *.pkg.tar.zst r2uploader.pkg.tar.zst
