@@ -1,21 +1,22 @@
 <script lang="ts">
-  import "../app.css";
-  import Sidebar from "$lib/components/Sidebar.svelte";
   import Alert from "$lib/components/Alert.svelte";
   import FileDrag from "$lib/components/FileDrag.svelte";
-  let { children } = $props();
-  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-  import { onDestroy, onMount } from "svelte";
+  import Modal from "$lib/components/Modal.svelte";
+  import Sidebar from "$lib/components/Sidebar.svelte";
+
+  const { children } = $props<{ children: any }>();
+  import db from "$lib/db";
   import {
     globalState,
     initAppSettings,
     setDragPaths,
     setIsDragging,
   } from "$lib/store.svelte";
-  import Modal from "$lib/components/Modal.svelte";
-  import db from "$lib/db";
   import { parsePaths } from "$lib/tools";
   import type { UploadHistory } from "$lib/type";
+  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+  import { onDestroy, onMount } from "svelte";
+  import "../app.css";
 
   let unlistenDrag: UnlistenFn;
   let unlistenProgress: UnlistenFn;
@@ -34,8 +35,15 @@
       "upload-progress",
       (event) => {
         console.log("event: ", event.payload);
-        db.history.put(event.payload);
-        globalState.statusChange += 1;
+        globalState.progress[event.payload.fileId] = event.payload;
+        // 如果上传完成了，无论成功还是失败，只要不是 uploading，就从 progress 移除，放入 db
+        if (
+          typeof event.payload.status !== "object" ||
+          !("uploading" in event.payload.status)
+        ) {
+          db.history.put(event.payload);
+          delete globalState.progress[event.payload.fileId];
+        }
       },
     );
   });

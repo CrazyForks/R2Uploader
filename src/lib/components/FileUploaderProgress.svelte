@@ -9,23 +9,19 @@
   let currentPage = $state(1);
   const pageSize = 10;
   let files = $state<UploadHistory[]>([]);
+  $inspect(activeTab);
 
   $effect(() => {
-    // 只要 globalState.statusChange 发生变化，就重新获取数据
-    globalState.statusChange;
     switch (activeTab) {
       case "all":
-        getAllFiles().then((f) => {
-          files = f;
-        });
+        getAllFiles();
+        break;
       case "in-progress":
-        getInProgressFiles().then((f) => {
-          files = f;
-        });
+        files = Object.values(globalState.progress);
+        break;
       case "completed":
-        getCompletedFiles().then((f) => {
-          files = f;
-        });
+        completedFiles();
+        break;
     }
   });
 
@@ -42,24 +38,14 @@
 
   // 获取所有文件
   async function getAllFiles() {
-    const offset = (currentPage - 1) * pageSize;
-    return await db.history
-      .orderBy("timestamp")
-      .reverse()
-      .offset(offset)
-      .limit(pageSize)
-      .toArray();
+    files = [
+      ...Object.values(globalState.progress),
+      ...(await getCompletedFiles()),
+    ];
   }
 
-  // 获取正在上传文件
-  async function getInProgressFiles() {
-    const offset = (currentPage - 1) * pageSize;
-    return await db.history
-      .where("status")
-      .equals("in-progress")
-      .offset(offset)
-      .limit(pageSize)
-      .toArray();
+  async function completedFiles() {
+    files = await getCompletedFiles();
   }
 
   async function copyLink(url: string) {
@@ -72,69 +58,74 @@
   }
 </script>
 
-<div class="w-full space-y-2 overflow-y-auto p-2">
-  {#each files as file (file.fileId)}
-    <div
-      class="flex w-full items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
-    >
-      <div class="flex flex-1 items-center justify-between">
-        <div class="flex-1">
-          <div class="text-sm text-slate-500 dark:text-slate-400">
-            {file.filename}
+{#if !files.length}
+  <div class="flex w-full items-center justify-center">Nothing</div>
+{:else}
+  <div class="w-full space-y-2 overflow-y-auto p-2">
+    {#each files as file (file.fileId)}
+      <div
+        class="flex w-full items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
+      >
+        <div class="flex flex-1 items-center justify-between">
+          <div class="flex-1">
+            <div class="text-sm text-slate-500 dark:text-slate-400">
+              {file.filename}
+            </div>
+            {#if typeof file.status === "object" && "uploading" in file.status}
+              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                <div
+                  class="h-full bg-blue-500 transition-all"
+                  style="width: {file.status.uploading.progress * 100}%"
+                ></div>
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                {Math.floor(file.status.uploading.progress * 100)}% -
+                {(file.status.uploading.bytesUploaded / 1024 / 1024).toFixed(
+                  2,
+                )}MB /
+                {(file.status.uploading.totalBytes / 1024 / 1024).toFixed(2)}MB
+                {#if file.status.uploading.speed > 0}
+                  - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}MB/s
+                {/if}
+              </div>
+            {:else if file.status === "success"}
+              <div class="text-sm">
+                <span class="text-green-500">上传完成</span>
+                <span class="text-xs"
+                  >{new Date(file.timestamp * 1000).toLocaleString()}</span
+                >
+              </div>
+            {:else if typeof file.status === "object" && "error" in file.status}
+              <div class="text-sm text-red-500">
+                上传失败：{file.status.error.message} ·
+                <span class="text-xs"
+                  >{new Date(file.timestamp * 1000).toLocaleString()}</span
+                >
+              </div>
+            {:else if file.status === "cancelled"}
+              <div class="text-sm text-yellow-500">
+                已取消 · <span class="text-xs"
+                  >{new Date(file.timestamp * 1000).toLocaleString()}</span
+                >
+              </div>
+            {:else}
+              <div class="text-sm text-slate-500">
+                等待上传... · <span class="text-xs"
+                  >{new Date(file.timestamp * 1000).toLocaleString()}</span
+                >
+              </div>
+            {/if}
           </div>
-          {#if typeof file.status === "object" && "uploading" in file.status}
-            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-              <div
-                class="h-full bg-blue-500 transition-all"
-                style="width: {file.status.uploading.progress * 100}%"
-              ></div>
-            </div>
-            <div class="mt-1 text-xs text-slate-500">
-              {Math.floor(file.status.uploading.progress * 100)}% -
-              {(file.status.uploading.bytesUploaded / 1024 / 1024).toFixed(2)}MB
-              /
-              {(file.status.uploading.totalBytes / 1024 / 1024).toFixed(2)}MB
-              {#if file.status.uploading.speed > 0}
-                - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}MB/s
-              {/if}
-            </div>
-          {:else if file.status === "success"}
-            <div class="text-sm">
-              <span class="text-green-500">上传完成</span>
-              <span class="text-xs"
-                >{new Date(file.timestamp * 1000).toLocaleString()}</span
-              >
-            </div>
-          {:else if typeof file.status === "object" && "error" in file.status}
-            <div class="text-sm text-red-500">
-              上传失败：{file.status.error.message} ·
-              <span class="text-xs"
-                >{new Date(file.timestamp * 1000).toLocaleString()}</span
-              >
-            </div>
-          {:else if file.status === "cancelled"}
-            <div class="text-sm text-yellow-500">
-              已取消 · <span class="text-xs"
-                >{new Date(file.timestamp * 1000).toLocaleString()}</span
-              >
-            </div>
-          {:else}
-            <div class="text-sm text-slate-500">
-              等待上传... · <span class="text-xs"
-                >{new Date(file.timestamp * 1000).toLocaleString()}</span
-              >
-            </div>
-          {/if}
-        </div>
-        <div class="px-2">
-          <button class="action-button" onclick={() => copyLink(file.url)}>
-            <Copy class="size-4" />
-          </button>
+          <div class="px-2">
+            <button class="action-button" onclick={() => copyLink(file.url)}>
+              <Copy class="size-4" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  {/each}
-</div>
+    {/each}
+  </div>
+{/if}
 
 <style lang="postcss">
   .action-button {

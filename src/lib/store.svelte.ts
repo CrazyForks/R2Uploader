@@ -1,7 +1,7 @@
 import type { Snippet } from "svelte";
 import db from "./db";
 import { copyFieldsSimple } from "./tools";
-import type { GlobalState } from "./type";
+import type { GlobalState, UploadHistory } from "./type";
 
 export let globalState: GlobalState = $state({
   alertMessage: "",
@@ -22,7 +22,7 @@ export let globalState: GlobalState = $state({
     locale: "en",
     defaultBucketId: undefined,
   },
-  statusChange: 0,
+  progress: {},
 });
 
 export function setAlert(message: string) {

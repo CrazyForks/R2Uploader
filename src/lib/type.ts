@@ -56,7 +56,7 @@ export interface GlobalState {
   files: Array<File>;
   selectedBucket: Selected<Bucket> | undefined;
   appSetting: AppSettings;
-  statusChange: number;
+  progress: Record<string, UploadHistory>;
 }
 
 export interface AppSettings {

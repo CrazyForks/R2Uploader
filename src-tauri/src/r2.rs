@@ -11,11 +11,11 @@ use mime_guess::from_path;
 use once_cell::sync::Lazy;
 use std::{
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
-use tokio::sync::Semaphore;
+use tokio::sync::{mpsc, Semaphore};
 
 static UPLOAD_TASKS: Lazy<
     DashMap<String, (tokio::task::JoinHandle<Result<(), String>>, Option<String>)>,
@@ -152,6 +152,7 @@ pub async fn cancel_upload(file_id: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Clone)]
 pub struct R2Client {
     client: Client,
     bucket_name: String,
@@ -346,6 +347,39 @@ impl R2Client {
         let mut completed_parts = Vec::new();
         let mut bytes_uploaded = 0;
         let start_time = SystemTime::now();
+        let mut last_progress_update = Instant::now();
+
+        // 创建一个 channel 用于发送进度更新
+        let (progress_tx, mut progress_rx) = mpsc::channel::<(u64, Duration)>(1);
+        let app_clone = app.clone();
+        let remote_filename_clone = remote_filename.to_string();
+        let file_id_clone = file_id.to_string();
+        let domain_clone = self.domain.clone();
+
+        // 启动进度更新任务
+        let progress_task = tokio::spawn(async move {
+            while let Some((bytes_uploaded, elapsed)) = progress_rx.recv().await {
+                let speed = bytes_uploaded as f64 / elapsed.as_secs_f64();
+                let _ = app_clone.emit(
+                    "upload-progress",
+                    UploadHistory {
+                        url: format!("{}/{}", domain_clone, remote_filename_clone),
+                        file_id: file_id_clone.clone(),
+                        filename: remote_filename_clone.clone(),
+                        status: UploadStatus::Uploading {
+                            progress: bytes_uploaded as f64 / file_size as f64,
+                            bytes_uploaded: bytes_uploaded as u64,
+                            total_bytes: file_size as u64,
+                            speed,
+                        },
+                        timestamp: SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs(),
+                    },
+                );
+            }
+        });
 
         loop {
             let remaining_bytes = file_size - bytes_uploaded;
@@ -372,32 +406,24 @@ impl R2Client {
             bytes_uploaded += buffer_size;
             part_number += 1;
 
-            // 更新上传进度
-            let elapsed = SystemTime::now()
-                .duration_since(start_time)
-                .unwrap_or_default()
-                .as_secs_f64();
-            let speed = bytes_uploaded as f64 / elapsed;
-
-            let _ = app.emit(
-                "upload-progress",
-                UploadHistory {
-                    url: format!("{}/{}", self.domain, remote_filename),
-                    file_id: file_id.to_string(),
-                    filename: remote_filename.to_string(),
-                    status: UploadStatus::Uploading {
-                        progress: bytes_uploaded as f64 / file_size as f64,
-                        bytes_uploaded: bytes_uploaded as u64,
-                        total_bytes: file_size as u64,
-                        speed,
-                    },
-                    timestamp: SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                },
-            );
+            // 每秒更新一次进度
+            let now = Instant::now();
+            if now.duration_since(last_progress_update) >= Duration::from_millis(500) {
+                let elapsed = SystemTime::now()
+                    .duration_since(start_time)
+                    .unwrap_or_default();
+                let _ = progress_tx.send((bytes_uploaded as u64, elapsed)).await;
+                last_progress_update = now;
+            }
         }
+
+        // 发送最后一次进度更新
+        let elapsed = SystemTime::now()
+            .duration_since(start_time)
+            .unwrap_or_default();
+        let _ = progress_tx.send((bytes_uploaded as u64, elapsed)).await;
+        drop(progress_tx);
+        let _ = progress_task.await;
 
         println!("全部已上传完成，准备完成多部分上传");
 
