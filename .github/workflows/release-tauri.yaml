@@ -19,7 +19,7 @@ jobs:
           - platform: "macos-latest" # for Intel based macs.
             args: "--target x86_64-apple-darwin"
           - platform: "ubuntu-22.04"
-            args: ""
+            args: "--target x86_64-unknown-linux-gnu"
           - platform: "windows-latest"
             args: ""
 
@@ -43,6 +43,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          # Install debtap for converting deb to pacman
+          git clone https://aur.archlinux.org/debtap.git
+          cd debtap
+          makepkg -si --noconfirm
+          cd ..
+          rm -rf debtap
         # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
         # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
 
@@ -59,3 +65,19 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Convert deb to pacman and release (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          debtap -u
+          debtap R2Uploader_*_amd64.deb
+          pacman -U --noconfirm R2Uploader-*.pkg.tar.zst
+          mv R2Uploader-*.pkg.tar.zst R2Uploader_${{ github.ref_name }}_x86_64.pkg.tar.zst
+      - name: Upload pacman package
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: R2Uploader_${{ github.ref_name }}_x86_64.pkg.tar.zst
+          asset_name: R2Uploader_${{ github.ref_name }}_x86_64.pkg.tar.zst
+          asset_content_type: application/x-tar
