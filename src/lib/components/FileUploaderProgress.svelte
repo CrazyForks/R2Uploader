@@ -8,8 +8,10 @@
   let { activeTab }: { activeTab: "all" | "in-progress" | "completed" } =
     $props();
   let currentPage = $state(1);
-  const pageSize = 10;
+  const pageSize = 20;
   let files = $state<UploadHistory[]>([]);
+  let totalItems = $state(0);
+  let totalPages = $state(1);
 
   $effect(() => {
     switch (activeTab) {
@@ -18,6 +20,8 @@
         break;
       case "in-progress":
         files = Object.values(globalState.progress);
+        totalItems = files.length;
+        totalPages = 1;
         break;
       case "completed":
         completedFiles();
@@ -25,9 +29,21 @@
     }
   });
 
+  // 获取已完成文件总数
+  async function getCompletedFilesCount() {
+    return await db.history.count();
+  }
+
+  async function completedFiles() {
+    files = await getCompletedFiles();
+  }
+
   // 获取已完成文件
   async function getCompletedFiles() {
     const offset = (currentPage - 1) * pageSize;
+    const count = await getCompletedFilesCount();
+    totalItems = count;
+    totalPages = Math.ceil(count / pageSize);
     return await db.history
       .orderBy("timestamp")
       .reverse()
@@ -38,14 +54,11 @@
 
   // 获取所有文件
   async function getAllFiles() {
-    files = [
-      ...Object.values(globalState.progress),
-      ...(await getCompletedFiles()),
-    ];
-  }
-
-  async function completedFiles() {
-    files = await getCompletedFiles();
+    const inProgressFiles = Object.values(globalState.progress);
+    const completedFiles = await getCompletedFiles();
+    files = [...inProgressFiles, ...completedFiles];
+    totalItems = inProgressFiles.length + totalItems;
+    totalPages = Math.ceil(totalItems / pageSize);
   }
 
   async function copyLink(url: string) {
@@ -59,7 +72,9 @@
 </script>
 
 {#if !files.length}
-  <div class="flex w-full items-center justify-center">{t().fileUploader.uploadStatus.nothing}</div>
+  <div class="flex w-full items-center justify-center">
+    {t().fileUploader.uploadStatus.nothing}
+  </div>
 {:else}
   <div class="w-full space-y-2 overflow-y-auto p-2">
     {#each files as file (file.fileId)}
@@ -85,32 +100,38 @@
                 )}MB /
                 {(file.status.uploading.totalBytes / 1024 / 1024).toFixed(2)}MB
                 {#if file.status.uploading.speed > 0}
-                  - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}{t().fileUploader.uploadStatus.speed}
+                  - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}{t()
+                    .fileUploader.uploadStatus.speed}
                 {/if}
               </div>
             {:else if file.status === "success"}
               <div class="text-sm">
-                <span class="text-green-500">{t().fileUploader.uploadStatus.uploadComplete}</span>
+                <span class="text-green-500"
+                  >{t().fileUploader.uploadStatus.uploadComplete}</span
+                >
                 <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
             {:else if typeof file.status === "object" && "error" in file.status}
               <div class="text-sm text-red-500">
-                {t().fileUploader.uploadStatus.uploadFailed}{file.status.error.message} ·
+                {t().fileUploader.uploadStatus.uploadFailed}{file.status.error
+                  .message} ·
                 <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
             {:else if file.status === "cancelled"}
               <div class="text-sm text-yellow-500">
-                {t().fileUploader.uploadStatus.cancelled} · <span class="text-xs"
+                {t().fileUploader.uploadStatus.cancelled} ·
+                <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
             {:else}
               <div class="text-sm text-slate-500">
-                {t().fileUploader.uploadStatus.waiting} · <span class="text-xs"
+                {t().fileUploader.uploadStatus.waiting} ·
+                <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
@@ -124,6 +145,34 @@
         </div>
       </div>
     {/each}
+  </div>
+
+  <!-- Pagination controls -->
+  <div class="mt-4 flex items-center justify-between px-4">
+    <div class="text-sm text-slate-600 dark:text-slate-400">
+      {t().fileUploader.uploadStatus.total}: {totalItems} ·
+      {t().fileUploader.uploadStatus.page}: {currentPage}/{totalPages}
+    </div>
+    <div class="flex gap-2">
+      <button
+        class="rounded px-3 py-1 text-sm {currentPage === 1
+          ? 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+          : 'bg-blue-500 text-white hover:bg-blue-600'}"
+        disabled={currentPage === 1}
+        onclick={() => currentPage--}
+      >
+        {t().fileUploader.uploadStatus.previous}
+      </button>
+      <button
+        class="rounded px-3 py-1 text-sm {currentPage === totalPages
+          ? 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+          : 'bg-blue-500 text-white hover:bg-blue-600'}"
+        disabled={currentPage === totalPages}
+        onclick={() => currentPage++}
+      >
+        {t().fileUploader.uploadStatus.next}
+      </button>
+    </div>
   </div>
 {/if}
 

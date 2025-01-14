@@ -103,6 +103,10 @@ export let en = $state({
       copySuccess: "Copy Success",
       copyFailed: "Copy Failed",
       speed: "MB/s",
+      total: "Total",
+      page: "Page",
+      previous: "Previous",
+      next: "Next"
     },
     upload: {
       globalPath: "Global path",
@@ -240,10 +244,14 @@ export let zh = $state({
       uploadComplete: "上传完成",
       uploadFailed: "上传失败：",
       cancelled: "已取消",
-      waiting: "等待上传...",
+      waiting: "等待中...",
       copySuccess: "复制成功",
       copyFailed: "复制失败",
       speed: "MB/s",
+      total: "总数",
+      page: "页码",
+      previous: "上一页",
+      next: "下一页"
     },
     upload: {
       globalPath: "全局路径",
