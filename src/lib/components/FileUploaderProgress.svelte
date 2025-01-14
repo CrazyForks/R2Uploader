@@ -3,6 +3,7 @@
   import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadHistory } from "$lib/type";
   import { Copy } from "lucide-svelte";
+  import { t } from "$lib/i18n.svelte";
 
   let { activeTab }: { activeTab: "all" | "in-progress" | "completed" } =
     $props();
@@ -50,15 +51,15 @@
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
-      setAlert("复制成功");
+      setAlert(t().fileUploader.uploadStatus.copySuccess);
     } catch (e) {
-      setAlert("复制失败");
+      setAlert(t().fileUploader.uploadStatus.copyFailed);
     }
   }
 </script>
 
 {#if !files.length}
-  <div class="flex w-full items-center justify-center">Nothing</div>
+  <div class="flex w-full items-center justify-center">{t().fileUploader.uploadStatus.nothing}</div>
 {:else}
   <div class="w-full space-y-2 overflow-y-auto p-2">
     {#each files as file (file.fileId)}
@@ -84,32 +85,32 @@
                 )}MB /
                 {(file.status.uploading.totalBytes / 1024 / 1024).toFixed(2)}MB
                 {#if file.status.uploading.speed > 0}
-                  - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}MB/s
+                  - {(file.status.uploading.speed / 1024 / 1024).toFixed(2)}{t().fileUploader.uploadStatus.speed}
                 {/if}
               </div>
             {:else if file.status === "success"}
               <div class="text-sm">
-                <span class="text-green-500">上传完成</span>
+                <span class="text-green-500">{t().fileUploader.uploadStatus.uploadComplete}</span>
                 <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
             {:else if typeof file.status === "object" && "error" in file.status}
               <div class="text-sm text-red-500">
-                上传失败：{file.status.error.message} ·
+                {t().fileUploader.uploadStatus.uploadFailed}{file.status.error.message} ·
                 <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
             {:else if file.status === "cancelled"}
               <div class="text-sm text-yellow-500">
-                已取消 · <span class="text-xs"
+                {t().fileUploader.uploadStatus.cancelled} · <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>
             {:else}
               <div class="text-sm text-slate-500">
-                等待上传... · <span class="text-xs"
+                {t().fileUploader.uploadStatus.waiting} · <span class="text-xs"
                   >{new Date(file.timestamp * 1000).toLocaleString()}</span
                 >
               </div>

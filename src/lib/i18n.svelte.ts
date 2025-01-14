@@ -30,6 +30,9 @@ export let en = $state({
   common: {
     upload: "Upload",
     setting: "Setting",
+    transfer: "Transfer",
+    collapse: "Collapse Sidebar",
+    expand: "Expand Sidebar",
     loading: "loading...",
     close: "close",
     uploading: "Uploading...",
@@ -68,6 +71,12 @@ export let en = $state({
     clipboard: "Clipboard",
   },
   fileUploader: {
+    preview: {
+      previewFailed: "Preview failed",
+      filePreview: "File Preview",
+      filename: "Filename:",
+      remotePath: "Remote Path:",
+    },
     previewFailed: "Preview failed",
     uploadSuccess: "Upload successful",
     uploadFailed: "Upload failed, please try again",
@@ -80,6 +89,30 @@ export let en = $state({
     globalPath: "Global path",
     remotePathPlaceholder: "Remote path",
     filenamePlaceholder: "Remote filename",
+    selectFile: "Select File",
+    selectFolder: "Select Folder",
+    selectClipboard: "Select Clipboard",
+    selectNewText: "New Text",
+    bucketReadyTip: "Your bucket is ready, drag and drop files here, or:",
+    uploadStatus: {
+      nothing: "Nothing",
+      uploadComplete: "Upload Complete",
+      uploadFailed: "Upload Failed:",
+      cancelled: "Cancelled",
+      waiting: "Waiting...",
+      copySuccess: "Copy Success",
+      copyFailed: "Copy Failed",
+      speed: "MB/s",
+    },
+    upload: {
+      globalPath: "Global path",
+      clear: "Clear",
+      upload: "Upload",
+      uploading: "Uploading...",
+      remotePath: "Remote path",
+      remoteFilename: "Remote filename",
+      uploadFailed: "Upload failed, please try again",
+    },
   },
   fileDrag: {
     dragHere: "Drag files here",
@@ -98,6 +131,17 @@ export let en = $state({
     uploadFailed: "Upload failed, please try again",
     getStatusFailed: "Failed to get upload status",
     allFilesUploaded: "All files uploaded",
+  },
+  tools: {
+    getFileDetailsFailed: "Failed to get file details",
+  },
+  transfer: {
+    title: "Transfer",
+    tabs: {
+      all: "All",
+      inProgress: "In Progress",
+      completed: "Completed",
+    },
   },
 });
 
@@ -127,6 +171,9 @@ export let zh = $state({
   common: {
     upload: "上传",
     setting: "设置",
+    transfer: "传输",
+    collapse: "收起侧边栏",
+    expand: "展开侧边栏",
     loading: "加载中...",
     close: "关闭",
     uploading: "上传中...",
@@ -165,6 +212,12 @@ export let zh = $state({
     clipboard: "剪贴板",
   },
   fileUploader: {
+    preview: {
+      previewFailed: "预览失败",
+      filePreview: "文件预览",
+      filename: "文件名：",
+      remotePath: "远程路径：",
+    },
     previewFailed: "预览失败",
     uploadSuccess: "上传成功",
     uploadFailed: "上传失败，请重试",
@@ -177,6 +230,30 @@ export let zh = $state({
     globalPath: "全局路径",
     remotePathPlaceholder: "远程路径",
     filenamePlaceholder: "远程文件名",
+    selectFile: "选择文件",
+    selectFolder: "选择文件夹",
+    selectClipboard: "选择剪贴板",
+    selectNewText: "选择新建文本",
+    bucketReadyTip: "您的存储桶已就绪，拖放文件到此，或：",
+    uploadStatus: {
+      nothing: "暂无内容",
+      uploadComplete: "上传完成",
+      uploadFailed: "上传失败：",
+      cancelled: "已取消",
+      waiting: "等待上传...",
+      copySuccess: "复制成功",
+      copyFailed: "复制失败",
+      speed: "MB/s",
+    },
+    upload: {
+      globalPath: "全局路径",
+      clear: "清空",
+      upload: "上传",
+      uploading: "上传中...",
+      remotePath: "远程路径",
+      remoteFilename: "远程文件名",
+      uploadFailed: "上传失败，请重试",
+    },
   },
   fileDrag: {
     dragHere: "拖动文件到此",
@@ -195,6 +272,17 @@ export let zh = $state({
     uploadFailed: "上传失败，请重试",
     getStatusFailed: "获取上传状态失败",
     allFilesUploaded: "所有文件都上传完成",
+  },
+  tools: {
+    getFileDetailsFailed: "获取文件详情失败",
+  },
+  transfer: {
+    title: "传输",
+    tabs: {
+      all: "全部",
+      inProgress: "传输中",
+      completed: "已完成",
+    },
   },
 });
 

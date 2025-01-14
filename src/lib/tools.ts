@@ -4,6 +4,7 @@ import { sep } from "@tauri-apps/api/path";
 import clipboard from "tauri-plugin-clipboard-api";
 import { globalState, setAlert } from "./store.svelte";
 import type { FileDetail } from "./type";
+import { t } from "./i18n.svelte";
 
 export function generateTimestamp() {
   const now = new Date();
@@ -30,7 +31,7 @@ async function getFileDetails(path: string) {
     return details;
   } catch (e) {
     console.error(e);
-    setAlert("获取文件详情失败");
+    setAlert(t().tools.getFileDetailsFailed);
   }
 }
 

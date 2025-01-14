@@ -4,6 +4,7 @@
   import FileUploaderReady from "./FileUploaderReady.svelte";
   import FileUploader from "./FileUploader.svelte";
   import { globalState } from "$lib/store.svelte";
+  import { t } from "$lib/i18n.svelte";
 
   onMount(async () => {
     window.addEventListener("keydown", handleKeyDown);
@@ -35,7 +36,7 @@
   class="flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
 >
   {#if !globalState.selectedBucket}
-    <p class="dark:text-slate-300">您尚未设置存储桶，无法操作</p>
+    <p class="dark:text-slate-300">{t().common.noBucketWarning}</p>
   {:else if !globalState.files.length}
     <FileUploaderReady />
   {:else}

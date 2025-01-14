@@ -12,7 +12,7 @@
 
   const links = $derived([
     { href: "/", icon: CloudUpload, label: t().common.upload },
-    { href: "/transfer", icon: ArrowsUpFromLine, label: "传输" },
+    { href: "/transfer", icon: ArrowsUpFromLine, label: t().common.transfer },
     { href: "/setting", icon: Settings, label: t().common.setting },
   ]);
 </script>
@@ -36,6 +36,7 @@
             (globalState.appSetting.sidebarCollapsed =
               !globalState.appSetting.sidebarCollapsed)}
           class="nav-link gapped"
+          aria-label={globalState.appSetting.sidebarCollapsed ? t().common.expand : t().common.collapse}
         >
           {#if globalState.appSetting.sidebarCollapsed}
             <PanelRightClose class="size-5" />

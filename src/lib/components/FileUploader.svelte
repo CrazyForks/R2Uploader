@@ -7,6 +7,7 @@
   import { dragHandle, dragHandleZone } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
   import FileUploaderPreview from "./FileUploaderPreview.svelte";
+  import { t } from "$lib/i18n.svelte";
 
   let oldPrefix = $state("");
   let prefix = $state("");
@@ -59,7 +60,7 @@
       await goto("/transfer");
     } catch (error: unknown) {
       console.error(error);
-      setAlert("上传失败，请重试");
+      setAlert(t().fileUploader.upload.uploadFailed);
     } finally {
       isUploading = false;
     }
@@ -79,19 +80,19 @@
       bind:value={prefix}
       oninput={onChangePrefix}
       class="input w-36"
-      placeholder="全局路径"
+      placeholder={t().fileUploader.upload.globalPath}
     />
     <div class="flex-1"></div>
     <button
       onclick={() => (globalState.files = [])}
       class="cursor-pointer rounded-md border px-2 text-sm text-cyan-500"
-      >清空</button
+      >{t().fileUploader.upload.clear}</button
     >
     <button
       onclick={uploadFile}
       disabled={isUploading}
       class="cursor-pointer rounded-md bg-cyan-500 px-6 text-white hover:bg-cyan-400"
-      >{isUploading ? "上传中..." : "上传"}</button
+      >{isUploading ? t().fileUploader.upload.uploading : t().fileUploader.upload.upload}</button
     >
   </div>
   <section
@@ -116,13 +117,13 @@
             <input
               bind:value={file.remoteFilenamePrefix}
               class="input w-24"
-              placeholder="远程路径"
+              placeholder={t().fileUploader.upload.remotePath}
             />
             <span class="text-slate-400">/</span>
             <input
               bind:value={file.remoteFilename}
               class="input flex-1"
-              placeholder="远程文件名"
+              placeholder={t().fileUploader.upload.remoteFilename}
             />
           </div>
         </div>

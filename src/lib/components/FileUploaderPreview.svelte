@@ -1,9 +1,10 @@
 <script lang="ts">
   import { LinkPreview } from "bits-ui";
   import { Eye } from "lucide-svelte";
-  import type { File, UploadProgress } from "$lib/type";
+  import type { File } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
   import { setAlert } from "$lib/store.svelte";
+  import { t } from "$lib/i18n.svelte";
 
   let { file }: { file: File } = $props();
 
@@ -24,7 +25,7 @@
         previewContent = file.source.fileContent || "";
       }
     } catch (error) {
-      previewError = error instanceof Error ? error.message : "预览失败";
+      previewError = error instanceof Error ? error.message : t().fileUploader.preview.previewFailed;
       setAlert(previewError);
     } finally {
       previewLoading = false;
@@ -65,7 +66,7 @@
           {#if file.type === "image"}
             <img
               src={previewContent}
-              alt="文件预览"
+              alt={t().fileUploader.preview.filePreview}
               class="max-h-48 max-w-48 rounded-md object-contain"
             />
           {:else if file.type === "text"}
@@ -80,11 +81,11 @@
 
       <div class="space-y-2 text-xs">
         <div class="flex items-center justify-between">
-          <span class="text-slate-500 dark:text-slate-400">文件名：</span>
+          <span class="text-slate-500 dark:text-slate-400">{t().fileUploader.preview.filename}</span>
           <span class="font-medium">{file.remoteFilename}</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-slate-500 dark:text-slate-400">远程路径：</span>
+          <span class="text-slate-500 dark:text-slate-400">{t().fileUploader.preview.remotePath}</span>
           <span
             class="rounded bg-slate-100/50 px-2 py-1 font-mono text-slate-700 dark:bg-slate-700/50 dark:text-slate-300"
           >
