@@ -35,7 +35,7 @@ base64 = "0.22"
 aws-config = { version = "1.1.7", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1", features = ["behavior-version-latest"] }
 aws-smithy-runtime = "1.7.6"
-hyper-proxy = { version = "0.9.1" ,default-features=false}
+hyper-proxy = { version = "0.9.1", default-features = false }
 hyper = { version = "0.14", features = ["client"] }
 
 [profile.dev]
