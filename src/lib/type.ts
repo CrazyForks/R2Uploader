@@ -65,6 +65,9 @@ export interface AppSettings {
   useSystemProxy: boolean;
   locale: string;
   defaultBucketId: number | undefined;
+  activated: boolean;
+  trialStartDate: number | null;
+  trialDays: number;
 }
 
 export interface ModalState {

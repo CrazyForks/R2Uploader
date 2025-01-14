@@ -3,6 +3,8 @@
   import FileDrag from "$lib/components/FileDrag.svelte";
   import Modal from "$lib/components/Modal.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
+  import TrialStatus from "$lib/components/TrialStatus.svelte";
+  import { page } from "$app/stores";
 
   const { children } = $props<{ children: any }>();
   import db from "$lib/db";

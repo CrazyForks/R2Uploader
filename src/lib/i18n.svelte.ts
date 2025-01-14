@@ -154,7 +154,19 @@ export let en = $state({
       codeLabel: "Activation Code",
       codePlaceholder: "Enter your activation code",
       submit: "Activate"
-    }
+    },
+    activated: {
+      title: "Activated",
+      message: "Dear valued user, your app has been successfully activated!",
+      subtitle: "Thank you for your support"
+    },
+    trial: {
+      daysLeft: "Trial period: {days} days left",
+      expired: "Trial period has expired",
+      needActivation: "Please activate the app to continue using it",
+      start: "Start {days}-day trial"
+    },
+    error: "Invalid activation code. Please try again."
   },
 });
 
@@ -308,7 +320,19 @@ export let zh = $state({
       codeLabel: "激活码",
       codePlaceholder: "请输入激活码",
       submit: "激活"
-    }
+    },
+    activated: {
+      title: "已激活",
+      message: "尊贵的用户，您的应用已成功激活！",
+      subtitle: "感谢您的支持"
+    },
+    trial: {
+      daysLeft: "试用期剩余：{days}天",
+      expired: "试用期已过期",
+      needActivation: "请激活应用以继续使用",
+      start: "开始{days}天免费试用"
+    },
+    error: "激活码无效，请重试"
   },
 });
 
