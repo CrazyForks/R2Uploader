@@ -68,7 +68,7 @@
 {#if shouldShow}
   {#if !globalState.appSetting.trialStartDate && showStartButton}
     <button
-      on:click={startTrial}
+      onclick={startTrial}
       class="w-full rounded-md bg-cyan-500 px-4 py-2 text-white transition-colors hover:bg-cyan-600"
     >
       {trialText}

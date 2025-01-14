@@ -441,6 +441,10 @@ impl R2Client {
 }
 
 fn create_proxy_connector() -> Option<ProxyConnector<HttpConnector>> {
+    #[cfg(any(target_os = "ios", target_os = "android"))]
+    return None;
+
+    #[cfg(not(any(target_os = "ios", target_os = "android")))]
     match sysproxy::Sysproxy::get_system_proxy() {
         Ok(proxy) if !proxy.host.is_empty() && proxy.port > 0 && proxy.enable => {
             // Try to create proxy URI and connector
