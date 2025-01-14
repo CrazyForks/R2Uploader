@@ -8,11 +8,13 @@
     PanelRightClose,
     PanelRightOpen,
     Settings,
+    Lock,
   } from "lucide-svelte";
 
   const links = $derived([
     { href: "/", icon: CloudUpload, label: t().common.upload },
     { href: "/transfer", icon: ArrowsUpFromLine, label: t().common.transfer },
+    { href: "/activate", icon: Lock, label: t().activate.title },
     { href: "/setting", icon: Settings, label: t().common.setting },
   ]);
 </script>

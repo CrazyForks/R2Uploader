@@ -147,6 +147,15 @@ export let en = $state({
       completed: "Completed",
     },
   },
+  activate: {
+    title: "Activation",
+    form: {
+      title: "Activate App",
+      codeLabel: "Activation Code",
+      codePlaceholder: "Enter your activation code",
+      submit: "Activate"
+    }
+  },
 });
 
 export let zh = $state({
@@ -291,6 +300,15 @@ export let zh = $state({
       inProgress: "传输中",
       completed: "已完成",
     },
+  },
+  activate: {
+    title: "激活",
+    form: {
+      title: "激活应用",
+      codeLabel: "激活码",
+      codePlaceholder: "请输入激活码",
+      submit: "激活"
+    }
   },
 });
 
