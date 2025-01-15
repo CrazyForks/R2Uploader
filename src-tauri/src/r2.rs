@@ -124,7 +124,7 @@ pub async fn r2_upload(
 }
 
 #[tauri::command]
-pub async fn cancel_upload(file_id: String) -> Result<(), String> {
+pub async fn r2_cancel_upload(file_id: String) -> Result<(), String> {
     // First get all the information we need
     let task_info = UPLOAD_TASKS
         .get(&file_id)

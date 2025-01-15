@@ -17,6 +17,7 @@ pub fn run() {
             manager::get_file_details,
             r2::r2_ping,
             r2::r2_upload,
+            r2::r2_cancel_upload,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
