@@ -13,14 +13,14 @@ APP_PACKAGE="$APP_NAME.pkg"
 APP_PATH="$PROJECT_DIR/src-tauri/target/universal-apple-darwin/release/bundle/macos/$APP_BUNDLE"
 
 # Build, Sign, Package
-# bun tauri build --target universal-apple-darwin
+bun tauri build --target universal-apple-darwin
 
-cp "embedded.provisionprofile" "$APP_PATH/Contents/embedded.provisionprofile"
+# cp "/Users/vihv/Documents/证件信息/苹果证书/r2uploader.provisionprofile" "$APP_PATH/Contents/embedded.provisionprofile"
 
-codesign --deep --force \
-	--sign "$APPLE_DISTRIBUTION_CERT" \
-	--entitlements "entitlements.plist" \
-	"$APP_PATH"
+# codesign --deep --force \
+# 	--sign "$APPLE_DISTRIBUTION_CERT" \
+# 	--entitlements "entitlements.plist" \
+# 	"$APP_PATH"
 
 cd "$PROJECT_DIR/src-tauri/target/universal-apple-darwin/release/bundle/macos"
 

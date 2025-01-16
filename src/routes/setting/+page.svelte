@@ -97,16 +97,6 @@
         </Select.Content>
       </Select.Root>
     </div>
-    <div class="flex items-center justify-between">
-      <span class="text-slate-600 dark:text-slate-400"
-        >{t().common.useSystemProxy}</span
-      >
-      <input
-        type="checkbox"
-        class="toggle border-slate-600 checked:border-cyan-600 checked:bg-cyan-500 checked:text-white"
-        bind:checked={globalState.appSetting.useSystemProxy}
-      />
-    </div>
   </div>
 
   <div class="settings-section flex min-h-0 flex-col overflow-hidden">
