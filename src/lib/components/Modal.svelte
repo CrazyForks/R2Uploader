@@ -35,7 +35,7 @@
   bind:this={modal}
   {onclose}
 >
-  <div class="modal-box dark:bg-slate-800">
+  <div class="modal-box scrollbar-hide dark:bg-slate-800">
     {#if isLoading}
       <div class="flex h-full items-center justify-center p-2">loading...</div>
     {:else}

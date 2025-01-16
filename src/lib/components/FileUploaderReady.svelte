@@ -11,7 +11,9 @@
 </script>
 
 <div class="flex items-center justify-center gap-12">
-  <UploadCloud class="hidden size-32 text-slate-400 sm:block" />
+  <UploadCloud
+    class="hidden size-32 text-cyan-500 sm:block dark:text-slate-400"
+  />
   <div class="flex flex-1 flex-col items-start gap-3">
     <p class="text-slate-500 dark:text-slate-300">
       {t().fileUploader.bucketReadyTip}

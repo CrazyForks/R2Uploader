@@ -67,7 +67,9 @@
 
   <div class="settings-section space-y-2 p-2">
     <div class="flex items-center justify-between">
-      <span>{t().settings.language}</span>
+      <span class="text-slate-600 dark:text-slate-400"
+        >{t().settings.language}</span
+      >
       <Select.Root
         items={languages}
         onSelectedChange={(selected) => {
@@ -96,7 +98,9 @@
       </Select.Root>
     </div>
     <div class="flex items-center justify-between">
-      <span>{t().common.useSystemProxy}</span>
+      <span class="text-slate-600 dark:text-slate-400"
+        >{t().common.useSystemProxy}</span
+      >
       <input
         type="checkbox"
         class="toggle border-slate-600 checked:border-cyan-600 checked:bg-cyan-500 checked:text-white"

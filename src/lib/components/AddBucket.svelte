@@ -10,6 +10,10 @@
   import type { Bucket } from "$lib/type";
   import { invoke } from "@tauri-apps/api/core";
   import { ArrowLeft, HelpCircle } from "lucide-svelte";
+  import { onDestroy } from "svelte";
+  import { marked } from "marked";
+  import DOMPurify from "dompurify";
+
   let showHelp = $state(false);
 
   let {
@@ -23,6 +27,12 @@
   } = $props();
 
   let checkResult = $state(false);
+  let isChecking = $state(false);
+  let errorMessage = $state("");
+
+  onDestroy(() => {
+    errorMessage = "";
+  });
 
   let bucket: Bucket = $state({
     type: "r2",
@@ -48,7 +58,7 @@
     }
   });
 
-  function parseS3ApiUrl(url: string) {
+  async function parseS3ApiUrl(url: string) {
     if (!url) return;
     try {
       const urlObj = new URL(url);
@@ -125,13 +135,18 @@
   }
 
   async function checkButket() {
+    isChecking = true;
+    errorMessage = "";
     try {
       await invoke("r2_ping", bucket);
       checkResult = true;
       setAlert("成功");
     } catch (e) {
       checkResult = false;
+      errorMessage = e as string;
       console.error(e);
+    } finally {
+      isChecking = false;
     }
   }
 
@@ -151,6 +166,15 @@
     show = false;
     editBucketId = undefined;
   }
+
+  function renderMarkdown(markdown: string) {
+    marked.setOptions({
+      async: false,
+      gfm: false,
+    });
+    const html = marked(markdown);
+    return DOMPurify.sanitize(html as string);
+  }
 </script>
 
 {#snippet content()}
@@ -162,12 +186,8 @@
         </button>
         <p>{t().addBucket.howToUse}</p>
       </div>
-      <div class="space-y-2 text-sm text-slate-600">
-        <p>{t().addBucket.step1}</p>
-        <p>{t().addBucket.step2}</p>
-        <p>{t().addBucket.step3}</p>
-        <p>{t().addBucket.step4}</p>
-        <p>{t().addBucket.step5}</p>
+      <div class="prose prose-sm prose-slate dark:prose-invert max-w-none">
+        {@html renderMarkdown(t().addBucket.use)}
       </div>
     </div>
   {:else}
@@ -210,19 +230,32 @@
         </div>
       {/each}
     </div>
-    <div class="mt-4 flex justify-end space-x-2">
-      <button onclick={closeModal} class="button button-primary"
-        >{t().addBucket.cancel}</button
-      >
-      {#if !checkResult}
-        <button onclick={checkButket} class="button button-primary"
-          >Check</button
-        >
-      {:else}
-        <button onclick={saveBucket} class="button button-primary"
-          >{t().addBucket.save}</button
-        >
+    <div class="mt-2">
+      {#if errorMessage}
+        <p class="text-sm text-rose-500">{errorMessage}</p>
       {/if}
+      <div class="flex justify-end space-x-2">
+        <button onclick={closeModal} class="button button-primary"
+          >{t().addBucket.cancel}</button
+        >
+        {#if !checkResult}
+          <button
+            onclick={checkButket}
+            class="button button-primary"
+            disabled={isChecking}
+          >
+            {#if isChecking}
+              Checking...
+            {:else}
+              Check
+            {/if}
+          </button>
+        {:else}
+          <button onclick={saveBucket} class="button text-green-500"
+            >{t().addBucket.save}</button
+          >
+        {/if}
+      </div>
     </div>
   {/if}
 {/snippet}

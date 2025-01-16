@@ -4,7 +4,7 @@
   import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadHistory } from "$lib/type";
   import { Copy } from "lucide-svelte";
-  import { onMount, tick } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   const pageSize = 20;
   const tabs: { id: "all" | "in-progress" | "completed"; label: string }[] = [
@@ -14,66 +14,62 @@
   ];
 
   let activeTab: "all" | "in-progress" | "completed" = $state("all");
-  let files: UploadHistory[] = $state([]);
   let currentPage = $state(1);
   let totalItems = $state(0);
   let totalPages = $state(1);
+  let files: UploadHistory[] = $state([]);
+  let isLoading = $state(false);
+  let error = $state<string | null>(null);
+  let inProgressFiles = $derived(Object.values(globalState.progress));
 
-  onMount(async () => {
-    await getAllFiles();
+  $effect(() => {
+    activeTab;
+    currentPage;
+    inProgressFiles;
+    untrack(loadFiles);
   });
 
-  async function changeTab() {
-    await tick();
-    switch (activeTab) {
-      case "all":
-        getAllFiles();
-        break;
-      case "in-progress":
-        setInProgress();
-        break;
-      case "completed":
-        completedFiles();
-        break;
+  async function loadFiles() {
+    try {
+      isLoading = true;
+      error = null;
+
+      if (activeTab === "in-progress") {
+        files = inProgressFiles;
+        totalItems = files.length;
+        totalPages = 1;
+      } else if (activeTab === "completed") {
+        const offset = (currentPage - 1) * pageSize;
+        const count = await db.history.count();
+        totalItems = count;
+        totalPages = Math.ceil(count / pageSize);
+        files = await db.history
+          .orderBy("timestamp")
+          .reverse()
+          .offset(offset)
+          .limit(pageSize)
+          .toArray();
+      } else {
+        // all files
+        const offset = (currentPage - 1) * pageSize;
+        const count = await db.history.count();
+        const completedFiles = await db.history
+          .orderBy("timestamp")
+          .reverse()
+          .offset(offset)
+          .limit(pageSize)
+          .toArray();
+
+        totalItems = inProgressFiles.length + count;
+        totalPages = Math.ceil(totalItems / pageSize);
+        files = [...inProgressFiles, ...completedFiles];
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Failed to load files";
+      console.error("Error loading files:", e);
+    } finally {
+      isLoading = false;
     }
-  }
-
-  function setInProgress() {
-    files = Object.values(globalState.progress);
-    totalItems = files.length;
-    totalPages = 1;
-  }
-
-  // 获取已完成文件总数
-  async function getCompletedFilesCount() {
-    return await db.history.count();
-  }
-
-  async function completedFiles() {
-    files = await getCompletedFiles();
-  }
-
-  // 获取已完成文件
-  async function getCompletedFiles() {
-    const offset = (currentPage - 1) * pageSize;
-    const count = await getCompletedFilesCount();
-    totalItems = count;
-    totalPages = Math.ceil(count / pageSize);
-    return await db.history
-      .orderBy("timestamp")
-      .reverse()
-      .offset(offset)
-      .limit(pageSize)
-      .toArray();
-  }
-
-  // 获取所有文件
-  async function getAllFiles() {
-    const inProgressFiles = Object.values(globalState.progress);
-    const completedFiles = await getCompletedFiles();
-    files = [...inProgressFiles, ...completedFiles];
-    totalItems = inProgressFiles.length + totalItems;
-    totalPages = Math.ceil(totalItems / pageSize);
   }
 
   async function copyLink(url: string) {
@@ -94,7 +90,7 @@
       aria-current={activeTab === tab.id || undefined}
       onclick={() => {
         activeTab = tab.id;
-        changeTab();
+        currentPage = 1;
       }}
     >
       {tab.label}
@@ -105,7 +101,13 @@
 <div
   class="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
 >
-  {#if !files.length}
+  {#if isLoading}
+    <div class="flex w-full items-center justify-center">Loading...</div>
+  {:else if error}
+    <div class="flex w-full items-center justify-center text-red-500">
+      {error}
+    </div>
+  {:else if !files.length}
     <div class="flex w-full items-center justify-center">
       {t().fileUploader.uploadStatus.nothing}
     </div>
@@ -199,7 +201,6 @@
             disabled={currentPage === 1}
             onclick={() => {
               currentPage--;
-              changeTab();
             }}
           >
             {t().fileUploader.uploadStatus.previous}
@@ -211,7 +212,6 @@
             disabled={currentPage === totalPages}
             onclick={() => {
               currentPage++;
-              changeTab();
             }}
           >
             {t().fileUploader.uploadStatus.next}

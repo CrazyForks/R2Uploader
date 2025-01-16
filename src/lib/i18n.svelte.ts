@@ -6,14 +6,34 @@ export let en = $state({
   addBucket: {
     invalidS3Api: "Invalid S3 API format, please refer to help",
     howToUse: "How to use",
-    step1:
-      "1. Enter S3 API URL in format: https://[accountId].r2.cloudflarestorage.com/[bucketName]",
-    step2:
-      "2. If you already have Bucket Name and Account ID, you can fill them directly",
-    step3: "3. Enter Access Key and Secret Key for authentication",
-    step4: "4. Optional: Fill in Custom Domain",
-    step5: "5. Click Save to save configuration",
-    title: "Add Bucket",
+    use: `# Cloudflare R2 Configuration Guide
+
+## Connection Setup
+
+1. Find your Cloudflare R2 S3 API URL:
+   - Go to your R2 bucket settings page
+   - Look for the "S3 API" section under "Bucket Details"
+   - Copy the S3 API URL in the following format:
+   \`\`\`
+   https://[accountId].r2.cloudflarestorage.com/[bucketName]
+   \`\`\`
+   The application will automatically extract the \`Bucket Name\` and \`Account ID\` from this URL.
+
+2. Create an API token with the following steps:
+   - Go to Cloudflare R2 API Tokens page: https://dash.cloudflare.com/?to=/:account/r2/api-tokens
+   - Generate a new token with at least read and write permissions for objects
+   - Copy the "Access Key ID" and paste it into the "Access Key" field
+   - Copy the "Secret Access Key" and paste it into the "Secret Key" field
+
+3. (Optional) Configure a Custom Domain:
+   - If you have a custom domain for your R2 bucket, enter it in the "Custom Domain" field
+   - This domain will be used when generating shareable links for uploaded files
+
+## Verification and Save
+
+1. Click the "Check" button to verify your bucket connectivity
+2. If the connection test passes, click "Save" to store your configuration`,
+    title: "Add Cloudflare R2 Bucket",
     cancel: "Cancel",
     save: "Save",
     addNew: "Add New Bucket",
@@ -106,7 +126,7 @@ export let en = $state({
       total: "Total",
       page: "Page",
       previous: "Previous",
-      next: "Next"
+      next: "Next",
     },
     upload: {
       globalPath: "Global path",
@@ -153,20 +173,20 @@ export let en = $state({
       title: "Activate App",
       codeLabel: "Activation Code",
       codePlaceholder: "Enter your activation code",
-      submit: "Activate"
+      submit: "Activate",
     },
     activated: {
       title: "Activated",
       message: "Dear valued user, your app has been successfully activated!",
-      subtitle: "Thank you for your support"
+      subtitle: "Thank you for your support",
     },
     trial: {
       daysLeft: "Trial period: {days} days left",
       expired: "Trial period has expired",
       needActivation: "Please activate the app to continue using it",
-      start: "Start {days}-day trial"
+      start: "Start {days}-day trial",
     },
-    error: "Invalid activation code. Please try again."
+    error: "Invalid activation code. Please try again.",
   },
 });
 
@@ -174,13 +194,34 @@ export let zh = $state({
   addBucket: {
     invalidS3Api: "S3 API 格式不正确，请参阅帮助",
     howToUse: "如何使用",
-    step1:
-      "1. 输入 S3 API URL，格式为：https://[accountId].r2.cloudflarestorage.com/[bucketName]",
-    step2: "2. 如果已有 Bucket Name 和 Account ID，可以直接填写",
-    step3: "3. 输入 Access Key 和 Secret Key 进行身份验证",
-    step4: "4. 可选：填写自定义域名（Custom Domain）",
-    step5: "5. 点击 Save 保存配置",
-    title: "添加存储桶",
+    use: `# Cloudflare R2 配置指南
+
+## 连接设置
+
+1. 获取 Cloudflare R2 S3 API URL：
+   - 进入 R2 存储桶的设置页面
+   - 在"存储桶详细信息"中找到"S3 API"部分
+   - 复制 S3 API URL，格式如下：
+   \`\`\`
+   https://[accountId].r2.cloudflarestorage.com/[bucketName]
+   \`\`\`
+   程序将自动从此 URL 中提取 \`Bucket Name\` 和 \`Account ID\`。
+
+2. 创建 API 令牌，步骤如下：
+   - 前往 Cloudflare R2 API 令牌页面：https://dash.cloudflare.com/?to=/:account/r2/api-tokens
+   - 创建新的令牌，确保至少具有对象的读写权限
+   - 复制"访问密钥 ID"并粘贴到"Access Key"字段
+   - 复制"机密访问密钥"并粘贴到"Secret Key"字段
+
+3. （可选）配置自定义域名：
+   - 如果您为 R2 存储桶配置了自定义域名，请在"Custom Domain"字段中输入
+   - 上传文件后生成的分享链接将使用此域名
+
+## 验证与保存
+
+1. 点击"Check"按钮验证存储桶连接
+2. 连接测试通过后，点击"Save"保存配置`,
+    title: "添加 Cloudflare R2 存储桶",
     cancel: "取消",
     save: "保存",
     addNew: "添加新存储桶",
@@ -272,7 +313,7 @@ export let zh = $state({
       total: "总数",
       page: "页码",
       previous: "上一页",
-      next: "下一页"
+      next: "下一页",
     },
     upload: {
       globalPath: "全局路径",
@@ -319,20 +360,20 @@ export let zh = $state({
       title: "激活应用",
       codeLabel: "激活码",
       codePlaceholder: "请输入激活码",
-      submit: "激活"
+      submit: "激活",
     },
     activated: {
       title: "已激活",
       message: "尊贵的用户，您的应用已成功激活！",
-      subtitle: "感谢您的支持"
+      subtitle: "感谢您的支持",
     },
     trial: {
       daysLeft: "试用期剩余：{days}天",
       expired: "试用期已过期",
       needActivation: "请激活应用以继续使用",
-      start: "开始{days}天免费试用"
+      start: "开始{days}天免费试用",
     },
-    error: "激活码无效，请重试"
+    error: "激活码无效，请重试",
   },
 });
 

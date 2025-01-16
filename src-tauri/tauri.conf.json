@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "r2uploader",
+  "productName": "R2Uploader",
   "version": "0.1.0",
   "identifier": "cn.zerorust.r2uploader",
   "build": {
@@ -25,8 +25,10 @@
     "active": true,
     "targets": "all",
     "category": "Utility",
+    "copyright": "Copyright © 2025 ZeroRust",
     "macOS": {
-      "entitlements": "./Entitlements.plist"
+      "entitlements": "./Entitlements.plist",
+      "signingIdentity": "EB681D39B9F2516FFF4CE7DA2DA1D88DB1F2953C"
     },
     "icon": [
       "icons/32x32.png",
