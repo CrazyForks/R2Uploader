@@ -4,7 +4,7 @@
   import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadHistory } from "$lib/type";
   import { Copy } from "lucide-svelte";
-  import { onMount, untrack } from "svelte";
+  import { untrack } from "svelte";
 
   const pageSize = 20;
   const tabs: { id: "all" | "in-progress" | "completed"; label: string }[] = [
@@ -113,7 +113,7 @@
     </div>
   {:else}
     <div class="w-full space-y-2 overflow-y-auto p-2">
-      {#each files as file (file.fileId)}
+      {#each files as file}
         <div
           class="flex w-full items-center gap-4 rounded-md bg-slate-50/80 p-2 shadow-sm backdrop-blur-sm transition-all hover:shadow-md dark:bg-slate-700/80"
         >
@@ -126,10 +126,19 @@
                 <div
                   class="h-2 w-full overflow-hidden rounded-full bg-slate-200"
                 >
-                  <div
-                    class="h-full bg-blue-500 transition-all"
-                    style="width: {file.status.uploading.progress * 100}%"
-                  ></div>
+                  <div class="progress-bar">
+                    <!-- 已走过的进度 -->
+                    <div
+                      class="progress-completed"
+                      style="width: {file.status.uploading.progress * 100}%"
+                    ></div>
+                    <!-- 未走过的进度 -->
+                    <div
+                      class="progress-remaining"
+                      style="width: {100 -
+                        file.status.uploading.progress * 100}%"
+                    ></div>
+                  </div>
                 </div>
                 <div class="mt-1 text-xs text-slate-500">
                   {Math.floor(file.status.uploading.progress * 100)}% -
@@ -240,5 +249,43 @@
 
   .nav-link[aria-current].bg {
     @apply bg-cyan-50 dark:bg-cyan-900/30;
+  }
+
+  .progress-bar {
+    @apply h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700;
+    position: relative;
+  }
+
+  .progress-completed {
+    @apply h-full bg-blue-500 dark:bg-blue-600;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: width 0.3s ease;
+  }
+
+  .progress-remaining {
+    @apply h-full bg-slate-200 dark:bg-slate-700;
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.15),
+      rgba(255, 255, 255, 0.15) 10px,
+      transparent 10px,
+      transparent 20px
+    );
+    background-size: 28px 28px;
+    animation: progress-animation 1s linear infinite;
+  }
+
+  @keyframes progress-animation {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 28px 0;
+    }
   }
 </style>

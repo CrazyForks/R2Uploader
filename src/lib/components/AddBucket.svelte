@@ -140,7 +140,7 @@
     try {
       await invoke("r2_ping", bucket);
       checkResult = true;
-      setAlert("成功");
+      setAlert("success");
     } catch (e) {
       checkResult = false;
       errorMessage = e as string;
