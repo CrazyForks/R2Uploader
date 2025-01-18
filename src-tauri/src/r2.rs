@@ -9,13 +9,14 @@ use hyper::client::HttpConnector;
 use hyper_proxy::ProxyConnector;
 use mime_guess::from_path;
 use once_cell::sync::Lazy;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{
     sync::Arc,
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
-use tokio::sync::{mpsc, Semaphore};
+use tokio::sync::Semaphore;
 
 // 键是 file_id，值是一个元组，包含一个 JoinHandle 和一个 Option<String>，用于存储 upload_id，upload_id 用于分段上传
 static UPLOAD_TASKS: Lazy<
@@ -47,40 +48,33 @@ pub async fn r2_upload(
 ) -> Result<(), String> {
     let client =
         Arc::new(R2Client::new(bucket_name, account_id, access_key, secret_key, domain).await?);
-    let semaphore = Arc::new(Semaphore::new(5));
 
     for file in files {
         let client = client.clone();
-        let semaphore = semaphore.clone();
         let app = app.clone();
         let filename = file.remote_filename.clone();
         let file_id = file.id.clone();
-        let file_id_for_emit = file_id.clone();
-        let file_id_for_tasks = file_id.clone();
-        let file_id_for_spawn = file_id.clone();
-
-        emit_progress(
-            &app,
-            format!("{}/{}", client.domain, filename),
-            file_id_for_emit,
-            filename.clone(),
-            UploadStatus::Uploading {
-                progress: 0.0,
-                bytes_uploaded: 0,
-                total_bytes: 0,
-                speed: 0.0,
-            },
-        );
 
         let handle = tokio::spawn(async move {
-            let _permit = semaphore.acquire().await.unwrap();
             let result = match &file.source {
                 UploadSource::FilePath(path) => {
                     client
-                        .stream_upload_file(&app, &path, &filename, &file_id_for_spawn)
+                        .stream_upload_file(&app, &path, &filename, &file_id.clone())
                         .await
                 }
                 UploadSource::FileContent(content) => {
+                    emit_progress(
+                        &app,
+                        format!("{}/{}", client.domain, filename),
+                        file_id.clone(),
+                        filename.clone(),
+                        UploadStatus::Uploading {
+                            progress: 0.0,
+                            bytes_uploaded: 0,
+                            total_bytes: content.len() as u64,
+                            speed: 0.0,
+                        },
+                    );
                     client.upload_content(content, &filename).await
                 }
             };
@@ -102,7 +96,7 @@ pub async fn r2_upload(
             result
         });
 
-        UPLOAD_TASKS.insert(file_id_for_tasks, (handle, None));
+        UPLOAD_TASKS.insert(file.id.clone(), (handle, None));
     }
 
     Ok(())
@@ -284,7 +278,6 @@ impl R2Client {
             })
     }
 
-    // 流式上传文件
     async fn stream_upload_file(
         &self,
         app: &tauri::AppHandle,
@@ -293,12 +286,27 @@ impl R2Client {
         file_id: &str,
     ) -> Result<(), String> {
         const CHUNK_SIZE: usize = 5 * 1024 * 1024; // 5MB chunks
+        const MAX_CONCURRENT_TASKS: usize = 16; // 最大并发任务数
 
         // 读取文件信息
         let mut file = tokio::fs::File::open(path)
             .await
             .map_err(|e| e.to_string())?;
         let file_size = file.metadata().await.map_err(|e| e.to_string())?.len() as usize;
+
+        // 首次报告
+        emit_progress(
+            &app,
+            format!("{}/{}", self.domain, remote_filename),
+            file_id.to_string(),
+            remote_filename.to_string(),
+            UploadStatus::Uploading {
+                progress: 0.0,
+                bytes_uploaded: 0,
+                total_bytes: file_size as u64,
+                speed: 0.0,
+            },
+        );
 
         // 如果文件小于 CHUNK_SIZE，直接上传
         if file_size < CHUNK_SIZE {
@@ -336,13 +344,20 @@ impl R2Client {
             (Arc::new(self.clone()), remote_filename.to_string()),
         );
 
-        let mut part_number = 1;
-        let mut completed_parts = Vec::new();
-        let mut bytes_uploaded = 0;
         let start_time = SystemTime::now();
+        let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_TASKS)); // 限制并发任务数
+        let mut tasks = Vec::new();
+        let mut part_number = 1;
+        let bytes_uploaded = Arc::new(AtomicUsize::new(0)); // 用于跟踪实际上传的字节数
+        let mut file_offset = 0; // 用于跟踪文件的读取偏移量
 
+        // 读取文件并分块上传
         loop {
-            let remaining_bytes = file_size - bytes_uploaded;
+            // 获取 Semaphore 许可
+            let semaphore = semaphore.clone();
+            let permit = semaphore.acquire_owned().await.map_err(|e| e.to_string())?;
+
+            let remaining_bytes = file_size - file_offset; // 基于文件偏移量计算剩余字节
             let buffer_size = if remaining_bytes > CHUNK_SIZE {
                 CHUNK_SIZE
             } else {
@@ -358,33 +373,59 @@ impl R2Client {
                 .await
                 .map_err(|e| e.to_string())?;
 
-            let part = self
-                .upload_part(remote_filename, &upload_id, part_number, buffer.to_vec())
-                .await?;
+            // 克隆需要的变量以在任务中使用
+            let client = self.clone();
+            let remote_filename = remote_filename.to_string();
+            let upload_id = upload_id.clone();
+            let app = app.clone();
+            let file_id = file_id.to_string();
+            let domain = self.domain.clone();
+            let bytes_uploaded = bytes_uploaded.clone();
 
-            completed_parts.push(part);
-            bytes_uploaded += buffer_size;
+            // 启动并行上传任务
+            let task = tokio::spawn(async move {
+                let part = client
+                    .upload_part(&remote_filename, &upload_id, part_number, buffer.to_vec())
+                    .await?;
+
+                // 更新实际上传的字节数
+                bytes_uploaded.fetch_add(buffer_size, Ordering::SeqCst);
+
+                // 更新进度
+                let elapsed = SystemTime::now()
+                    .duration_since(start_time)
+                    .unwrap_or_default();
+                let uploaded = bytes_uploaded.load(Ordering::SeqCst);
+                let speed = uploaded as f64 / elapsed.as_secs_f64();
+                emit_progress(
+                    &app,
+                    format!("{}/{}", domain, remote_filename),
+                    file_id,
+                    remote_filename,
+                    UploadStatus::Uploading {
+                        progress: uploaded as f64 / file_size as f64,
+                        bytes_uploaded: (part_number as usize * CHUNK_SIZE) as u64,
+                        total_bytes: file_size as u64,
+                        speed,
+                    },
+                );
+
+                // 释放 Semaphore 许可
+                drop(permit);
+
+                Ok::<_, String>(part)
+            });
+
+            tasks.push(task);
+            file_offset += buffer_size; // 更新文件读取偏移量
             part_number += 1;
-
-            // 更新进度
-            let elapsed = SystemTime::now()
-                .duration_since(start_time)
-                .unwrap_or_default();
-            let speed = bytes_uploaded as f64 / elapsed.as_secs_f64();
-            emit_progress(
-                app,
-                format!("{}/{}", self.domain, remote_filename),
-                file_id.to_string(),
-                remote_filename.to_string(),
-                UploadStatus::Uploading {
-                    progress: bytes_uploaded as f64 / file_size as f64,
-                    bytes_uploaded: bytes_uploaded as u64,
-                    total_bytes: file_size as u64,
-                    speed,
-                },
-            );
         }
 
+        // 等待所有任务完成
+        let results = futures::future::try_join_all(tasks).await.unwrap();
+        let completed_parts: Vec<_> = results.into_iter().collect::<Result<_, _>>()?;
+
+        // 完成分块上传
         self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
             .await
     }

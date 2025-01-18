@@ -4,7 +4,7 @@
   import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadHistory } from "$lib/type";
   import { Copy } from "lucide-svelte";
-  import { untrack } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   const pageSize = 20;
   const tabs: { id: "all" | "in-progress" | "completed"; label: string }[] = [
@@ -18,9 +18,14 @@
   let totalItems = $state(0);
   let totalPages = $state(1);
   let files: UploadHistory[] = $state([]);
-  let isLoading = $state(false);
   let error = $state<string | null>(null);
   let inProgressFiles = $derived(Object.values(globalState.progress));
+  let completedFiles: UploadHistory[] = $state([]);
+
+  onMount(async () => {
+    await getCompletedFiles();
+    loadFiles();
+  });
 
   $effect(() => {
     activeTab;
@@ -31,7 +36,6 @@
 
   async function loadFiles() {
     try {
-      isLoading = true;
       error = null;
 
       if (activeTab === "in-progress") {
@@ -39,37 +43,30 @@
         totalItems = files.length;
         totalPages = 1;
       } else if (activeTab === "completed") {
-        const offset = (currentPage - 1) * pageSize;
-        const count = await db.history.count();
-        totalItems = count;
-        totalPages = Math.ceil(count / pageSize);
-        files = await db.history
-          .orderBy("timestamp")
-          .reverse()
-          .offset(offset)
-          .limit(pageSize)
-          .toArray();
+        await getCompletedFiles();
+        files = completedFiles;
       } else {
-        // all files
-        const offset = (currentPage - 1) * pageSize;
-        const count = await db.history.count();
-        const completedFiles = await db.history
-          .orderBy("timestamp")
-          .reverse()
-          .offset(offset)
-          .limit(pageSize)
-          .toArray();
-
-        totalItems = inProgressFiles.length + count;
-        totalPages = Math.ceil(totalItems / pageSize);
+        // all
+        await getCompletedFiles();
         files = [...inProgressFiles, ...completedFiles];
       }
     } catch (e) {
       error = e instanceof Error ? e.message : "Failed to load files";
       console.error("Error loading files:", e);
-    } finally {
-      isLoading = false;
     }
+  }
+
+  async function getCompletedFiles() {
+    const offset = (currentPage - 1) * pageSize;
+    const count = await db.history.count();
+    totalItems = count;
+    totalPages = Math.ceil(count / pageSize);
+    completedFiles = await db.history
+      .orderBy("timestamp")
+      .reverse()
+      .offset(offset)
+      .limit(pageSize)
+      .toArray();
   }
 
   async function copyLink(url: string) {
@@ -101,9 +98,7 @@
 <div
   class="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-200 bg-slate-100/80 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
 >
-  {#if isLoading}
-    <div class="flex w-full items-center justify-center">Loading...</div>
-  {:else if error}
+  {#if error}
     <div class="flex w-full items-center justify-center text-red-500">
       {error}
     </div>
