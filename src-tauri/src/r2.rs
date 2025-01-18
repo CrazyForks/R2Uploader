@@ -188,9 +188,7 @@ impl R2Client {
         Ok(Self {
             client: Client::new(&config),
             bucket_name: bucket_name.to_string(),
-            domain: domain
-                .unwrap_or(format!("https://{}.r2.cloudflarestorage.com", account_id).as_str())
-                .to_string(),
+            domain: domain.unwrap_or("").to_string(),
         })
     }
 
