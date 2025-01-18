@@ -44,7 +44,7 @@ export let en = $state({
       accountId: "Account ID",
       accessKey: "Access Key",
       secretKey: "Secret Key",
-      customDomain: "Custom Domain",
+      customDomain: "Custom Domain, e.g. https://example.com",
     },
   },
   common: {
@@ -231,7 +231,7 @@ export let zh = $state({
       accountId: "Account ID",
       accessKey: "Access Key",
       secretKey: "Secret Key",
-      customDomain: "自定义域名",
+      customDomain: "自定义域名，例如 https://example.com",
     },
   },
   common: {
