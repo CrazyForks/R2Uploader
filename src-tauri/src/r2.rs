@@ -168,6 +168,9 @@ impl R2Client {
         secret_key: &str,
         domain: Option<&str>,
     ) -> Result<Self, String> {
+        // 设置环境变量 AWS_REQUEST_CHECKSUM_CALCULATION
+        std::env::set_var("AWS_REQUEST_CHECKSUM_CALCULATION", "WHEN_REQUIRED");
+
         let credentials = Credentials::new(access_key, secret_key, None, None, "R2Uploader");
 
         let mut config_loader = ConfigLoader::default()

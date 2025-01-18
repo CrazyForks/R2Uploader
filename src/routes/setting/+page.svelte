@@ -140,7 +140,7 @@
               addBucketModalShow = true;
             }}
           >
-            Edit
+            {t().settings.edit}
           </button>
           <button
             class="button button-danger button-opacity text-sm"

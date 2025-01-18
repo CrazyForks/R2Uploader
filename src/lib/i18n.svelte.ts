@@ -38,6 +38,8 @@ export let en = $state({
     save: "Save",
     addNew: "Add New Bucket",
     requiredField: "This field is required",
+    check: "Check",
+    checking: "Checking...",
     labels: {
       s3Api: "S3 API",
       bucketName: "Bucket Name",
@@ -73,6 +75,7 @@ export let en = $state({
     },
     defaultBucket: "Default Bucket",
     setDefault: "Set as Default",
+    edit: "Edit",
   },
   uploadTargetSelector: {
     title: "Bucket",
@@ -225,6 +228,8 @@ export let zh = $state({
     cancel: "取消",
     save: "保存",
     addNew: "添加新存储桶",
+    check: "检查",
+    checking: "检查中...",
     labels: {
       s3Api: "S3 API",
       bucketName: "Bucket 名称",
@@ -260,6 +265,7 @@ export let zh = $state({
     },
     defaultBucket: "默认存储桶",
     setDefault: "设为默认",
+    edit: "编辑",
   },
   uploadTargetSelector: {
     title: "存储桶",

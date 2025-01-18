@@ -30,10 +30,6 @@
   let isChecking = $state(false);
   let errorMessage = $state("");
 
-  onDestroy(() => {
-    errorMessage = "";
-  });
-
   let bucket: Bucket = $state({
     type: "r2",
     bucketName: "",
@@ -57,6 +53,12 @@
       });
     }
   });
+
+  function resetState() {
+    checkResult = false;
+    isChecking = false;
+    errorMessage = "";
+  }
 
   async function parseS3ApiUrl(url: string) {
     if (!url) return;
@@ -209,6 +211,7 @@
             onfocus={() => (config.focused = true)}
             onblur={() => (config.focused = false)}
             oninput={(e: Event) => {
+              resetState();
               if (config.id === "s3Api") {
                 const target = e.target as HTMLInputElement;
                 if (config.error) {
@@ -245,9 +248,9 @@
             disabled={isChecking}
           >
             {#if isChecking}
-              Checking...
+              {t().addBucket.checking}
             {:else}
-              Check
+              {t().addBucket.check}
             {/if}
           </button>
         {:else}
