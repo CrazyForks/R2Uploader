@@ -17,6 +17,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
 use tokio::sync::{mpsc, Semaphore};
 
+// 键是 file_id，值是一个元组，包含一个 JoinHandle 和一个 Option<String>，用于存储 upload_id，upload_id 用于分段上传
 static UPLOAD_TASKS: Lazy<
     DashMap<String, (tokio::task::JoinHandle<Result<(), String>>, Option<String>)>,
 > = Lazy::new(DashMap::new);
@@ -58,23 +59,16 @@ pub async fn r2_upload(
         let file_id_for_tasks = file_id.clone();
         let file_id_for_spawn = file_id.clone();
 
-        // 发送初始状态
-        let _ = app.emit(
-            "upload-progress",
-            UploadHistory {
-                file_id: file_id_for_emit,
-                filename: filename.clone(),
-                status: UploadStatus::Uploading {
-                    progress: 0.0,
-                    bytes_uploaded: 0,
-                    total_bytes: 0,
-                    speed: 0.0,
-                },
-                timestamp: SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-                url: format!("{}/{}", client.domain, filename),
+        emit_progress(
+            &app,
+            format!("{}/{}", client.domain, filename),
+            file_id_for_emit,
+            filename.clone(),
+            UploadStatus::Uploading {
+                progress: 0.0,
+                bytes_uploaded: 0,
+                total_bytes: 0,
+                speed: 0.0,
             },
         );
 
@@ -91,26 +85,17 @@ pub async fn r2_upload(
                 }
             };
 
-            // 发送最终状态
-            let final_status = match &result {
-                Ok(_) => UploadStatus::Success,
-                Err(e) => UploadStatus::Error {
-                    message: e.to_string(),
-                    code: "UPLOAD_ERROR".to_string(),
-                },
-            };
-
-            let _ = app.emit(
-                "upload-progress",
-                UploadHistory {
-                    url: format!("{}/{}", client.domain, filename),
-                    file_id: file_id_for_spawn,
-                    filename,
-                    status: final_status,
-                    timestamp: SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
+            emit_progress(
+                &app,
+                format!("{}/{}", client.domain, filename),
+                file_id,
+                filename,
+                match &result {
+                    Ok(_) => UploadStatus::Success,
+                    Err(e) => UploadStatus::Error {
+                        message: e.to_string(),
+                        code: "UPLOAD_ERROR".to_string(),
+                    },
                 },
             );
 
@@ -121,6 +106,28 @@ pub async fn r2_upload(
     }
 
     Ok(())
+}
+
+pub fn emit_progress(
+    app: &AppHandle,
+    url: String,
+    file_id: String,
+    filename: String,
+    status: UploadStatus,
+) {
+    let _ = app.emit(
+        "upload-progress",
+        UploadHistory {
+            url,
+            file_id,
+            filename,
+            status,
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        },
+    );
 }
 
 #[tauri::command]
@@ -277,6 +284,7 @@ impl R2Client {
             })
     }
 
+    // 流式上传文件
     async fn stream_upload_file(
         &self,
         app: &tauri::AppHandle,
@@ -286,6 +294,7 @@ impl R2Client {
     ) -> Result<(), String> {
         const CHUNK_SIZE: usize = 5 * 1024 * 1024; // 5MB chunks
 
+        // 读取文件信息
         let mut file = tokio::fs::File::open(path)
             .await
             .map_err(|e| e.to_string())?;
@@ -331,39 +340,6 @@ impl R2Client {
         let mut completed_parts = Vec::new();
         let mut bytes_uploaded = 0;
         let start_time = SystemTime::now();
-        let mut last_progress_update = Instant::now();
-
-        // 创建一个 channel 用于发送进度更新
-        let (progress_tx, mut progress_rx) = mpsc::channel::<(u64, Duration)>(1);
-        let app_clone = app.clone();
-        let remote_filename_clone = remote_filename.to_string();
-        let file_id_clone = file_id.to_string();
-        let domain_clone = self.domain.clone();
-
-        // 启动进度更新任务
-        let progress_task = tokio::spawn(async move {
-            while let Some((bytes_uploaded, elapsed)) = progress_rx.recv().await {
-                let speed = bytes_uploaded as f64 / elapsed.as_secs_f64();
-                let _ = app_clone.emit(
-                    "upload-progress",
-                    UploadHistory {
-                        url: format!("{}/{}", domain_clone, remote_filename_clone),
-                        file_id: file_id_clone.clone(),
-                        filename: remote_filename_clone.clone(),
-                        status: UploadStatus::Uploading {
-                            progress: bytes_uploaded as f64 / file_size as f64,
-                            bytes_uploaded: bytes_uploaded as u64,
-                            total_bytes: file_size as u64,
-                            speed,
-                        },
-                        timestamp: SystemTime::now()
-                            .duration_since(UNIX_EPOCH)
-                            .unwrap()
-                            .as_secs(),
-                    },
-                );
-            }
-        });
 
         loop {
             let remaining_bytes = file_size - bytes_uploaded;
@@ -390,24 +366,24 @@ impl R2Client {
             bytes_uploaded += buffer_size;
             part_number += 1;
 
-            // 每秒更新一次进度
-            let now = Instant::now();
-            if now.duration_since(last_progress_update) >= Duration::from_millis(500) {
-                let elapsed = SystemTime::now()
-                    .duration_since(start_time)
-                    .unwrap_or_default();
-                let _ = progress_tx.send((bytes_uploaded as u64, elapsed)).await;
-                last_progress_update = now;
-            }
+            // 更新进度
+            let elapsed = SystemTime::now()
+                .duration_since(start_time)
+                .unwrap_or_default();
+            let speed = bytes_uploaded as f64 / elapsed.as_secs_f64();
+            emit_progress(
+                app,
+                format!("{}/{}", self.domain, remote_filename),
+                file_id.to_string(),
+                remote_filename.to_string(),
+                UploadStatus::Uploading {
+                    progress: bytes_uploaded as f64 / file_size as f64,
+                    bytes_uploaded: bytes_uploaded as u64,
+                    total_bytes: file_size as u64,
+                    speed,
+                },
+            );
         }
-
-        // 发送最后一次进度更新
-        let elapsed = SystemTime::now()
-            .duration_since(start_time)
-            .unwrap_or_default();
-        let _ = progress_tx.send((bytes_uploaded as u64, elapsed)).await;
-        drop(progress_tx);
-        let _ = progress_task.await;
 
         self.complete_multipart_upload(remote_filename, &upload_id, completed_parts)
             .await
