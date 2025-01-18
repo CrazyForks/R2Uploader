@@ -170,19 +170,17 @@ impl R2Client {
     ) -> Result<Self, String> {
         let credentials = Credentials::new(access_key, secret_key, None, None, "R2Uploader");
 
-        // Create HTTP client with or without proxy
-        let http_client = match create_proxy_connector() {
-            Some(proxy_connector) => HyperClientBuilder::new().build(proxy_connector),
-            None => HyperClientBuilder::new().build(HttpConnector::new()),
-        };
-
-        let config = ConfigLoader::default()
+        let mut config_loader = ConfigLoader::default()
             .region(Region::new("auto"))
             .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
-            .credentials_provider(credentials)
-            .http_client(http_client)
-            .load()
-            .await;
+            .credentials_provider(credentials);
+
+        if let Some(proxy_connector) = create_proxy_connector() {
+            config_loader =
+                config_loader.http_client(HyperClientBuilder::new().build(proxy_connector));
+        }
+
+        let config = config_loader.load().await;
 
         Ok(Self {
             client: Client::new(&config),
