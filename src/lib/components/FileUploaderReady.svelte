@@ -8,6 +8,17 @@
   import { UploadCloud } from "lucide-svelte";
   import AddTextContent from "./AddTextContent.svelte";
   import { t } from "$lib/i18n.svelte";
+  import { onMount } from "svelte";
+  import { platform } from "@tauri-apps/plugin-os";
+
+  let isMobile = $state(false);
+
+  onMount(() => {
+    const currentPlatform = platform();
+    if (currentPlatform === "ios" || currentPlatform === "android") {
+      isMobile = true;
+    }
+  });
 </script>
 
 <div class="flex items-center justify-center gap-12">
@@ -22,12 +33,14 @@
       <button onclick={openDialogForFiles} class="button button-primary"
         >{t().fileUploader.selectFile}</button
       >
-      <button onclick={openDialogForDir} class="button button-primary"
-        >{t().fileUploader.selectFolder}</button
-      >
-      <button onclick={checkClipboardContent} class="button button-primary"
-        >{t().fileUploader.selectClipboard}</button
-      >
+      {#if !isMobile}
+        <button onclick={openDialogForDir} class="button button-primary"
+          >{t().fileUploader.selectFolder}</button
+        >
+        <button onclick={checkClipboardContent} class="button button-primary"
+          >{t().fileUploader.selectClipboard}</button
+        >
+      {/if}
       <button onclick={() => showModal(text)} class="button button-primary"
         >{t().fileUploader.selectNewText}</button
       >
