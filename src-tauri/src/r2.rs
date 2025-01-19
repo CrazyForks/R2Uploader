@@ -1,4 +1,5 @@
 use crate::typ::{File, UploadHistory, UploadSource, UploadStatus};
+use aws_config::timeout::TimeoutConfig;
 use aws_config::ConfigLoader;
 use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{CompletedMultipartUpload, CompletedPart};
@@ -10,6 +11,7 @@ use hyper_proxy::ProxyConnector;
 use mime_guess::from_path;
 use once_cell::sync::Lazy;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
@@ -168,14 +170,22 @@ impl R2Client {
         secret_key: &str,
         domain: Option<&str>,
     ) -> Result<Self, String> {
+        println!("new r2 client...");
         // 设置环境变量 AWS_REQUEST_CHECKSUM_CALCULATION
         std::env::set_var("AWS_REQUEST_CHECKSUM_CALCULATION", "WHEN_REQUIRED");
 
         let credentials = Credentials::new(access_key, secret_key, None, None, "R2Uploader");
 
+        // 设置超时配置
+        let timeout_config = TimeoutConfig::builder()
+            .connect_timeout(Duration::from_secs(30)) // 连接超时 30 秒
+            .read_timeout(Duration::from_secs(30)) // 读取超时 30 秒
+            .build();
+
         let mut config_loader = ConfigLoader::default()
             .region(Region::new("auto"))
             .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", account_id))
+            .timeout_config(timeout_config)
             .credentials_provider(credentials);
 
         if let Some(proxy_connector) = create_proxy_connector() {
@@ -446,6 +456,7 @@ impl R2Client {
     }
 
     pub async fn ping(&self) -> Result<(), String> {
+        println!("ping...");
         self.client
             .head_bucket()
             .bucket(&self.bucket_name)

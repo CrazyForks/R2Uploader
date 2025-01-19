@@ -10,7 +10,10 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri",
-    "format": "prettier --write ./src"
+    "format": "prettier --write ./src",
+    "backup": "mkdir -p backup && cp ./src-tauri/gen/android/app/build.gradle.kts ./backup/ && cp ./src-tauri/gen/android/app/src/main/AndroidManifest.xml ./backup/",
+    "restore": "mkdir -p ./src-tauri/gen/android/app/src/main/java/cn/zerorust/r2uploader && cp ./backup/build.gradle.kts ./src-tauri/gen/android/app/ && cp ./backup/AndroidManifest.xml ./src-tauri/gen/android/app/src/main/ && if [ ! -f ./src-tauri/gen/android/keystore.properties ]; then echo -e 'password=\\nkeyAlias=upload\\nstoreFile=/home/vihv/upload-keystore.jks' > ./src-tauri/gen/android/keystore.properties; fi",
+    "restore-win": "powershell -ExecutionPolicy Bypass -File ./restore.ps1"
   },
   "license": "MIT",
   "dependencies": {
@@ -18,7 +21,7 @@
     "@tauri-apps/api": "^2.2.0",
     "@tauri-apps/plugin-dialog": "~2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.4",
-    "@tauri-apps/plugin-os": "~2",
+    "@tauri-apps/plugin-os": "~2.2.0",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.3",
     "dexie": "^4.0.11",
