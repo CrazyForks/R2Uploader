@@ -34,7 +34,6 @@
     unlistenProgress = await listen<UploadHistory>(
       "upload-progress",
       (event) => {
-        console.log(event.payload);
         globalState.progress[event.payload.fileId] = event.payload;
         // 如果上传完成了，无论成功还是失败，只要不是 uploading，就从 progress 移除，放入 db
         if (

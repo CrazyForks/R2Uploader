@@ -81,8 +81,7 @@
 
   async function cancelUpload(fileId: string) {
     try {
-      const resp = await invoke("r2_cancel_upload", { fileId });
-      console.log("取消结果", resp);
+      await invoke("r2_cancel_upload", { fileId });
     } catch (e) {
       console.error(e);
     }
