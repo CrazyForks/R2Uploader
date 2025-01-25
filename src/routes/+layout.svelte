@@ -3,8 +3,6 @@
   import FileDrag from "$lib/components/FileDrag.svelte";
   import Modal from "$lib/components/Modal.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
-  import TrialStatus from "$lib/components/TrialStatus.svelte";
-  import { page } from "$app/stores";
 
   const { children } = $props<{ children: any }>();
   import db from "$lib/db";
@@ -36,6 +34,7 @@
     unlistenProgress = await listen<UploadHistory>(
       "upload-progress",
       (event) => {
+        console.log(event.payload);
         globalState.progress[event.payload.fileId] = event.payload;
         // 如果上传完成了，无论成功还是失败，只要不是 uploading，就从 progress 移除，放入 db
         if (

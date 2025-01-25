@@ -3,6 +3,7 @@
   import { t } from "$lib/i18n.svelte";
   import { globalState, setAlert } from "$lib/store.svelte";
   import type { UploadHistory } from "$lib/type";
+  import { invoke } from "@tauri-apps/api/core";
   import { Copy } from "lucide-svelte";
   import { onMount, untrack } from "svelte";
 
@@ -75,6 +76,15 @@
       setAlert(t().fileUploader.uploadStatus.copySuccess);
     } catch (e) {
       setAlert(t().fileUploader.uploadStatus.copyFailed);
+    }
+  }
+
+  async function cancelUpload(fileId: string) {
+    try {
+      const resp = await invoke("r2_cancel_upload", { fileId });
+      console.log("取消结果", resp);
+    } catch (e) {
+      console.error(e);
     }
   }
 </script>
@@ -182,10 +192,24 @@
                 </div>
               {/if}
             </div>
-            <div class="px-2">
-              <button class="action-button" onclick={() => copyLink(file.url)}>
-                <Copy class="size-4" />
-              </button>
+            <div class="flex items-center gap-2 px-2">
+              {#if typeof file.status === "object" && "uploading" in file.status}
+                <button
+                  class="cursor-pointer rounded-md bg-red-50 px-3 py-1 text-sm text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                  onclick={() => cancelUpload(file.fileId)}
+                >
+                  {t().fileUploader.uploadStatus.cancel}
+                </button>
+              {/if}
+
+              {#if (typeof file.status === "object" && "uploading" in file.status) || file.status === "success"}
+                <button
+                  class="action-button"
+                  onclick={() => copyLink(file.url)}
+                >
+                  <Copy class="size-4" />
+                </button>
+              {/if}
             </div>
           </div>
         </div>

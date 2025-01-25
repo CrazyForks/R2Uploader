@@ -127,7 +127,7 @@ pub fn emit_progress(
 }
 
 #[tauri::command]
-pub async fn r2_cancel_upload(file_id: String) -> Result<(), String> {
+pub async fn r2_cancel_upload(app: AppHandle, file_id: String) -> Result<(), String> {
     // First get all the information we need
     let task_info = UPLOAD_TASKS
         .get(&file_id)
@@ -137,10 +137,13 @@ pub async fn r2_cancel_upload(file_id: String) -> Result<(), String> {
         .get(&file_id)
         .map(|entry| (entry.0.clone(), entry.1.clone()));
 
+    let mut filename = "".to_string();
+
     // Then handle the cancellation
     if let Some((_, upload_id)) = task_info {
         if let Some(upload_id) = upload_id {
             if let Some((client, remote_filename)) = client_info {
+                filename = remote_filename.clone();
                 let _ = client
                     .abort_multipart_upload(&remote_filename, &upload_id)
                     .await;
@@ -150,6 +153,15 @@ pub async fn r2_cancel_upload(file_id: String) -> Result<(), String> {
         // Finally remove the entries
         UPLOAD_TASKS.remove(&file_id);
         UPLOAD_TASKS_INFO.remove(&file_id);
+
+        // emit
+        emit_progress(
+            &app,
+            "".to_string(),
+            file_id,
+            filename,
+            UploadStatus::Cancelled,
+        );
     }
 
     Ok(())
