@@ -35,13 +35,32 @@ async function getFileDetails(path: string) {
   }
 }
 
+function getFileType(path: string): "file" | "text" | "image" {
+  const ext = path.split(".").pop()?.toLowerCase();
+  if (!ext) return "file";
+
+  // 图片格式
+  const imageExts = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "tiff"];
+  if (imageExts.includes(ext)) {
+    return "image";
+  }
+
+  // 文本格式
+  const textExts = ["txt", "md", "markdown", "json", "csv"];
+  if (textExts.includes(ext)) {
+    return "text";
+  }
+
+  return "file";
+}
+
 export async function parsePaths(paths: string[]) {
   paths.forEach(async (file) => {
     const details = await getFileDetails(file);
     if (details && details.length > 0) {
       details.forEach((detail) => {
         globalState.files.push({
-          type: "file",
+          type: getFileType(detail.path),
           id: detail.id,
           source: {
             filePath: detail.path,

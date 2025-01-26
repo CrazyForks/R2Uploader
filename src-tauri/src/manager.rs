@@ -1,7 +1,7 @@
-use base64::{engine::general_purpose, Engine};
-use uuid::Uuid;
-
 use crate::typ::FileDetail;
+use base64::{engine::general_purpose, Engine};
+use mime_guess::from_path;
+use uuid::Uuid;
 
 async fn get_file_details_internal(
     path: String,
@@ -62,7 +62,26 @@ pub async fn preview_file(path: String) -> Result<String, String> {
         return Err("文件大小超过 10MB 限制".to_string());
     }
 
-    if path.ends_with(".txt") {
+    let mime_type = from_path(&path).first_or_octet_stream();
+
+    // 处理图片文件
+    if mime_type.type_() == "image" {
+        let supported_formats = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "tiff"];
+        if supported_formats.contains(&mime_type.subtype().as_ref()) {
+            let data = tokio::fs::read(&path)
+                .await
+                .map_err(|e| format!("无法读取图片文件：{}", e))?;
+            let base64 = general_purpose::STANDARD.encode(data);
+            return Ok(format!("data:{};base64,{}", mime_type, base64));
+        }
+    }
+
+    // 处理文本文件
+    if mime_type.type_() == "text"
+        || mime_type.subtype() == "json"
+        || mime_type.subtype() == "csv"
+        || mime_type.subtype() == "markdown"
+    {
         let content = tokio::fs::read_to_string(&path)
             .await
             .map_err(|e| format!("无法读取文件：{}", e))?;
@@ -70,17 +89,5 @@ pub async fn preview_file(path: String) -> Result<String, String> {
         return Ok(lines.join("\n"));
     }
 
-    if path.ends_with(".png") || path.ends_with(".jpg") || path.ends_with(".jpeg") {
-        let data = tokio::fs::read(&path)
-            .await
-            .map_err(|e| format!("无法读取图片文件：{}", e))?;
-        let base64 = general_purpose::STANDARD.encode(data);
-        return Ok(format!(
-            "data:image/{};base64,{}",
-            path.split('.').last().unwrap_or("png"),
-            base64
-        ));
-    }
-
-    Err("不支持的文件类型".to_string())
+    Err(format!("不支持的文件类型：{}", mime_type))
 }

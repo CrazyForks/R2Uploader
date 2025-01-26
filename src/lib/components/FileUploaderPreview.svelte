@@ -25,8 +25,10 @@
         previewContent = file.source.fileContent || "";
       }
     } catch (error) {
-      previewError = error instanceof Error ? error.message : t().fileUploader.preview.previewFailed;
-      setAlert(previewError);
+      previewError =
+        error instanceof Error
+          ? error.message
+          : t().fileUploader.preview.previewFailed;
     } finally {
       previewLoading = false;
     }
@@ -60,8 +62,6 @@
               class="size-8 animate-spin rounded-full border-b-2 border-slate-900"
             ></div>
           </div>
-        {:else if previewError}
-          <div class="text-sm text-red-500">{previewError}</div>
         {:else if previewContent}
           {#if file.type === "image"}
             <img
@@ -81,11 +81,15 @@
 
       <div class="space-y-2 text-xs">
         <div class="flex items-center justify-between">
-          <span class="text-slate-500 dark:text-slate-400">{t().fileUploader.preview.filename}</span>
+          <span class="text-slate-500 dark:text-slate-400"
+            >{t().fileUploader.preview.filename}</span
+          >
           <span class="font-medium">{file.remoteFilename}</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-slate-500 dark:text-slate-400">{t().fileUploader.preview.remotePath}</span>
+          <span class="text-slate-500 dark:text-slate-400"
+            >{t().fileUploader.preview.remotePath}</span
+          >
           <span
             class="rounded bg-slate-100/50 px-2 py-1 font-mono text-slate-700 dark:bg-slate-700/50 dark:text-slate-300"
           >

@@ -92,7 +92,9 @@
       onclick={uploadFile}
       disabled={isUploading}
       class="cursor-pointer rounded-md bg-cyan-500 px-6 text-white hover:bg-cyan-400"
-      >{isUploading ? t().fileUploader.upload.uploading : t().fileUploader.upload.upload}</button
+      >{isUploading
+        ? t().fileUploader.upload.uploading
+        : t().fileUploader.upload.upload}</button
     >
   </div>
   <section

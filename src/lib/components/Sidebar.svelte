@@ -39,7 +39,9 @@
             (globalState.appSetting.sidebarCollapsed =
               !globalState.appSetting.sidebarCollapsed)}
           class="nav-link gapped"
-          aria-label={globalState.appSetting.sidebarCollapsed ? t().common.expand : t().common.collapse}
+          aria-label={globalState.appSetting.sidebarCollapsed
+            ? t().common.expand
+            : t().common.collapse}
         >
           {#if globalState.appSetting.sidebarCollapsed}
             <PanelRightClose class="size-5" />
@@ -52,8 +54,7 @@
         <li>
           <a
             {href}
-            class="nav-link gapped bg {globalState.appSetting
-              .sidebarCollapsed
+            class="nav-link gapped bg {globalState.appSetting.sidebarCollapsed
               ? 'rounded-none'
               : 'rounded-lg'}"
             class:min-w-28={!globalState.appSetting.sidebarCollapsed}
