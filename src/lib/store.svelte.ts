@@ -21,9 +21,6 @@ export let globalState: GlobalState = $state({
     useSystemProxy: true,
     locale: "en",
     defaultBucketId: undefined,
-    activated: false,
-    trialStartDate: null,
-    trialDays: 7,
   },
   progress: {},
 });

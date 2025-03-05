@@ -4,6 +4,8 @@
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { globalState, setDragPaths, setIsDragging } from "$lib/store.svelte";
   import { t } from "$lib/i18n.svelte";
+  import { page } from "$app/state";
+  import { goto } from "$app/navigation";
 
   let unlistenDrop: UnlistenFn;
   let unlistenLeave: UnlistenFn;
@@ -24,6 +26,10 @@
     unlistenDrop = await listen("tauri://drag-drop", async (event) => {
       setIsDragging(false);
       setDragPaths((event as DragEvent).payload.paths || []);
+      // 如果不在首页，跳转到首页，因为首页才能上传
+      if (page.route.id !== "/") {
+        await goto("/");
+      }
     });
 
     unlistenLeave = await listen("tauri://drag-leave", async (e) => {

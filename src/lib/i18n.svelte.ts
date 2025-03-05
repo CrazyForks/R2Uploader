@@ -171,31 +171,6 @@ export let en = $state({
       completed: "Completed",
     },
   },
-  activate: {
-    title: "Activation",
-    form: {
-      title: "Activate App",
-      codeLabel: "Activation Code",
-      codePlaceholder: "Enter your activation code",
-      submit: "Activate",
-    },
-    activated: {
-      title: "Activated",
-      message: "Dear valued user, your app has been successfully activated!",
-      subtitle: "Thank you for your support",
-    },
-    trial: {
-      daysLeft: "Trial period: {days} days left",
-      expired: "Trial period has expired",
-      needActivation: "Please activate the app to continue using it",
-      start: "Start {days}-day trial",
-    },
-    warning: {
-      title: "App Not Activated",
-      message: "Your app is running in limited mode. Activate now to unlock full features and optimal performance.",
-    },
-    error: "Invalid activation code. Please try again.",
-  },
 });
 
 export let zh = $state({
@@ -365,31 +340,6 @@ export let zh = $state({
       inProgress: "传输中",
       completed: "已完成",
     },
-  },
-  activate: {
-    title: "激活",
-    form: {
-      title: "激活应用",
-      codeLabel: "激活码",
-      codePlaceholder: "请输入激活码",
-      submit: "激活",
-    },
-    activated: {
-      title: "已激活",
-      message: "尊贵的用户，您的应用已成功激活！",
-      subtitle: "感谢您的支持",
-    },
-    trial: {
-      daysLeft: "试用期剩余：{days}天",
-      expired: "试用期已过期",
-      needActivation: "请激活应用以继续使用",
-      start: "开始{days}天免费试用",
-    },
-    warning: {
-      title: "应用未激活",
-      message: "您的应用正在以受限模式运行。立即激活以解锁全部功能和最佳性能。",
-    },
-    error: "激活码无效，请重试",
   },
 });
 

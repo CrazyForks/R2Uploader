@@ -14,7 +14,6 @@
   const links = $derived([
     { href: "/", icon: CloudUpload, label: t().common.upload },
     { href: "/transfer", icon: ArrowsUpFromLine, label: t().common.transfer },
-    { href: "/activate", icon: Crown, label: t().activate.title },
     { href: "/setting", icon: Settings, label: t().common.setting },
   ]);
 </script>
@@ -24,10 +23,12 @@
 
 {#snippet Desktop()}
   <nav
-    class="hidden min-h-dvh border-r border-slate-200 bg-white transition-all md:block dark:border-slate-700 dark:bg-slate-800"
-    style="width: {globalState.appSetting.sidebarCollapsed ? '3rem' : '10rem'}"
+    class="hidden min-h-dvh border-r border-slate-200 bg-white transition-all md:block dark:border-slate-700 dark:bg-slate-800 {globalState
+      .appSetting.sidebarCollapsed
+      ? 'w-16'
+      : 'w-40'}"
   >
-    <ul class="flex flex-col items-center space-y-2 overflow-hidden">
+    <ul class="flex flex-col items-center space-y-2">
       <li
         class="flex w-full {globalState.appSetting.sidebarCollapsed
           ? 'justify-center'
@@ -54,7 +55,7 @@
           <a
             {href}
             class="nav-link gapped bg {globalState.appSetting.sidebarCollapsed
-              ? 'rounded-none'
+              ? '-mx-2 rounded-none'
               : 'rounded-lg'}"
             class:min-w-28={!globalState.appSetting.sidebarCollapsed}
             aria-current={page.route.id === href ? "page" : null}
@@ -91,11 +92,11 @@
 
 <style lang="postcss">
   .nav-link {
-    @apply flex cursor-pointer items-center text-slate-700 transition-colors dark:text-slate-200;
+    @apply flex h-12 cursor-pointer items-center justify-center text-slate-700 transition-colors dark:text-slate-200;
   }
 
   .gapped {
-    @apply gap-3 px-4 py-3;
+    @apply gap-3 px-4;
   }
 
   .nav-link[aria-current] {

@@ -22,8 +22,8 @@
     <div
       role="alert"
       class="alert bg-primary flex items-center justify-center rounded-2xl
-                   border-none px-6 py-3 text-center text-white ring-1
-                   shadow-lg ring-white/10 backdrop-blur"
+                   border-none px-6 py-3 text-center text-white shadow-lg
+                   ring-1 ring-white/10 backdrop-blur"
     >
       <p class="truncate text-sm font-medium">{globalState.alertMessage}</p>
     </div>
